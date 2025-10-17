@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Basic Landing Page", () => {
   test("should load the homepage", async ({ page }) => {
-    await page.goto("http://localhost:5173");
+    await page.goto("/");
 
     // Check that the page loads
     await expect(page).toHaveTitle(/Creator Pool/);
@@ -14,18 +14,18 @@ test.describe("Basic Landing Page", () => {
   });
 
   test("should display creator pool logo", async ({ page }) => {
-    await page.goto("http://localhost:5173");
+    await page.goto("/");
 
-    // Check for logo
-    await expect(page.getByText("Creator Pool")).toBeVisible();
+    // Check for logo in header
+    await expect(page.getByRole("banner").getByText("Creator Pool")).toBeVisible();
   });
 
   test("should have navigation links", async ({ page }) => {
-    await page.goto("http://localhost:5173");
+    await page.goto("/");
 
-    // Check for navigation elements
-    await expect(page.getByText("Explore Pools")).toBeVisible();
-    await expect(page.getByText("Login")).toBeVisible();
-    await expect(page.getByText("Sign Up")).toBeVisible();
+    // Check for navigation elements in header
+    await expect(page.getByRole("banner").getByText("Explore Pools")).toBeVisible();
+    await expect(page.getByRole("banner").getByText("Login")).toBeVisible();
+    await expect(page.getByRole("banner").getByText("Sign Up")).toBeVisible();
   });
 });
