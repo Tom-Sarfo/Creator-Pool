@@ -1,6 +1,8 @@
 import type { Route } from "./+types/signup";
 import { SignUp } from "@clerk/react-router";
 import { Link } from "react-router";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlay } from "@fortawesome/free-solid-svg-icons";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -20,13 +22,7 @@ export default function SignUpPage() {
         <div className="flex justify-center">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-purple-600 rounded flex items-center justify-center">
-              <svg
-                className="w-5 h-5 text-white"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path d="M8 5v10l8-5-8-5z" />
-              </svg>
+              <FontAwesomeIcon icon={faPlay} className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold text-gray-800">
               Creator Pool

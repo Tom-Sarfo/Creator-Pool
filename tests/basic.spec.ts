@@ -17,14 +17,18 @@ test.describe("Basic Landing Page", () => {
     await page.goto("/");
 
     // Check for logo in header
-    await expect(page.getByRole("banner").getByText("Creator Pool")).toBeVisible();
+    await expect(
+      page.getByRole("banner").getByText("Creator Pool")
+    ).toBeVisible();
   });
 
   test("should have navigation links", async ({ page }) => {
     await page.goto("/");
 
     // Check for navigation elements in header
-    await expect(page.getByRole("banner").getByText("Explore Pools")).toBeVisible();
+    await expect(
+      page.getByRole("banner").getByText("Explore Pools")
+    ).toBeVisible();
     await expect(page.getByRole("banner").getByText("Login")).toBeVisible();
     await expect(page.getByRole("banner").getByText("Sign Up")).toBeVisible();
   });

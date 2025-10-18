@@ -7,10 +7,11 @@ import {
   ScrollRestoration,
 } from "react-router";
 import { ClerkProvider } from "@clerk/react-router";
-import { rootAuthLoader } from "@clerk/react-router/ssr.server";
+import { rootAuthLoader } from "@clerk/react-router/server";
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import "./lib/fontawesome";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
