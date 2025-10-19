@@ -17,7 +17,9 @@ import {
   faWallet,
   faUser,
   faCog,
+  faBrain,
 } from "@fortawesome/free-solid-svg-icons";
+import { DASHBOARD_NAVIGATION, CATEGORIES, MOCK_POOLS } from "../lib/constants";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -34,119 +36,25 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
-  const navigation = [
-    { name: "Dashboard", href: "/dashboard", icon: faHome },
-    { name: "Active Pools", href: "/predictor/pools", icon: faChartLine },
-    {
-      name: "My Predictions",
-      href: "/predictor/predictions",
-      icon: faChartLine,
-    },
-    { name: "Wallet", href: "/predictor/wallet", icon: faWallet },
-    { name: "Profile", href: "/predictor/profile", icon: faUser },
-  ];
+  const navigation = DASHBOARD_NAVIGATION.map((item) => ({
+    ...item,
+    icon:
+      item.icon === "home"
+        ? faHome
+        : item.icon === "chart-line"
+          ? faChartLine
+          : item.icon === "brain"
+            ? faBrain
+            : item.icon === "wallet"
+              ? faWallet
+              : item.icon === "user"
+                ? faUser
+                : faHome,
+  }));
 
-  const categories = [
-    { id: "all", name: "All Categories" },
-    { id: "tech", name: "Tech" },
-    { id: "gaming", name: "Gaming" },
-    { id: "lifestyle", name: "Lifestyle" },
-    { id: "education", name: "Education" },
-    { id: "entertainment", name: "Entertainment" },
-  ];
+  const categories = CATEGORIES;
 
-  const pools = [
-    {
-      id: 1,
-      creator: "TechReview Pro",
-      creatorVerified: true,
-      title: "iPhone 15 Pro Max - Complete Review & Hidden Features",
-      thumbnail:
-        "https://via.placeholder.com/300x200/8B5CF6/FFFFFF?text=iPhone+15+Pro",
-      category: "tech",
-      timeRemaining: "2h 34m",
-      totalStake: 12450,
-      participants: 847,
-      odds: { yes: 0.68, no: 0.32 },
-      status: "LIVE",
-      question: "Will this video reach 500K views in 7 days?",
-    },
-    {
-      id: 2,
-      creator: "GameMaster Elite",
-      creatorVerified: true,
-      title: "PlayStation 6 Leak - Everything We Know So Far",
-      thumbnail:
-        "https://via.placeholder.com/300x200/10B981/FFFFFF?text=PS6+Leak",
-      category: "gaming",
-      timeRemaining: "5h 12m",
-      totalStake: 8920,
-      participants: 623,
-      odds: { yes: 0.45, no: 0.55 },
-      status: "HOT",
-      question: "Will this video reach 1M views in 3 days?",
-    },
-    {
-      id: 3,
-      creator: "FitLife Coach",
-      creatorVerified: true,
-      title: "30-Day Fitness Transformation - Real Results",
-      thumbnail:
-        "https://via.placeholder.com/300x200/F59E0B/FFFFFF?text=Fitness+Transform",
-      category: "lifestyle",
-      timeRemaining: "1h 45m",
-      totalStake: 5670,
-      participants: 412,
-      odds: { yes: 0.72, no: 0.28 },
-      status: "TRENDING",
-      question: "Will this video reach 250K views in 5 days?",
-    },
-    {
-      id: 4,
-      creator: "Chef Maria",
-      creatorVerified: true,
-      title: "Perfect Pasta Recipe - 5 Minutes to Delicious",
-      thumbnail:
-        "https://via.placeholder.com/300x200/EF4444/FFFFFF?text=Pasta+Recipe",
-      category: "lifestyle",
-      timeRemaining: "8h 22m",
-      totalStake: 3450,
-      participants: 289,
-      odds: { yes: 0.58, no: 0.42 },
-      status: "NEW",
-      question: "Will this video reach 100K views in 10 days?",
-    },
-    {
-      id: 5,
-      creator: "Wanderlust Adventures",
-      creatorVerified: true,
-      title: "Most Dangerous City in the World - Travel Guide",
-      thumbnail:
-        "https://via.placeholder.com/300x200/8B5CF6/FFFFFF?text=Dangerous+City",
-      category: "entertainment",
-      timeRemaining: "12h 8m",
-      totalStake: 15680,
-      participants: 1024,
-      odds: { yes: 0.35, no: 0.65 },
-      status: "HOT",
-      question: "Will this video reach 2M views in 14 days?",
-    },
-    {
-      id: 6,
-      creator: "EduMaster Pro",
-      creatorVerified: true,
-      title: "How to Memorize Anything - Memory Techniques",
-      thumbnail:
-        "https://via.placeholder.com/300x200/3B82F6/FFFFFF?text=Memory+Techniques",
-      category: "education",
-      timeRemaining: "6h 15m",
-      totalStake: 7890,
-      participants: 567,
-      odds: { yes: 0.63, no: 0.37 },
-      status: "LIVE",
-      question: "Will this video reach 750K views in 7 days?",
-    },
-  ];
+  const pools = MOCK_POOLS;
 
   const getStatusColor = (status: string) => {
     switch (status) {

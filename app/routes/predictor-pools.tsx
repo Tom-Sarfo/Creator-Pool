@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { CATEGORIES, MOCK_POOLS } from "../lib/constants";
 
 export default function PredictorPools() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("active");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -10,113 +12,9 @@ export default function PredictorPools() {
     [key: number]: "yes" | "no" | null;
   }>({});
 
-  const categories = [
-    { id: "all", name: "All Categories" },
-    { id: "tech", name: "Tech" },
-    { id: "gaming", name: "Gaming" },
-    { id: "lifestyle", name: "Lifestyle" },
-    { id: "education", name: "Education" },
-    { id: "entertainment", name: "Entertainment" },
-  ];
+  const categories = CATEGORIES;
 
-  const pools = [
-    {
-      id: 1,
-      creator: "TechReview Pro",
-      creatorVerified: true,
-      creatorSubs: "2.4M subs",
-      title: "iPhone 15 Pro Max - Complete Review & Hidden Features",
-      thumbnail:
-        "https://via.placeholder.com/300x200/8B5CF6/FFFFFF?text=iPhone+15+Pro",
-      category: "tech",
-      timeRemaining: "2h 34m",
-      totalStake: 12450,
-      participants: 847,
-      odds: { yes: 0.68, no: 0.32 },
-      status: "LIVE",
-      question: "Will this video reach 500K views in 7 days?",
-    },
-    {
-      id: 2,
-      creator: "GameMaster Elite",
-      creatorVerified: true,
-      creatorSubs: "1.8M subs",
-      title: "PlayStation 6 Leak - Everything We Know So Far",
-      thumbnail:
-        "https://via.placeholder.com/300x200/10B981/FFFFFF?text=PS6+Leak",
-      category: "gaming",
-      timeRemaining: "5h 12m",
-      totalStake: 8920,
-      participants: 623,
-      odds: { yes: 0.45, no: 0.55 },
-      status: "HOT",
-      question: "Will this video reach 1M views in 3 days?",
-    },
-    {
-      id: 3,
-      creator: "FitLife Coach",
-      creatorVerified: true,
-      creatorSubs: "950K subs",
-      title: "30-Day Fitness Transformation - Real Results",
-      thumbnail:
-        "https://via.placeholder.com/300x200/F59E0B/FFFFFF?text=Fitness+Transform",
-      category: "lifestyle",
-      timeRemaining: "1h 45m",
-      totalStake: 5670,
-      participants: 412,
-      odds: { yes: 0.72, no: 0.28 },
-      status: "TRENDING",
-      question: "Will this video reach 250K views in 5 days?",
-    },
-    {
-      id: 4,
-      creator: "Chef Maria",
-      creatorVerified: true,
-      creatorSubs: "1.2M subs",
-      title: "Perfect Pasta Recipe - 5 Minutes to Delicious",
-      thumbnail:
-        "https://via.placeholder.com/300x200/EF4444/FFFFFF?text=Pasta+Recipe",
-      category: "lifestyle",
-      timeRemaining: "8h 22m",
-      totalStake: 3450,
-      participants: 289,
-      odds: { yes: 0.58, no: 0.42 },
-      status: "NEW",
-      question: "Will this video reach 100K views in 10 days?",
-    },
-    {
-      id: 5,
-      creator: "Wanderlust Adventures",
-      creatorVerified: true,
-      creatorSubs: "3.1M subs",
-      title: "Most Dangerous City in the World - Travel Guide",
-      thumbnail:
-        "https://via.placeholder.com/300x200/8B5CF6/FFFFFF?text=Dangerous+City",
-      category: "entertainment",
-      timeRemaining: "12h 8m",
-      totalStake: 15680,
-      participants: 1024,
-      odds: { yes: 0.35, no: 0.65 },
-      status: "HOT",
-      question: "Will this video reach 2M views in 14 days?",
-    },
-    {
-      id: 6,
-      creator: "EduMaster Pro",
-      creatorVerified: true,
-      creatorSubs: "750K subs",
-      title: "How to Memorize Anything - Memory Techniques",
-      thumbnail:
-        "https://via.placeholder.com/300x200/3B82F6/FFFFFF?text=Memory+Techniques",
-      category: "education",
-      timeRemaining: "6h 15m",
-      totalStake: 7890,
-      participants: 567,
-      odds: { yes: 0.63, no: 0.37 },
-      status: "LIVE",
-      question: "Will this video reach 750K views in 7 days?",
-    },
-  ];
+  const pools = MOCK_POOLS;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -145,8 +43,15 @@ export default function PredictorPools() {
   };
 
   const handlePredict = (poolId: number) => {
-    // Redirect to pool detail page
-    window.location.href = `/predictor/pool/${poolId}`;
+    // Get the selected prediction for this pool
+    const selectedPrediction = selectedPredictions[poolId];
+
+    // Navigate to pool detail page with prediction parameter
+    if (selectedPrediction) {
+      navigate(`/predictor/pool/${poolId}?prediction=${selectedPrediction}`);
+    } else {
+      navigate(`/predictor/pool/${poolId}`);
+    }
   };
 
   return (

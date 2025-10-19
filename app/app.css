@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-sans:
+    "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
 html,
@@ -12,4 +13,86 @@ body {
   @media (prefers-color-scheme: dark) {
     color-scheme: dark;
   }
+}
+
+/* Fix FontAwesome icon flickering during navigation */
+.fa,
+.fas,
+.far,
+.fab,
+.fal,
+.fad,
+.fat {
+  display: inline-block;
+  font-style: normal;
+  font-variant: normal;
+  text-rendering: auto;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Prevent layout shifts during icon loading */
+svg[data-icon] {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.125em;
+}
+
+/* Smooth transitions for icon state changes */
+svg[data-icon] * {
+  transition: none !important;
+}
+
+/* Prevent icon re-rendering flicker */
+.fa,
+.fas,
+.far,
+.fab,
+.fal,
+.fad,
+.fat,
+svg[data-icon] {
+  will-change: auto;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Ensure consistent icon sizing */
+.fa,
+.fas,
+.far,
+.fab,
+.fal,
+.fad,
+.fat {
+  width: 1em;
+  height: 1em;
+  min-width: 1em;
+  min-height: 1em;
+}
+
+/* Smooth page transitions */
+#root,
+main,
+.min-h-screen {
+  transition: opacity 0.1s ease-in-out;
+}
+
+/* Prevent layout shifts during navigation */
+* {
+  box-sizing: border-box;
+}
+
+/* Optimize rendering performance */
+.fa,
+.fas,
+.far,
+.fab,
+.fal,
+.fad,
+.fat,
+svg[data-icon] {
+  contain: layout style paint;
 }

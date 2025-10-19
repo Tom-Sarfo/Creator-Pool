@@ -1,12 +1,20 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { UserButton } from "@clerk/react-router";
-import { faBars, faBell, faWallet } from "@fortawesome/free-solid-svg-icons";
+import {
+  faBars,
+  faBell,
+  faWallet,
+  faSync,
+  faSearch,
+} from "@fortawesome/free-solid-svg-icons";
 
 interface HeaderProps {
   title: string;
   onMenuClick?: () => void;
   showMenuButton?: boolean;
   walletBalance?: number;
+  showSyncButton?: boolean;
+  showSearchBar?: boolean;
 }
 
 export default function Header({
@@ -14,6 +22,8 @@ export default function Header({
   onMenuClick,
   showMenuButton = false,
   walletBalance = 0,
+  showSyncButton = false,
+  showSearchBar = false,
 }: HeaderProps) {
   return (
     <div className="sticky top-0 z-40 flex h-16 items-center justify-between bg-white border-b border-gray-200 px-4 lg:px-6">
@@ -32,6 +42,31 @@ export default function Header({
       </div>
 
       <div className="flex items-center space-x-4">
+        {/* Sync Button */}
+        {showSyncButton && (
+          <button className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+            <FontAwesomeIcon icon={faSync} className="h-4 w-4" />
+            <span className="hidden sm:inline">Sync Channel</span>
+          </button>
+        )}
+
+        {/* Search Bar */}
+        {showSearchBar && (
+          <div className="relative hidden sm:block">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FontAwesomeIcon
+                icon={faSearch}
+                className="h-4 w-4 text-gray-400"
+              />
+            </div>
+            <input
+              type="text"
+              placeholder="Search videos..."
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            />
+          </div>
+        )}
+
         {/* Wallet Balance */}
         <div className="flex items-center space-x-2 text-purple-600">
           <FontAwesomeIcon icon={faWallet} className="h-5 w-5" />

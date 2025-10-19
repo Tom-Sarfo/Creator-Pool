@@ -1,74 +1,16 @@
 import { useState } from "react";
+import {
+  PREDICTOR_WALLET_DATA,
+  PREDICTOR_WALLET_TRANSACTIONS,
+  PREDICTOR_WALLET_PAYMENT_METHODS,
+} from "../lib/constants";
 
 export default function PredictorWallet() {
   const [activeTab, setActiveTab] = useState("overview");
 
-  const walletData = {
-    balance: 1247.5,
-    totalEarnings: 2840.25,
-    totalStaked: 1592.75,
-    pendingWithdrawals: 0,
-  };
-
-  const transactions = [
-    {
-      id: 1,
-      type: "win",
-      amount: 45.0,
-      description: "Won prediction: iPhone Review",
-      date: "2 hours ago",
-      status: "completed",
-    },
-    {
-      id: 2,
-      type: "stake",
-      amount: -25.0,
-      description: "Prediction stake: Game Trailer",
-      date: "5 hours ago",
-      status: "completed",
-    },
-    {
-      id: 3,
-      type: "deposit",
-      amount: 100.0,
-      description: "Bank transfer deposit",
-      date: "1 day ago",
-      status: "completed",
-    },
-    {
-      id: 4,
-      type: "win",
-      amount: 35.0,
-      description: "Won prediction: Game Review",
-      date: "2 days ago",
-      status: "completed",
-    },
-    {
-      id: 5,
-      type: "withdrawal",
-      amount: -200.0,
-      description: "Withdrawal to bank account",
-      date: "3 days ago",
-      status: "completed",
-    },
-  ];
-
-  const paymentMethods = [
-    {
-      id: 1,
-      type: "bank",
-      name: "Chase Bank ****1234",
-      isDefault: true,
-      status: "verified",
-    },
-    {
-      id: 2,
-      type: "paypal",
-      name: "PayPal (user@example.com)",
-      isDefault: false,
-      status: "verified",
-    },
-  ];
+  const walletData = PREDICTOR_WALLET_DATA;
+  const transactions = PREDICTOR_WALLET_TRANSACTIONS;
+  const paymentMethods = PREDICTOR_WALLET_PAYMENT_METHODS;
 
   const getTransactionIcon = (type: string) => {
     switch (type) {

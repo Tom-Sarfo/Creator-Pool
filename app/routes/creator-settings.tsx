@@ -12,6 +12,7 @@ import {
   faLightbulb,
 } from "@fortawesome/free-solid-svg-icons";
 import { faYoutube } from "@fortawesome/free-brands-svg-icons";
+import { CREATOR_SETTINGS_DATA } from "../lib/constants";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -31,6 +32,8 @@ export default function CreatorSettings() {
     newParticipant: false,
     weeklyReport: true,
   });
+
+  const settingsData = CREATOR_SETTINGS_DATA;
 
   const tabs = [
     { id: "profile", name: "Profile", icon: faUser },
@@ -93,7 +96,7 @@ export default function CreatorSettings() {
                   </label>
                   <input
                     type="text"
-                    defaultValue="Creator Name"
+                    defaultValue={settingsData.displayName}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
                   />
                 </div>
@@ -104,7 +107,7 @@ export default function CreatorSettings() {
                   </label>
                   <textarea
                     rows={4}
-                    defaultValue="I create amazing content and love engaging with my audience through prediction pools!"
+                    defaultValue={settingsData.bio}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
                   />
                 </div>
@@ -150,7 +153,7 @@ export default function CreatorSettings() {
                         Connected Channel
                       </p>
                       <p className="text-sm text-gray-600">
-                        Creator Channel (1,250 subscribers)
+                        {settingsData.channelName}
                       </p>
                     </div>
                   </div>
@@ -382,30 +385,19 @@ export default function CreatorSettings() {
                     Earnings History
                   </h3>
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between py-2">
-                      <span className="text-sm text-gray-600">
-                        January 2024
-                      </span>
-                      <span className="text-sm font-medium text-gray-900">
-                        $89.50
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between py-2">
-                      <span className="text-sm text-gray-600">
-                        December 2023
-                      </span>
-                      <span className="text-sm font-medium text-gray-900">
-                        $156.20
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between py-2">
-                      <span className="text-sm text-gray-600">
-                        November 2023
-                      </span>
-                      <span className="text-sm font-medium text-gray-900">
-                        $78.90
-                      </span>
-                    </div>
+                    {settingsData.earningsHistory.map((earning, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between py-2"
+                      >
+                        <span className="text-sm text-gray-600">
+                          {earning.month}
+                        </span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {earning.amount}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>

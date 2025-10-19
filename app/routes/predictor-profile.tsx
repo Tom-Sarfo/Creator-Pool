@@ -1,67 +1,28 @@
 import { useState } from "react";
+import {
+  PREDICTOR_PROFILE_DATA,
+  PREDICTOR_PROFILE_ACHIEVEMENTS,
+} from "../lib/constants";
 
 export default function PredictorProfile() {
   const [activeTab, setActiveTab] = useState("profile");
 
-  const profileData = {
-    username: "PredictorPro",
-    email: "user@example.com",
-    joinDate: "January 2024",
-    totalPredictions: 25,
-    winRate: 78.7,
-    totalEarnings: 1247.5,
-    rank: "Gold",
-    badges: ["Early Adopter", "High Roller", "Streak Master"],
-  };
-
-  const achievements = [
-    {
-      id: 1,
-      title: "First Win",
-      description: "Won your first prediction",
-      icon: "🎉",
-      unlocked: true,
-      date: "Jan 15, 2024",
-    },
-    {
-      id: 2,
-      title: "Win Streak",
-      description: "Won 5 predictions in a row",
-      icon: "🔥",
-      unlocked: true,
-      date: "Feb 3, 2024",
-    },
-    {
-      id: 3,
-      title: "High Roller",
-      description: "Made a prediction with $100+ stake",
-      icon: "💰",
-      unlocked: true,
-      date: "Feb 10, 2024",
-    },
-    {
-      id: 4,
-      title: "Prediction Master",
-      description: "Made 50 total predictions",
-      icon: "🎯",
-      unlocked: false,
-      date: null,
-    },
-    {
-      id: 5,
-      title: "Perfect Month",
-      description: "100% win rate for a month",
-      icon: "⭐",
-      unlocked: false,
-      date: null,
-    },
-  ];
+  const profileData = PREDICTOR_PROFILE_DATA;
+  const achievements = PREDICTOR_PROFILE_ACHIEVEMENTS;
 
   const stats = [
-    { label: "Total Predictions", value: "25", icon: "📊" },
-    { label: "Win Rate", value: "78.7%", icon: "🎯" },
-    { label: "Total Earnings", value: "$1,247.50", icon: "💰" },
-    { label: "Current Rank", value: "Gold", icon: "🏆" },
+    {
+      label: "Total Predictions",
+      value: profileData.totalPredictions.toString(),
+      icon: "📊",
+    },
+    { label: "Win Rate", value: `${profileData.winRate}%`, icon: "🎯" },
+    {
+      label: "Total Earnings",
+      value: `$${profileData.totalEarnings.toLocaleString()}`,
+      icon: "💰",
+    },
+    { label: "Current Rank", value: profileData.rank, icon: "🏆" },
   ];
 
   return (

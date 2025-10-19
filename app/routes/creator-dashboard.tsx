@@ -6,7 +6,20 @@ import {
   faChartBar,
   faDollarSign,
   faTrophy,
+  faPlay,
+  faEye,
+  faHeart,
+  faCalendar,
+  faSync,
+  faEllipsisV,
+  faPlus,
+  faLayerGroup,
+  faCoins,
 } from "@fortawesome/free-solid-svg-icons";
+import { useState } from "react";
+import { RECENT_VIDEOS, CREATOR_STATS } from "../lib/constants";
+import Tabs from "../components/Tabs";
+import EnablePoolModal from "../components/EnablePoolModal";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -19,301 +32,411 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function CreatorDashboard() {
-  // Mock data - will be replaced with real data later
-  const stats = {
-    totalVideos: 24,
-    activePools: 3,
-    totalPledged: 1250,
-    totalEarned: 89.5,
+  const [activeTab, setActiveTab] = useState("all");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState(null);
+  const stats = CREATOR_STATS;
+  const videos = RECENT_VIDEOS;
+
+  // Filter videos based on active tab
+  const getFilteredVideos = () => {
+    switch (activeTab) {
+      case "active":
+        return videos.filter(
+          (video) =>
+            video.poolStatus === "active" || video.poolStatus === "closing"
+        );
+      case "unlisted":
+        return videos.filter((video) => video.status === "unlisted");
+      default:
+        return videos;
+    }
   };
 
-  const recentVideos = [
+  const filteredVideos = getFilteredVideos();
+
+  const activeVideoCount = videos.filter(
+    (video) => video.poolStatus === "active" || video.poolStatus === "closing"
+  ).length;
+  const unlistedVideoCount = videos.filter(
+    (video) => video.status === "unlisted"
+  ).length;
+
+  const getPoolStatusColor = (poolStatus: string) => {
+    switch (poolStatus) {
+      case "active":
+        return "bg-green-100 text-green-800";
+      case "closing":
+        return "bg-yellow-100 text-yellow-800";
+      case "settled":
+        return "bg-blue-100 text-blue-800";
+      case "ready":
+        return "bg-orange-100 text-orange-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const formatViews = (views: number) => {
+    if (views >= 1000000) {
+      return (views / 1000000).toFixed(1) + "M";
+    } else if (views >= 1000) {
+      return (views / 1000).toFixed(1) + "K";
+    }
+    return views.toString();
+  };
+
+  const formatLikes = (likes: number) => {
+    if (likes >= 1000000) {
+      return (likes / 1000000).toFixed(1) + "M";
+    } else if (likes >= 1000) {
+      return (likes / 1000).toFixed(1) + "K";
+    }
+    return likes.toString();
+  };
+
+  // Tab data for the reusable Tabs component
+  const videoTabs = [
     {
-      id: 1,
-      title: "My Latest Gaming Video - Epic Win!",
-      thumbnail: "/api/placeholder/160/90",
-      views: 12500,
-      status: "published",
-      poolStatus: "active",
-      poolSize: 450,
+      id: "all",
+      name: "All Videos",
+      count: stats.totalVideos,
     },
     {
-      id: 2,
-      title: "Tutorial: How to Build a React App",
-      thumbnail: "/api/placeholder/160/90",
-      views: 8900,
-      status: "published",
-      poolStatus: "settled",
-      poolSize: 320,
+      id: "active",
+      name: "Active Pool",
+      count: activeVideoCount,
     },
     {
-      id: 3,
-      title: "Unlisted: Secret Project Reveal",
-      thumbnail: "/api/placeholder/160/90",
-      views: 0,
-      status: "unlisted",
-      poolStatus: "pending",
-      poolSize: 0,
+      id: "unlisted",
+      name: "Unlisted",
+      count: unlistedVideoCount,
     },
   ];
 
-  const activePools = [
-    {
-      id: 1,
-      videoTitle: "My Latest Gaming Video - Epic Win!",
-      question: "Will this video reach 20K views in 7 days?",
-      participants: 23,
-      totalStake: 450,
-      timeRemaining: "5 days, 12 hours",
-      status: "active",
-    },
-    {
-      id: 2,
-      videoTitle: "React Tutorial Series",
-      question: "Will this get 15K views in 5 days?",
-      participants: 18,
-      totalStake: 320,
-      timeRemaining: "2 days, 8 hours",
-      status: "active",
-    },
-  ];
+  const handleEnablePoolClick = (video: any) => {
+    setSelectedVideo(video);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedVideo(null);
+  };
+
+  const handleEnablePool = (poolData: any) => {
+    // Handle pool creation/enabling logic here
+    console.log("Enabling pool:", poolData);
+    // You can add API call to create the pool here
+  };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      {/* Welcome section */}
+    <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen">
+      {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-          Welcome back, Creator! 👋
+          Creator Hub
         </h1>
         <p className="text-gray-600">
-          Here's what's happening with your content and prediction pools.
+          Manage your prediction pools and earnings
         </p>
       </div>
 
-      {/* Stats grid */}
+      {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+        {/* Total Videos */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <FontAwesomeIcon
-                  icon={faVideo}
-                  className="w-5 h-5 text-blue-600"
+                  icon={faPlay}
+                  className="w-6 h-6 text-blue-600"
                 />
               </div>
             </div>
             <div className="ml-4 flex-1">
               <p className="text-sm font-medium text-gray-500">Total Videos</p>
-              <p className="text-2xl font-semibold text-gray-900">
+              <p className="text-3xl font-bold text-gray-900">
                 {stats.totalVideos}
               </p>
             </div>
           </div>
         </div>
 
+        {/* Active Pools */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <FontAwesomeIcon
-                  icon={faChartBar}
-                  className="w-5 h-5 text-purple-600"
+                  icon={faLayerGroup}
+                  className="w-6 h-6 text-green-600"
                 />
               </div>
             </div>
             <div className="ml-4 flex-1">
               <p className="text-sm font-medium text-gray-500">Active Pools</p>
-              <p className="text-2xl font-semibold text-gray-900">
+              <p className="text-3xl font-bold text-gray-900">
                 {stats.activePools}
               </p>
             </div>
           </div>
         </div>
 
+        {/* Total Pledged Amount */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                 <FontAwesomeIcon
-                  icon={faDollarSign}
-                  className="w-5 h-5 text-green-600"
+                  icon={faCoins}
+                  className="w-6 h-6 text-purple-600"
                 />
               </div>
             </div>
             <div className="ml-4 flex-1">
-              <p className="text-sm font-medium text-gray-500">Total Pledged</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                ${stats.totalPledged.toLocaleString()}
+              <p className="text-sm font-medium text-gray-500">
+                Total Pledged Amount
+              </p>
+              <p className="text-3xl font-bold text-gray-900">
+                ${stats.totalPledgedAmount}
               </p>
             </div>
           </div>
         </div>
 
+        {/* Total Royalties Earned */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
                 <FontAwesomeIcon
                   icon={faTrophy}
-                  className="w-5 h-5 text-yellow-600"
+                  className="w-6 h-6 text-red-600"
                 />
               </div>
             </div>
             <div className="ml-4 flex-1">
-              <p className="text-sm font-medium text-gray-500">Total Earned</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                ${stats.totalEarned}
+              <p className="text-sm font-medium text-gray-500">
+                Total Royalties Earned
+              </p>
+              <p className="text-3xl font-bold text-gray-900">
+                ${stats.totalRoyaltiesEarned}
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Quick actions */}
-      <div className="mb-8">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Link
-            to="/creator/videos"
-            className="flex-1 bg-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors text-center"
-          >
-            🎬 Manage Videos
-          </Link>
-          <Link
-            to="/creator/pools"
-            className="flex-1 bg-white text-purple-600 border border-purple-600 px-6 py-3 rounded-lg font-medium hover:bg-purple-50 transition-colors text-center"
-          >
-            🎯 Create New Pool
-          </Link>
+      {/* Video List Section */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        {/* Tabs */}
+        <div className="px-4 sm:px-6 py-4">
+          <Tabs
+            tabs={videoTabs}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-        {/* Recent Videos */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Recent Videos
-              </h2>
-              <Link
-                to="/creator/videos"
-                className="text-sm text-purple-600 hover:text-purple-700 font-medium"
-              >
-                View all
-              </Link>
-            </div>
-          </div>
-          <div className="divide-y divide-gray-200">
-            {recentVideos.map((video) => (
-              <div key={video.id} className="p-4 sm:p-6">
-                <div className="flex items-start space-x-4">
-                  <div className="flex-shrink-0">
-                    <div className="w-20 h-12 bg-gray-200 rounded-md flex items-center justify-center">
-                      <span className="text-xs text-gray-500">Thumbnail</span>
+        {/* Video List */}
+        <div className="divide-y divide-gray-200">
+          {filteredVideos.map((video) => (
+            <div key={video.id} className="p-4 sm:p-6">
+              <div className="flex items-start space-x-4">
+                {/* Video Thumbnail */}
+                <div className="flex-shrink-0 relative">
+                  <div className="w-16 h-12 bg-gray-200 rounded-md overflow-hidden relative">
+                    <img
+                      src={video.thumbnail}
+                      alt={video.title}
+                      className="w-full h-full object-cover"
+                    />
+                    {/* Duration overlay */}
+                    <div className="absolute bottom-0 right-0 bg-black bg-opacity-75 text-white text-xs px-1 rounded-tl">
+                      {video.duration}
+                    </div>
+                    {/* Unlisted badge */}
+                    {video.status === "unlisted" && (
+                      <div className="absolute top-0 left-0 bg-red-600 text-white text-xs px-1 rounded-br">
+                        Unlisted
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Video Info */}
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-medium text-gray-900 mb-1 line-clamp-2">
+                    {video.title}
+                  </h3>
+
+                  {/* Video Stats */}
+                  <div className="flex items-center space-x-4 text-xs text-gray-500 mb-2">
+                    <div className="flex items-center space-x-1">
+                      <FontAwesomeIcon icon={faEye} className="w-3 h-3" />
+                      <span>{formatViews(video.views)} views</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <FontAwesomeIcon icon={faHeart} className="w-3 h-3" />
+                      <span>{formatLikes(video.likes)} likes</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <FontAwesomeIcon icon={faCalendar} className="w-3 h-3" />
+                      <span>{video.uploadDate}</span>
                     </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-medium text-gray-900 truncate">
-                      {video.title}
-                    </h3>
-                    <div className="mt-1 flex items-center space-x-4 text-xs text-gray-500">
-                      <span>{video.views.toLocaleString()} views</span>
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          video.status === "published"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-yellow-100 text-yellow-800"
-                        }`}
-                      >
-                        {video.status}
-                      </span>
+
+                  {/* Pool Status and Action */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      {video.poolStatus === "active" && (
+                        <div className="flex items-center space-x-2">
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${getPoolStatusColor(video.poolStatus)}`}
+                          >
+                            Active Pool
+                          </span>
+                          <span className="text-xs text-gray-600">
+                            ${video.poolStake.toLocaleString()} pool •{" "}
+                            {video.poolParticipants} predictions
+                          </span>
+                        </div>
+                      )}
+                      {video.poolStatus === "closing" && (
+                        <div className="flex items-center space-x-2">
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${getPoolStatusColor(video.poolStatus)}`}
+                          >
+                            Pool Closing Soon
+                          </span>
+                          <span className="text-xs text-gray-600">
+                            ${video.poolStake.toLocaleString()} pool •{" "}
+                            {video.timeRemaining}
+                          </span>
+                        </div>
+                      )}
+                      {video.poolStatus === "settled" && (
+                        <div className="flex items-center space-x-2">
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${getPoolStatusColor(video.poolStatus)}`}
+                          >
+                            Pool Settled
+                          </span>
+                          <span className="text-xs text-gray-600">
+                            Target reached • +${video.earnedAmount} earned
+                          </span>
+                        </div>
+                      )}
+                      {video.poolStatus === "ready" && (
+                        <div className="flex items-center space-x-2">
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${getPoolStatusColor(video.poolStatus)}`}
+                          >
+                            Ready for Pool
+                          </span>
+                          <span className="text-xs text-gray-600">
+                            Perfect for predictions
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    <div className="mt-2 flex items-center justify-between">
-                      <span
-                        className={`text-xs px-2 py-1 rounded-full ${
-                          video.poolStatus === "active"
-                            ? "bg-purple-100 text-purple-800"
-                            : video.poolStatus === "settled"
-                              ? "bg-gray-100 text-gray-800"
-                              : "bg-gray-100 text-gray-500"
-                        }`}
-                      >
-                        {video.poolStatus === "active"
-                          ? `Pool: $${video.poolSize}`
-                          : video.poolStatus === "settled"
-                            ? "Pool settled"
-                            : "No pool"}
-                      </span>
-                      <button className="text-xs text-purple-600 hover:text-purple-700">
-                        {video.poolStatus === "pending"
-                          ? "Create Pool"
-                          : "View Pool"}
+
+                    {/* Action Button and Menu */}
+                    <div className="flex items-center space-x-2 ml-4">
+                      {video.poolStatus === "active" && (
+                        <button className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors">
+                          View Pool
+                        </button>
+                      )}
+                      {video.poolStatus === "closing" && (
+                        <button className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors">
+                          View Pool
+                        </button>
+                      )}
+                      {video.poolStatus === "settled" && (
+                        <button className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                          View Results
+                        </button>
+                      )}
+                      {video.poolStatus === "ready" && (
+                        <button
+                          onClick={() => handleEnablePoolClick(video)}
+                          className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-1"
+                        >
+                          <FontAwesomeIcon icon={faPlus} className="w-4 h-4" />
+                          <span>Enable Prediction Pool</span>
+                        </button>
+                      )}
+                      <button className="p-2 text-gray-400 hover:text-gray-600">
+                        <FontAwesomeIcon
+                          icon={faEllipsisV}
+                          className="w-4 h-4"
+                        />
                       </button>
                     </div>
                   </div>
+
+                  {/* Progress Bar for Active Pools */}
+                  {video.poolStatus === "active" && (
+                    <div className="mt-2">
+                      <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                        <span>Progress to 50K views</span>
+                        <span>57.4%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-purple-600 h-2 rounded-full"
+                          style={{ width: "57.4%" }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
 
-        {/* Active Pools */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Active Pools
-              </h2>
-              <Link
-                to="/creator/pools"
-                className="text-sm text-purple-600 hover:text-purple-700 font-medium"
-              >
-                View all
-              </Link>
+        {/* Pagination */}
+        <div className="px-4 sm:px-6 py-4 border-t border-gray-200">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-700">
+              Showing 1-{filteredVideos.length} of {stats.totalVideos} videos
+            </p>
+            <div className="flex items-center space-x-2">
+              <button className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50">
+                Previous
+              </button>
+              <button className="px-3 py-1 text-sm bg-purple-600 text-white rounded">
+                1
+              </button>
+              <button className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900">
+                2
+              </button>
+              <button className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900">
+                3
+              </button>
+              <span className="px-2 text-sm text-gray-500">...</span>
+              <button className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900">
+                42
+              </button>
+              <button className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900">
+                Next
+              </button>
             </div>
           </div>
-          <div className="divide-y divide-gray-200">
-            {activePools.map((pool) => (
-              <div key={pool.id} className="p-4 sm:p-6">
-                <h3 className="text-sm font-medium text-gray-900 mb-2">
-                  {pool.videoTitle}
-                </h3>
-                <p className="text-sm text-gray-600 mb-3">{pool.question}</p>
-                <div className="flex items-center justify-between text-xs text-gray-500">
-                  <div className="flex items-center space-x-4">
-                    <span>{pool.participants} participants</span>
-                    <span>${pool.totalStake} total</span>
-                  </div>
-                  <span className="text-purple-600 font-medium">
-                    {pool.timeRemaining}
-                  </span>
-                </div>
-                <div className="mt-3">
-                  <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-                    <span>Progress</span>
-                    <span>{Math.round((pool.participants / 30) * 100)}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-purple-600 h-2 rounded-full"
-                      style={{
-                        width: `${Math.min((pool.participants / 30) * 100, 100)}%`,
-                      }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
 
-      {/* Mobile bottom navigation hint */}
-      <div className="lg:hidden mt-8 p-4 bg-purple-50 rounded-lg">
-        <p className="text-sm text-purple-700 text-center">
-          💡 Use the menu button above to navigate between sections
-        </p>
-      </div>
+      {/* Enable Pool Modal */}
+      <EnablePoolModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        video={selectedVideo}
+        onEnablePool={handleEnablePool}
+      />
     </div>
   );
 }

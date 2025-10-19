@@ -8,6 +8,12 @@ import {
   faTrophy,
   faLightbulb,
 } from "@fortawesome/free-solid-svg-icons";
+import {
+  CREATOR_ANALYTICS_DATA,
+  CREATOR_ANALYTICS_POOL_PERFORMANCE,
+  CREATOR_ANALYTICS_MONTHLY_DATA,
+  TIME_RANGES,
+} from "../lib/constants";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -22,74 +28,10 @@ export function meta({}: Route.MetaArgs) {
 export default function CreatorAnalytics() {
   const [timeRange, setTimeRange] = useState("30d");
 
-  // Mock data - will be replaced with real data later
-  const analytics = {
-    totalPools: 12,
-    totalParticipants: 156,
-    totalStaked: 2450,
-    totalEarned: 89.5,
-    averagePoolSize: 204,
-    averageParticipants: 13,
-    winRate: 75,
-    topPerformingPool: {
-      title: "My Latest Gaming Video - Epic Win!",
-      participants: 23,
-      totalStake: 450,
-      earnings: 18.5,
-    },
-  };
-
-  const poolPerformance = [
-    {
-      name: "Gaming Video",
-      participants: 23,
-      stake: 450,
-      earnings: 18.5,
-      status: "won",
-    },
-    {
-      name: "React Tutorial",
-      participants: 18,
-      stake: 320,
-      earnings: 12.8,
-      status: "won",
-    },
-    {
-      name: "JavaScript Guide",
-      participants: 15,
-      stake: 280,
-      earnings: 0,
-      status: "lost",
-    },
-    {
-      name: "CSS Tips",
-      participants: 12,
-      stake: 180,
-      earnings: 7.2,
-      status: "won",
-    },
-    {
-      name: "Node.js Basics",
-      participants: 20,
-      stake: 380,
-      earnings: 15.2,
-      status: "won",
-    },
-  ];
-
-  const monthlyData = [
-    { month: "Jan", pools: 2, participants: 25, earnings: 15.5 },
-    { month: "Feb", pools: 3, participants: 45, earnings: 28.3 },
-    { month: "Mar", pools: 4, participants: 67, earnings: 35.7 },
-    { month: "Apr", pools: 3, participants: 52, earnings: 10.0 },
-  ];
-
-  const timeRanges = [
-    { id: "7d", name: "Last 7 days" },
-    { id: "30d", name: "Last 30 days" },
-    { id: "90d", name: "Last 90 days" },
-    { id: "1y", name: "Last year" },
-  ];
+  const analytics = CREATOR_ANALYTICS_DATA;
+  const poolPerformance = CREATOR_ANALYTICS_POOL_PERFORMANCE;
+  const monthlyData = CREATOR_ANALYTICS_MONTHLY_DATA;
+  const timeRanges = TIME_RANGES;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">

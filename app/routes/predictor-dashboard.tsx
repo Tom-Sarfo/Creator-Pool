@@ -4,88 +4,46 @@ import {
   faBullseye,
   faChartLine,
   faWallet,
+  faBrain,
+  faChartBar,
+  faDollarSign,
+  faClock,
+  faUsers,
+  faChevronRight,
 } from "@fortawesome/free-solid-svg-icons";
+import {
+  PREDICTOR_QUICK_ACTIONS,
+  RECENT_POOLS,
+  PREDICTOR_DASHBOARD_STATS,
+} from "../lib/constants";
 
 export default function PredictorDashboard() {
-  // Mock data for demonstration
-  const stats = {
-    totalPredictions: 47,
-    winRate: 78.7,
-    totalEarnings: 1247.5,
-    activePredictions: 8,
-  };
+  const stats = PREDICTOR_DASHBOARD_STATS;
 
-  const recentPools = [
-    {
-      id: 1,
-      creator: "TechReviewer",
-      title: "Will this iPhone review hit 1M views?",
-      thumbnail:
-        "https://via.placeholder.com/300x200/8B5CF6/FFFFFF?text=iPhone+Review",
-      timeRemaining: "2d 14h",
-      totalStake: 2840,
-      participants: 156,
-      myStake: 25,
-      myChoice: "YES",
-      odds: { yes: 1.8, no: 2.1 },
-    },
-    {
-      id: 2,
-      creator: "GamingPro",
-      title: "Will this game trailer reach 500K views?",
-      thumbnail:
-        "https://via.placeholder.com/300x200/10B981/FFFFFF?text=Game+Trailer",
-      timeRemaining: "5d 8h",
-      totalStake: 1920,
-      participants: 89,
-      myStake: 50,
-      myChoice: "NO",
-      odds: { yes: 2.3, no: 1.6 },
-    },
-    {
-      id: 3,
-      creator: "CookingMaster",
-      title: "Will this recipe video go viral?",
-      thumbnail:
-        "https://via.placeholder.com/300x200/F59E0B/FFFFFF?text=Recipe+Video",
-      timeRemaining: "1d 3h",
-      totalStake: 1560,
-      participants: 67,
-      myStake: 0,
-      myChoice: null,
-      odds: { yes: 1.9, no: 1.9 },
-    },
-  ];
+  const recentPools = RECENT_POOLS;
 
-  const quickActions = [
-    {
-      title: "Browse Active Pools",
-      description: "Discover new prediction opportunities",
-      icon: faBullseye,
-      href: "/predictor/pools",
-      color: "bg-purple-500 hover:bg-purple-600",
-    },
-    {
-      title: "View My Predictions",
-      description: "Track your active predictions",
-      icon: faChartLine,
-      href: "/predictor/predictions",
-      color: "bg-blue-500 hover:bg-blue-600",
-    },
-    {
-      title: "Manage Wallet",
-      description: "Deposit, withdraw, or view balance",
-      icon: faWallet,
-      href: "/predictor/wallet",
-      color: "bg-green-500 hover:bg-green-600",
-    },
-  ];
+  const quickActions = PREDICTOR_QUICK_ACTIONS.map((action) => ({
+    ...action,
+    icon:
+      action.icon === "bullseye"
+        ? faBullseye
+        : action.icon === "chart-line"
+          ? action.href === "/predictor/predictions"
+            ? faBrain
+            : faChartLine
+          : action.icon === "wallet"
+            ? faWallet
+            : faBullseye,
+  }));
 
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl p-6 text-white">
-        <h1 className="text-2xl font-bold mb-2">Welcome back, Predictor! 🎯</h1>
+        <div className="flex items-center mb-2">
+          <FontAwesomeIcon icon={faBrain} className="text-2xl mr-3" />
+          <h1 className="text-2xl font-bold">Welcome back, Predictor!</h1>
+        </div>
         <p className="text-purple-100">
           Ready to make your next prediction? Discover active pools and test
           your intuition.
@@ -97,7 +55,10 @@ export default function PredictorDashboard() {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="p-2 bg-blue-100 rounded-lg">
-              <span className="text-2xl">📊</span>
+              <FontAwesomeIcon
+                icon={faChartBar}
+                className="w-6 h-6 text-blue-600"
+              />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">
@@ -113,7 +74,10 @@ export default function PredictorDashboard() {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="p-2 bg-green-100 rounded-lg">
-              <span className="text-2xl">🎯</span>
+              <FontAwesomeIcon
+                icon={faBullseye}
+                className="w-6 h-6 text-green-600"
+              />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Win Rate</p>
@@ -127,7 +91,10 @@ export default function PredictorDashboard() {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="p-2 bg-yellow-100 rounded-lg">
-              <span className="text-2xl">💰</span>
+              <FontAwesomeIcon
+                icon={faDollarSign}
+                className="w-6 h-6 text-yellow-600"
+              />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">
@@ -143,7 +110,10 @@ export default function PredictorDashboard() {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="p-2 bg-purple-100 rounded-lg">
-              <span className="text-2xl">⏱️</span>
+              <FontAwesomeIcon
+                icon={faBrain}
+                className="w-6 h-6 text-purple-600"
+              />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">
@@ -193,9 +163,10 @@ export default function PredictorDashboard() {
             </h2>
             <Link
               to="/predictor/pools"
-              className="text-purple-600 hover:text-purple-700 font-medium"
+              className="text-purple-600 hover:text-purple-700 font-medium flex items-center"
             >
-              View All →
+              View All{" "}
+              <FontAwesomeIcon icon={faChevronRight} className="ml-1" />
             </Link>
           </div>
         </div>
@@ -222,9 +193,21 @@ export default function PredictorDashboard() {
                   </div>
                   <p className="text-sm text-gray-600 truncate">{pool.title}</p>
                   <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                    <span>⏱️ {pool.timeRemaining}</span>
-                    <span>👥 {pool.participants} predictors</span>
-                    <span>💰 ${pool.totalStake} total</span>
+                    <div className="flex items-center space-x-1">
+                      <FontAwesomeIcon icon={faClock} className="w-3 h-3" />
+                      <span>{pool.timeRemaining}</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <FontAwesomeIcon icon={faUsers} className="w-3 h-3" />
+                      <span>{pool.participants} predictors</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <FontAwesomeIcon
+                        icon={faDollarSign}
+                        className="w-3 h-3"
+                      />
+                      <span>${pool.totalStake} total</span>
+                    </div>
                   </div>
                 </div>
                 <div className="text-right">

@@ -31,6 +31,26 @@ export default function CreatorLayout() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Get the appropriate title based on current route
+  const getPageTitle = () => {
+    if (location.pathname === "/creator") {
+      return "Creator Hub";
+    }
+    if (location.pathname.startsWith("/creator/videos")) {
+      return "Videos";
+    }
+    if (location.pathname.startsWith("/creator/pools")) {
+      return "Pools";
+    }
+    if (location.pathname.startsWith("/creator/analytics")) {
+      return "Analytics";
+    }
+    if (location.pathname.startsWith("/creator/settings")) {
+      return "Settings";
+    }
+    return "Creator Dashboard";
+  };
+
   const navigation = [
     { name: "Dashboard", href: "/creator", icon: faChartLine },
     { name: "Videos", href: "/creator/videos", icon: faVideo },
@@ -130,10 +150,12 @@ export default function CreatorLayout() {
         <div className="lg:pl-64">
           {/* Top header */}
           <Header
-            title="Creator Dashboard"
+            title={getPageTitle()}
             onMenuClick={() => setSidebarOpen(true)}
             showMenuButton={true}
             walletBalance={0}
+            showSyncButton={location.pathname === "/creator"}
+            showSearchBar={location.pathname === "/creator"}
           />
 
           {/* Page content */}

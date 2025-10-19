@@ -5,9 +5,10 @@ import {
   SignInButton,
   UserButton,
 } from "@clerk/react-router";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useState } from "react";
+import { CATEGORIES, MOCK_POOLS } from "../lib/constants";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -20,64 +21,12 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function PoolsPage() {
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState("all");
 
-  const categories = [
-    { id: "all", name: "All Categories" },
-    { id: "tech", name: "Tech" },
-    { id: "gaming", name: "Gaming" },
-    { id: "lifestyle", name: "Lifestyle" },
-    { id: "education", name: "Education" },
-    { id: "entertainment", name: "Entertainment" },
-  ];
+  const categories = CATEGORIES;
 
-  const pools = [
-    {
-      id: 1,
-      creator: "TechReview Pro",
-      creatorVerified: true,
-      title: "iPhone 15 Pro Max - Complete Review & Hidden Features",
-      thumbnail:
-        "https://via.placeholder.com/300x200/8B5CF6/FFFFFF?text=iPhone+15+Pro",
-      category: "tech",
-      timeRemaining: "2h 34m",
-      totalStake: 12450,
-      participants: 847,
-      odds: { yes: 0.68, no: 0.32 },
-      status: "LIVE",
-      question: "Will this video reach 500K views in 7 days?",
-    },
-    {
-      id: 2,
-      creator: "GameMaster Elite",
-      creatorVerified: true,
-      title: "PlayStation 6 Leak - Everything We Know So Far",
-      thumbnail:
-        "https://via.placeholder.com/300x200/10B981/FFFFFF?text=PS6+Leak",
-      category: "gaming",
-      timeRemaining: "5h 12m",
-      totalStake: 8920,
-      participants: 623,
-      odds: { yes: 0.45, no: 0.55 },
-      status: "HOT",
-      question: "Will this video reach 1M views in 3 days?",
-    },
-    {
-      id: 3,
-      creator: "FitLife Coach",
-      creatorVerified: true,
-      title: "30-Day Fitness Transformation - Real Results",
-      thumbnail:
-        "https://via.placeholder.com/300x200/F59E0B/FFFFFF?text=Fitness+Transform",
-      category: "lifestyle",
-      timeRemaining: "1h 45m",
-      totalStake: 5670,
-      participants: 412,
-      odds: { yes: 0.72, no: 0.28 },
-      status: "TRENDING",
-      question: "Will this video reach 250K views in 5 days?",
-    },
-  ];
+  const pools = MOCK_POOLS.slice(0, 3); // Use first 3 pools for this page
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -260,7 +209,10 @@ export default function PoolsPage() {
 
                   {/* Action Button */}
                   <SignedIn>
-                    <button className="w-full bg-purple-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors">
+                    <button
+                      onClick={() => navigate(`/predictor/pool/${pool.id}`)}
+                      className="w-full bg-purple-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
+                    >
                       Predict Now
                     </button>
                   </SignedIn>

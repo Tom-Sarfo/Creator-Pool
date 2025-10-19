@@ -1,4 +1,4 @@
-import { library } from "@fortawesome/fontawesome-svg-core";
+import { library, config } from "@fortawesome/fontawesome-svg-core";
 import {
   faHome,
   faChartLine,
@@ -15,8 +15,34 @@ import {
   faBars,
   faTimes,
   faLightbulb,
+  faEye,
+  faHeart,
+  faCalendar,
+  faSync,
+  faEllipsisV,
+  faPlus,
+  faDollarSign,
+  faTrophy,
+  faLayerGroup,
+  faCoins,
+  faBullseye,
+  faChartBar,
+  faThumbsUp,
+  faThumbsDown,
+  faCheck,
+  faTimes as faTimesCircle,
+  faExclamationTriangle,
+  faArrowUp,
+  faArrowDown,
+  faBrain,
+  faUsers,
+  faChevronRight,
 } from "@fortawesome/free-solid-svg-icons";
 import { faYoutube } from "@fortawesome/free-brands-svg-icons";
+
+// Configure FontAwesome to prevent flickering
+config.autoAddCss = false; // Disable auto CSS injection
+config.autoReplaceSvg = false; // Disable auto SVG replacement
 
 // Add icons to library
 library.add(
@@ -35,5 +61,27 @@ library.add(
   faBars,
   faTimes,
   faLightbulb,
+  faEye,
+  faHeart,
+  faCalendar,
+  faSync,
+  faEllipsisV,
+  faPlus,
+  faDollarSign,
+  faTrophy,
+  faLayerGroup,
+  faCoins,
+  faBullseye,
+  faChartBar,
+  faThumbsUp,
+  faThumbsDown,
+  faCheck,
+  faTimesCircle,
+  faExclamationTriangle,
+  faArrowUp,
+  faArrowDown,
+  faBrain,
+  faUsers,
+  faChevronRight,
   faYoutube
 );

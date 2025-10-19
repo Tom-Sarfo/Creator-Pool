@@ -14,6 +14,7 @@ import {
   faWallet,
   faUser,
   faTimes,
+  faBrain,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
@@ -27,7 +28,7 @@ export default function PredictorLayout() {
     {
       name: "My Predictions",
       href: "/predictor/predictions",
-      icon: faChartLine,
+      icon: faBrain,
     },
     { name: "Wallet", href: "/predictor/wallet", icon: faWallet },
     { name: "Profile", href: "/predictor/profile", icon: faUser },

@@ -1,5 +1,5 @@
 import type { Route } from "./+types/pool-detail";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCalendar,
@@ -8,6 +8,8 @@ import {
   faPlay,
   faCheckCircle,
 } from "@fortawesome/free-solid-svg-icons";
+import { useSearchParams } from "react-router";
+import { RECENT_PREDICTIONS, QUICK_STAKES, MOCK_POOLS } from "../lib/constants";
 
 export function meta({ params }: Route.MetaArgs) {
   return [
@@ -20,68 +22,82 @@ export function meta({ params }: Route.MetaArgs) {
 }
 
 export default function PoolDetailPage({ params }: Route.ComponentProps) {
+  const [searchParams] = useSearchParams();
   const [selectedPrediction, setSelectedPrediction] = useState<
     "yes" | "no" | null
   >(null);
-  const [stakeAmount, setStakeAmount] = useState(0);
+  const [stakeAmount, setStakeAmount] = useState("");
 
-  // Mock pool data - in real app, this would come from the loader
-  const pool = {
-    id: parseInt(params.id),
-    creator: "TechReview Pro",
-    creatorVerified: true,
-    creatorSubs: "2.4M subscribers",
-    title: "iPhone 15 Pro Max - Complete Review & Hidden Features",
-    thumbnail:
-      "https://via.placeholder.com/800x450/8B5CF6/FFFFFF?text=iPhone+15+Pro+Max",
-    category: "Technology",
-    timeRemaining: "2h 34m",
-    totalStake: 12450,
-    participants: 847,
-    odds: { yes: 0.68, no: 0.32 },
-    status: "Open for predictions",
-    question: "Will this video reach 500K views in 7 days?",
-    description:
-      "Join me for the most comprehensive iPhone 15 Pro Max review you'll find anywhere. I'll be testing the camera system against the iPhone 14 Pro, running performance benchmarks, and revealing some hidden features that Apple didn't mention in their keynote. Plus, I'll be sharing my honest thoughts on whether the Pro Max is worth the premium price tag.",
-    releaseDate: "Dec 15, 2024",
-    expectedDuration: "12 min",
-    yesPool: 8466,
-    noPool: 3984,
-    platformFee: "3.5%",
-    creatorRoyalty: "0.1%",
-    creatorPledge: "15% AdSense",
-  };
+  // Find the actual pool data based on the ID
+  const poolId = parseInt(params.id);
+  const poolData = MOCK_POOLS.find((p) => p.id === poolId);
 
-  const recentPredictions = [
-    {
-      user: "CryptoKing23",
-      time: "2 minutes ago",
-      prediction: "YES",
-      amount: 125,
-    },
-    {
-      user: "TechSavvy_Sarah",
-      time: "5 minutes ago",
-      prediction: "NO",
-      amount: 75,
-    },
-    {
-      user: "InvestorMike",
-      time: "8 minutes ago",
-      prediction: "YES",
-      amount: 200,
-    },
-  ];
+  // Create pool object with additional fields needed for the detail page
+  const pool = poolData
+    ? {
+        id: poolData.id,
+        creator: poolData.creator,
+        creatorVerified: poolData.creatorVerified,
+        creatorSubs: poolData.creatorSubs,
+        title: poolData.title,
+        thumbnail: poolData.thumbnail,
+        category: poolData.category,
+        timeRemaining: poolData.timeRemaining,
+        totalStake: poolData.totalStake,
+        participants: poolData.participants,
+        odds: poolData.odds,
+        status:
+          poolData.status === "LIVE" ? "Open for predictions" : poolData.status,
+        question: poolData.question,
+        description: `Join this prediction pool for ${poolData.title}. ${poolData.question} Help determine the outcome and potentially earn rewards based on your prediction accuracy.`,
+        releaseDate: "Dec 15, 2024",
+        expectedDuration: "12 min",
+        yesPool: Math.round(poolData.totalStake * poolData.odds.yes),
+        noPool: Math.round(poolData.totalStake * poolData.odds.no),
+        platformFee: "3.5%",
+        creatorRoyalty: "0.1%",
+        creatorPledge: "15% AdSense",
+      }
+    : null;
 
-  const quickStakes = [10, 25, 50, 100];
+  // Handle URL search parameters for pre-selected prediction
+  useEffect(() => {
+    const predictionParam = searchParams.get("prediction");
+    if (
+      predictionParam &&
+      (predictionParam === "yes" || predictionParam === "no")
+    ) {
+      setSelectedPrediction(predictionParam as "yes" | "no");
+    }
+  }, [searchParams]);
 
+  // Show error if pool not found
+  if (!pool) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Pool Not Found
+          </h2>
+          <p className="text-gray-600">
+            The pool you're looking for doesn't exist or has been removed.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const recentPredictions = RECENT_PREDICTIONS;
+  const quickStakes = QUICK_STAKES;
+
+  const stakeAmountNumber = parseFloat(stakeAmount) || 0;
   const potentialPayout =
-    selectedPrediction && stakeAmount > 0
-      ? stakeAmount *
+    selectedPrediction && stakeAmountNumber > 0
+      ? stakeAmountNumber *
         (selectedPrediction === "yes" ? 1 / pool.odds.yes : 1 / pool.odds.no)
       : 0;
 
-  const potentialProfit = potentialPayout - stakeAmount;
+  const potentialProfit = potentialPayout - stakeAmountNumber;
 
   return (
     <div className="space-y-6">
@@ -246,24 +262,23 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                 Stake Amount
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 font-medium">
                   $
                 </span>
                 <input
                   type="number"
-                  value={stakeAmount || ""}
-                  onChange={(e) =>
-                    setStakeAmount(parseFloat(e.target.value) || 0)
-                  }
-                  className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  value={stakeAmount}
+                  onChange={(e) => setStakeAmount(e.target.value)}
+                  className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-base"
                   placeholder="0.00"
                   min="1"
                   max="500"
+                  step="0.01"
                 />
               </div>
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>Min: $1.00</span>
-                <span>Max: $500.00</span>
+              <div className="flex justify-between text-xs text-gray-500 mt-2">
+                <span className="font-medium">Min: $1.00</span>
+                <span className="font-medium">Max: $500.00</span>
               </div>
             </div>
 
@@ -272,8 +287,12 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
               {quickStakes.map((amount) => (
                 <button
                   key={amount}
-                  onClick={() => setStakeAmount(amount)}
-                  className="py-2 px-3 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  onClick={() => setStakeAmount(amount.toString())}
+                  className={`py-2 px-3 text-sm border rounded-lg transition-colors font-medium ${
+                    stakeAmount === amount.toString()
+                      ? "border-purple-500 bg-purple-50 text-purple-700"
+                      : "border-gray-300 hover:bg-gray-50 text-gray-700"
+                  }`}
                 >
                   ${amount}
                 </button>
@@ -281,25 +300,32 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
             </div>
 
             {/* Potential Payout */}
-            <div className="space-y-2 mb-6">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Potential Payout:</span>
-                <span className="font-medium">
-                  ${potentialPayout.toFixed(2)}
-                </span>
+            {selectedPrediction && stakeAmountNumber > 0 && (
+              <div className="bg-gray-50 rounded-lg p-4 mb-6 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Potential Payout:</span>
+                  <span className="font-semibold text-gray-900">
+                    ${potentialPayout.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Potential Profit:</span>
+                  <span
+                    className={`font-semibold ${
+                      potentialProfit >= 0 ? "text-green-600" : "text-red-600"
+                    }`}
+                  >
+                    {potentialProfit >= 0 ? "+" : ""}$
+                    {potentialProfit.toFixed(2)}
+                  </span>
+                </div>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Potential Profit:</span>
-                <span className="font-medium">
-                  ${potentialProfit.toFixed(2)}
-                </span>
-              </div>
-            </div>
+            )}
 
             {/* Confirm Button */}
             <button
-              disabled={!selectedPrediction || stakeAmount < 1}
-              className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              disabled={!selectedPrediction || stakeAmountNumber < 1}
+              className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
             >
               Confirm Prediction
             </button>

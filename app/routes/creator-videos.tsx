@@ -7,6 +7,7 @@ import {
   faVideo,
   faLightbulb,
 } from "@fortawesome/free-solid-svg-icons";
+import { CREATOR_VIDEOS_DATA } from "../lib/constants";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -22,69 +23,7 @@ export default function CreatorVideos() {
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Mock data - will be replaced with real data later
-  const videos = [
-    {
-      id: 1,
-      title: "My Latest Gaming Video - Epic Win!",
-      thumbnail: "/api/placeholder/160/90",
-      views: 12500,
-      likes: 450,
-      publishedAt: "2024-01-15",
-      status: "published",
-      poolStatus: "active",
-      poolSize: 450,
-      poolParticipants: 23,
-    },
-    {
-      id: 2,
-      title: "Tutorial: How to Build a React App",
-      thumbnail: "/api/placeholder/160/90",
-      views: 8900,
-      likes: 320,
-      publishedAt: "2024-01-12",
-      status: "published",
-      poolStatus: "settled",
-      poolSize: 320,
-      poolParticipants: 18,
-    },
-    {
-      id: 3,
-      title: "Unlisted: Secret Project Reveal",
-      thumbnail: "/api/placeholder/160/90",
-      views: 0,
-      likes: 0,
-      publishedAt: "2024-01-10",
-      status: "unlisted",
-      poolStatus: "pending",
-      poolSize: 0,
-      poolParticipants: 0,
-    },
-    {
-      id: 4,
-      title: "React Hooks Explained - Complete Guide",
-      thumbnail: "/api/placeholder/160/90",
-      views: 15600,
-      likes: 520,
-      publishedAt: "2024-01-08",
-      status: "published",
-      poolStatus: "none",
-      poolSize: 0,
-      poolParticipants: 0,
-    },
-    {
-      id: 5,
-      title: "Draft: Advanced JavaScript Concepts",
-      thumbnail: "/api/placeholder/160/90",
-      views: 0,
-      likes: 0,
-      publishedAt: "2024-01-05",
-      status: "draft",
-      poolStatus: "none",
-      poolSize: 0,
-      poolParticipants: 0,
-    },
-  ];
+  const videos = CREATOR_VIDEOS_DATA;
 
   const tabs = [
     { id: "all", name: "All Videos", count: videos.length },
