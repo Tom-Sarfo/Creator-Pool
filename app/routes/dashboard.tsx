@@ -19,7 +19,8 @@ import {
   faCog,
   faBrain,
 } from "@fortawesome/free-solid-svg-icons";
-import { DASHBOARD_NAVIGATION, CATEGORIES, MOCK_POOLS } from "../lib/constants";
+import { DASHBOARD_NAVIGATION, CATEGORIES } from "../lib/constants";
+import { useAppContext } from "../contexts/AppContext";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -35,6 +36,8 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("active");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+
+  const { pools } = useAppContext();
 
   const navigation = DASHBOARD_NAVIGATION.map((item) => ({
     ...item,
@@ -53,8 +56,6 @@ export default function DashboardPage() {
   }));
 
   const categories = CATEGORIES;
-
-  const pools = MOCK_POOLS;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -239,10 +240,10 @@ export default function DashboardPage() {
                               YES
                             </div>
                             <div className="text-sm font-bold text-green-700">
-                              {pool.odds.yes}
+                              {pool.odds?.yes || 0}
                             </div>
                             <div className="text-xs text-green-600">
-                              {Math.round(pool.odds.yes * 100)}% chance
+                              {Math.round((pool.odds?.yes || 0) * 100)}% chance
                             </div>
                           </div>
                           <div className="flex-1 bg-red-50 border border-red-200 rounded-lg p-2 text-center">
@@ -250,10 +251,10 @@ export default function DashboardPage() {
                               NO
                             </div>
                             <div className="text-sm font-bold text-red-700">
-                              {pool.odds.no}
+                              {pool.odds?.no || 0}
                             </div>
                             <div className="text-xs text-red-600">
-                              {Math.round(pool.odds.no * 100)}% chance
+                              {Math.round((pool.odds?.no || 0) * 100)}% chance
                             </div>
                           </div>
                         </div>

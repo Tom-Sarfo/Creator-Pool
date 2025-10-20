@@ -14,7 +14,8 @@ import {
   faCircle,
   faChevronDown,
 } from "@fortawesome/free-solid-svg-icons";
-import { RECENT_VIDEOS } from "../lib/constants";
+import { useAppContext } from "../contexts/AppContext";
+import { POOL_QUESTIONS, PLEDGE_OPTIONS } from "../lib/constants";
 
 interface VideoData {
   id: string;
@@ -39,6 +40,7 @@ export default function EnablePoolModal({
   video,
   onEnablePool,
 }: EnablePoolModalProps) {
+  const { videos } = useAppContext();
   const [pledgeType, setPledgeType] = useState("fixed");
   const [customAmount, setCustomAmount] = useState("200");
   const [selectedQuestion, setSelectedQuestion] = useState(0);
@@ -48,58 +50,19 @@ export default function EnablePoolModal({
   );
   const [showVideoSelector, setShowVideoSelector] = useState(false);
 
-  const questions = [
-    {
-      id: 0,
-      text: "Will this video reach 50,000 views within 7 days of going public?",
-      basis: "Based on your channel's average performance",
-      performance: "Based on your avg. 68K views/week",
-    },
-    {
-      id: 1,
-      text: "Will this video get more than 1,000 likes in the first 24 hours?",
-      basis: "Based on your channel's engagement rate",
-      performance: "Based on your avg. 4.2% engagement rate",
-    },
-    {
-      id: 2,
-      text: "Will this video reach 100,000 views within 14 days?",
-      basis: "Based on your channel's performance",
-      performance: "Based on your avg. 85K views/2 weeks",
-    },
-    {
-      id: 3,
-      text: "Will this video have more than 500 comments in 7 days?",
-      basis: "Based on your channel's comment rate",
-      performance: "Based on your avg. 320 comments/week",
-    },
-  ];
+  // Use constants from the constants file
+  const questions = POOL_QUESTIONS;
 
-  const pledgeOptions = [
-    {
-      type: "none",
-      title: "No Pledge",
-      description: "Start with a basic pool (users only)",
-      amount: "$0",
-    },
-    {
-      type: "fixed",
-      title: "Fixed Amount",
-      description: "Add a one-time amount to the pool",
-      amount: `$${customAmount}`,
-    },
-    {
-      type: "percentage",
-      title: "Revenue Percentage",
-      description: "Pledge % of AdSense earnings from this video",
-      amount: "15%",
-    },
-  ];
+  // Update the fixed amount option with the current customAmount value
+  const pledgeOptions = PLEDGE_OPTIONS.map((option) => ({
+    ...option,
+    amount: option.type === "fixed" ? `$${customAmount}` : option.amount,
+  }));
 
   if (!isOpen) return null;
 
   // Get unlisted videos for selection
-  const unlistedVideos = RECENT_VIDEOS.filter((v) => v.status === "unlisted");
+  const unlistedVideos = videos.filter((v) => v.status === "unlisted");
 
   // Determine if we need to show video selector (when no specific video is passed)
   const needsVideoSelection = !video && unlistedVideos.length > 0;
@@ -158,9 +121,8 @@ export default function EnablePoolModal({
         />
 
         {/* Modal */}
-        <div className="relative bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="relative bg-white rounded-md shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">
                 Enable Prediction Pool
@@ -177,7 +139,7 @@ export default function EnablePoolModal({
             </button>
           </div>
 
-          <div className="p-6 space-y-6">
+          <div className="p-6 space-y-6 overflow-y-auto flex-1">
             {/* Video Preview */}
             <div>
               <h3 className="text-lg font-medium text-gray-900 mb-4">
@@ -289,8 +251,9 @@ export default function EnablePoolModal({
                 Pledge Options
               </h3>
               <p className="text-sm text-gray-600 mb-4">
-                Boost your pool size and attract more participants by pledging a
-                portion of your AdSense revenue
+                Boost your pool size and attract buzz around your content by
+                pledging a portion of your AdSense revenue more engagement, more
+                participants, bigger rewards.
               </p>
 
               <div className="space-y-3">
@@ -348,15 +311,16 @@ export default function EnablePoolModal({
                     Enter Fixed Amount
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 font-medium">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 font-medium z-10">
                       $
                     </span>
                     <input
                       type="number"
                       value={customAmount}
                       onChange={(e) => setCustomAmount(e.target.value)}
-                      className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full pl-8 pr-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-0 focus:border-purple-500 focus:outline-none transition-colors duration-200"
                       placeholder="200"
+                      onWheel={(e) => (e.target as HTMLInputElement).blur()}
                     />
                   </div>
                 </div>
@@ -480,7 +444,7 @@ export default function EnablePoolModal({
                 id="terms"
                 checked={termsAccepted}
                 onChange={(e) => setTermsAccepted(e.target.checked)}
-                className="mt-0.5 w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                className="mt-0.5 w-4 h-4 bg-white border-2 border-gray-300 rounded focus:ring-0 focus:ring-offset-0 focus:border-purple-500 focus:outline-none checked:bg-purple-500 checked:border-purple-500 text-white transition-colors duration-200"
               />
               <label htmlFor="terms" className="text-sm text-gray-600">
                 I agree to Creator Pool's{" "}
@@ -496,8 +460,7 @@ export default function EnablePoolModal({
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
             <button
               onClick={onClose}
               className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"

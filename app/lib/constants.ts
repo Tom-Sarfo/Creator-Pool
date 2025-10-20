@@ -41,103 +41,253 @@ export const CATEGORIES = [
   { id: "entertainment", name: "Entertainment" },
 ];
 
-// Pool data constants
-export const MOCK_POOLS = [
+// Unified video and pool data structure - all videos start as unlisted by default
+export const ALL_VIDEOS = [
   {
+    // Video basic info
     id: 1,
+    title: "Ultimate Gaming Setup Tour 2024 - $10K Build!",
+    thumbnail:
+      "https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=300&h=200&fit=crop&crop=center",
+    status: "unlisted", // First 3 videos are published
+    views: 247000,
+    likes: 12400,
+    duration: "12:34",
+    uploadDate: "2 days ago",
+
+    // Creator info
     creator: "TechReview Pro",
     creatorVerified: true,
     creatorSubs: "2.4M subs",
-    title: "iPhone 15 Pro Max - Complete Review & Hidden Features",
-    thumbnail:
-      "https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=400&h=240&fit=crop&crop=center",
     category: "tech",
-    timeRemaining: "2h 34m",
-    totalStake: 12450,
-    participants: 847,
-    odds: { yes: 0.68, no: 0.32 },
-    status: "LIVE",
-    question: "Will this video reach 500K views in 7 days?",
+
+    // Pool info - initially no pool
+    poolId: null,
+    poolStatus: null, // No pool initially - will be set when pool is created
+    poolQuestion: null,
+    poolParticipants: 0,
+    poolTotalStake: 0,
+    poolTimeRemaining: null,
+    poolTargetViews: null,
+    poolCurrentViews: 0,
+    poolCreatedAt: null,
+    poolOdds: null,
   },
   {
     id: 2,
+    title: "React vs Vue: The Ultimate 2024 Comparison",
+    thumbnail:
+      "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=300&h=200&fit=crop&crop=center",
+    status: "unlisted",
+    views: 89000,
+    likes: 4200,
+    duration: "18:42",
+    uploadDate: "5 days ago",
+
     creator: "GameMaster Elite",
     creatorVerified: true,
     creatorSubs: "1.8M subs",
-    title: "PlayStation 6 Leak - Everything We Know So Far",
-    thumbnail:
-      "https://images.unsplash.com/photo-1607853202273-797f1c22a38e?w=400&h=240&fit=crop&crop=center",
-    category: "gaming",
-    timeRemaining: "5h 12m",
-    totalStake: 8920,
-    participants: 623,
-    odds: { yes: 0.45, no: 0.55 },
-    status: "HOT",
-    question: "Will this video reach 1M views in 3 days?",
+    category: "tech",
+
+    poolId: null,
+    poolStatus: null,
+    poolQuestion: null,
+    poolParticipants: 0,
+    poolTotalStake: 0,
+    poolTimeRemaining: null,
+    poolTargetViews: null,
+    poolCurrentViews: 0,
+    poolCreatedAt: null,
+    poolOdds: null,
   },
   {
     id: 3,
+    title: "5 Minute Crafts That Actually Work!",
+    thumbnail:
+      "https://images.unsplash.com/photo-1581833971358-2c8b550f87b3?w=300&h=200&fit=crop&crop=center",
+    status: "unlisted",
+    views: 156000,
+    likes: 8700,
+    duration: "8:15",
+    uploadDate: "1 week ago",
+
     creator: "FitLife Coach",
     creatorVerified: true,
     creatorSubs: "950K subs",
-    title: "30-Day Fitness Transformation - Real Results",
-    thumbnail:
-      "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=240&fit=crop&crop=center",
     category: "lifestyle",
-    timeRemaining: "1h 45m",
-    totalStake: 5670,
-    participants: 412,
-    odds: { yes: 0.72, no: 0.28 },
-    status: "TRENDING",
-    question: "Will this video reach 250K views in 5 days?",
+
+    poolId: null,
+    poolStatus: null,
+    poolQuestion: null,
+    poolParticipants: 0,
+    poolTotalStake: 0,
+    poolTimeRemaining: null,
+    poolTargetViews: null,
+    poolCurrentViews: 0,
+    poolCreatedAt: null,
+    poolOdds: null,
   },
   {
     id: 4,
-    creator: "Chef Maria",
-    creatorVerified: true,
-    creatorSubs: "1.2M subs",
-    title: "Perfect Pasta Recipe - 5 Minutes to Delicious",
+    title: "AI Will Change Everything in 2024 - Here's How",
     thumbnail:
-      "https://images.unsplash.com/photo-1551892374-ecf8754cf8b0?w=400&h=240&fit=crop&crop=center",
-    category: "lifestyle",
-    timeRemaining: "8h 22m",
-    totalStake: 3450,
-    participants: 289,
-    odds: { yes: 0.58, no: 0.42 },
-    status: "NEW",
-    question: "Will this video reach 100K views in 10 days?",
+      "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=300&h=200&fit=crop&crop=center",
+    status: "unlisted",
+    views: 0,
+    likes: 0,
+    duration: "22:18",
+    uploadDate: "2 hours ago",
+
+    creator: "TechReview Pro",
+    creatorVerified: true,
+    creatorSubs: "2.4M subs",
+    category: "tech",
+
+    poolId: null,
+    poolStatus: null,
+    poolQuestion: null,
+    poolParticipants: 0,
+    poolTotalStake: 0,
+    poolTimeRemaining: null,
+    poolTargetViews: null,
+    poolCurrentViews: 0,
+    poolCreatedAt: null,
+    poolOdds: null,
   },
   {
     id: 5,
-    creator: "Wanderlust Adventures",
-    creatorVerified: true,
-    creatorSubs: "3.1M subs",
-    title: "Most Dangerous City in the World - Travel Guide",
+    title: "10 Productivity Hacks That Actually Work",
     thumbnail:
-      "https://images.unsplash.com/photo-1527004762775-e53ab78ba0df?w=400&h=240&fit=crop&crop=center",
-    category: "entertainment",
-    timeRemaining: "12h 8m",
-    totalStake: 15680,
-    participants: 1024,
-    odds: { yes: 0.35, no: 0.65 },
-    status: "HOT",
-    question: "Will this video reach 2M views in 14 days?",
+      "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=300&h=200&fit=crop&crop=center",
+    status: "unlisted",
+    views: 0,
+    likes: 0,
+    duration: "15:30",
+    uploadDate: "1 hour ago",
+
+    creator: "GameMaster Elite",
+    creatorVerified: true,
+    creatorSubs: "1.8M subs",
+    category: "lifestyle",
+
+    poolId: null,
+    poolStatus: null,
+    poolQuestion: null,
+    poolParticipants: 0,
+    poolTotalStake: 0,
+    poolTimeRemaining: null,
+    poolTargetViews: null,
+    poolCurrentViews: 0,
+    poolCreatedAt: null,
+    poolOdds: null,
   },
   {
     id: 6,
+    title: "Home Gym Setup Under $500 - Complete Guide",
+    thumbnail:
+      "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&h=200&fit=crop&crop=center",
+    status: "unlisted",
+    views: 0,
+    likes: 0,
+    duration: "11:45",
+    uploadDate: "5 hours ago",
+
+    creator: "FitLife Coach",
+    creatorVerified: true,
+    creatorSubs: "950K subs",
+    category: "lifestyle",
+
+    poolId: null,
+    poolStatus: null,
+    poolQuestion: null,
+    poolParticipants: 0,
+    poolTotalStake: 0,
+    poolTimeRemaining: null,
+    poolTargetViews: null,
+    poolCurrentViews: 0,
+    poolCreatedAt: null,
+    poolOdds: null,
+  },
+  {
+    id: 7,
+    title: "Advanced JavaScript Concepts Explained",
+    thumbnail:
+      "https://images.unsplash.com/photo-1579468118864-1b9ea3c0db4a?w=300&h=200&fit=crop&crop=center",
+    status: "unlisted",
+    views: 0,
+    likes: 0,
+    duration: "25:30",
+    uploadDate: "3 hours ago",
+
+    creator: "Chef Maria",
+    creatorVerified: true,
+    creatorSubs: "1.2M subs",
+    category: "education",
+
+    poolId: null,
+    poolStatus: null,
+    poolQuestion: null,
+    poolParticipants: 0,
+    poolTotalStake: 0,
+    poolTimeRemaining: null,
+    poolTargetViews: null,
+    poolCurrentViews: 0,
+    poolCreatedAt: null,
+    poolOdds: null,
+  },
+  {
+    id: 8,
+    title: "CSS Grid vs Flexbox - Complete Guide",
+    thumbnail:
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=200&fit=crop&crop=center",
+    status: "unlisted",
+    views: 0,
+    likes: 0,
+    duration: "18:15",
+    uploadDate: "4 hours ago",
+
+    creator: "Wanderlust Adventures",
+    creatorVerified: true,
+    creatorSubs: "3.1M subs",
+    category: "education",
+
+    poolId: null,
+    poolStatus: null,
+    poolQuestion: null,
+    poolParticipants: 0,
+    poolTotalStake: 0,
+    poolTimeRemaining: null,
+    poolTargetViews: null,
+    poolCurrentViews: 0,
+    poolCreatedAt: null,
+    poolOdds: null,
+  },
+  {
+    id: 9,
+    title: "Node.js Backend Development Tutorial",
+    thumbnail:
+      "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=300&h=200&fit=crop&crop=center",
+    status: "unlisted",
+    views: 0,
+    likes: 0,
+    duration: "32:45",
+    uploadDate: "6 hours ago",
+
     creator: "EduMaster Pro",
     creatorVerified: true,
     creatorSubs: "750K subs",
-    title: "How to Memorize Anything - Memory Techniques",
-    thumbnail:
-      "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=240&fit=crop&crop=center",
     category: "education",
-    timeRemaining: "6h 15m",
-    totalStake: 7890,
-    participants: 567,
-    odds: { yes: 0.63, no: 0.37 },
-    status: "LIVE",
-    question: "Will this video reach 750K views in 7 days?",
+
+    poolId: null,
+    poolStatus: null,
+    poolQuestion: null,
+    poolParticipants: 0,
+    poolTotalStake: 0,
+    poolTimeRemaining: null,
+    poolTargetViews: null,
+    poolCurrentViews: 0,
+    poolCreatedAt: null,
+    poolOdds: null,
   },
 ];
 
@@ -470,102 +620,6 @@ export const RECENT_POOLS = [
   },
 ];
 
-// Recent videos for creator dashboard
-export const RECENT_VIDEOS = [
-  {
-    id: 1,
-    title: "Ultimate Gaming Setup Tour 2024 - $10K Build!",
-    thumbnail:
-      "https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=300&h=200&fit=crop&crop=center",
-    status: "published",
-    views: 247000,
-    likes: 12400,
-    duration: "12:34",
-    uploadDate: "2 days ago",
-    poolStatus: "active",
-    poolParticipants: 847,
-    poolStake: 1240,
-    poolType: "Active Pool",
-  },
-  {
-    id: 2,
-    title: "React vs Vue: The Ultimate 2024 Comparison",
-    thumbnail:
-      "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=300&h=200&fit=crop&crop=center",
-    status: "published",
-    views: 89000,
-    likes: 4200,
-    duration: "18:42",
-    uploadDate: "5 days ago",
-    poolStatus: "closing",
-    poolParticipants: 623,
-    poolStake: 892,
-    poolType: "Pool Closing Soon",
-    timeRemaining: "2 hours left",
-  },
-  {
-    id: 3,
-    title: "5 Minute Crafts That Actually Work!",
-    thumbnail:
-      "https://images.unsplash.com/photo-1581833971358-2c8b550f87b3?w=300&h=200&fit=crop&crop=center",
-    status: "published",
-    views: 156000,
-    likes: 8700,
-    duration: "8:15",
-    uploadDate: "1 week ago",
-    poolStatus: "settled",
-    poolParticipants: 567,
-    poolStake: 32450,
-    poolType: "Pool Settled",
-    earnedAmount: 324.5,
-  },
-  {
-    id: 4,
-    title: "AI Will Change Everything in 2024 - Here's How",
-    thumbnail:
-      "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=300&h=200&fit=crop&crop=center",
-    status: "unlisted",
-    views: 0,
-    likes: 0,
-    duration: "22:18",
-    uploadDate: "2 hours ago",
-    poolStatus: "ready",
-    poolParticipants: 0,
-    poolStake: 0,
-    poolType: "Ready for Pool",
-  },
-  {
-    id: 5,
-    title: "10 Productivity Hacks That Actually Work",
-    thumbnail:
-      "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=300&h=200&fit=crop&crop=center",
-    status: "unlisted",
-    views: 0,
-    likes: 0,
-    duration: "15:30",
-    uploadDate: "1 hour ago",
-    poolStatus: "ready",
-    poolParticipants: 0,
-    poolStake: 0,
-    poolType: "Ready for Pool",
-  },
-  {
-    id: 6,
-    title: "Home Gym Setup Under $500 - Complete Guide",
-    thumbnail:
-      "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&h=200&fit=crop&crop=center",
-    status: "unlisted",
-    views: 0,
-    likes: 0,
-    duration: "11:45",
-    uploadDate: "5 hours ago",
-    poolStatus: "ready",
-    poolParticipants: 0,
-    poolStake: 0,
-    poolType: "Ready for Pool",
-  },
-];
-
 // Active pools for creator dashboard
 export const ACTIVE_POOLS = [
   {
@@ -588,65 +642,11 @@ export const ACTIVE_POOLS = [
 
 // Creator dashboard stats
 export const CREATOR_STATS = {
-  totalVideos: 247,
-  activePools: 12,
-  totalPledgedAmount: 548,
-  totalRoyaltiesEarned: 76,
+  totalVideos: 9, // Actual count from ALL_VIDEOS (9 total videos)
+  activePools: 0, // Will be calculated dynamically
+  totalPledgedAmount: 0, // Will be calculated dynamically
+  totalRoyaltiesEarned: 0, // Will be calculated dynamically
 };
-
-// Creator pools data
-export const CREATOR_POOLS_DATA = [
-  {
-    id: 1,
-    videoTitle: "My Latest Gaming Video - Epic Win!",
-    question: "Will this video reach 20K views in 7 days?",
-    participants: 23,
-    totalStake: 450,
-    timeRemaining: "5 days, 12 hours",
-    status: "active",
-    createdAt: "2024-01-15",
-    targetViews: 20000,
-    currentViews: 12500,
-  },
-  {
-    id: 2,
-    videoTitle: "React Tutorial Series",
-    question: "Will this get 15K views in 5 days?",
-    participants: 18,
-    totalStake: 320,
-    timeRemaining: "2 days, 8 hours",
-    status: "active",
-    createdAt: "2024-01-12",
-    targetViews: 15000,
-    currentViews: 8900,
-  },
-  {
-    id: 3,
-    videoTitle: "Tutorial: How to Build a React App",
-    question: "Will this reach 10K views in 3 days?",
-    participants: 12,
-    totalStake: 180,
-    timeRemaining: "Settled",
-    status: "settled",
-    createdAt: "2024-01-10",
-    targetViews: 10000,
-    currentViews: 12500,
-    result: "won",
-    creatorEarnings: 12.5,
-  },
-  {
-    id: 4,
-    videoTitle: "Advanced JavaScript Concepts",
-    question: "Will this get 25K views in 10 days?",
-    participants: 0,
-    totalStake: 0,
-    timeRemaining: "Expired",
-    status: "expired",
-    createdAt: "2024-01-05",
-    targetViews: 25000,
-    currentViews: 8500,
-  },
-];
 
 // Creator analytics data
 export const CREATOR_ANALYTICS_DATA = {
@@ -1004,5 +1004,54 @@ export const PREDICTOR_PROFILE_ACHIEVEMENTS = [
     icon: "⭐",
     unlocked: false,
     date: null,
+  },
+];
+
+// Pool creation constants
+export const POOL_QUESTIONS = [
+  {
+    id: 0,
+    text: "Will this video reach 50,000 views within 7 days of going public?",
+    basis: "Based on your channel's average performance",
+    performance: "Based on your avg. 68K views/week",
+  },
+  {
+    id: 1,
+    text: "Will this video get more than 1,000 likes in the first 24 hours?",
+    basis: "Based on your channel's engagement rate",
+    performance: "Based on your avg. 4.2% engagement rate",
+  },
+  {
+    id: 2,
+    text: "Will this video reach 100,000 views within 14 days?",
+    basis: "Based on your channel's performance",
+    performance: "Based on your avg. 85K views/2 weeks",
+  },
+  {
+    id: 3,
+    text: "Will this video have more than 500 comments in 7 days?",
+    basis: "Based on your channel's comment rate",
+    performance: "Based on your avg. 320 comments/week",
+  },
+];
+
+export const PLEDGE_OPTIONS = [
+  {
+    type: "none",
+    title: "No Pledge",
+    description: "Start with a basic pool (users only)",
+    amount: "$0",
+  },
+  {
+    type: "fixed",
+    title: "Fixed Amount",
+    description: "Add a one-time amount to the pool",
+    amount: "$200", // This will be updated dynamically in the component
+  },
+  {
+    type: "percentage",
+    title: "Revenue Percentage",
+    description: "Pledge % of AdSense earnings from this video",
+    amount: "15%",
   },
 ];

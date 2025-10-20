@@ -9,7 +9,8 @@ import {
   faCheckCircle,
 } from "@fortawesome/free-solid-svg-icons";
 import { useSearchParams } from "react-router";
-import { RECENT_PREDICTIONS, QUICK_STAKES, MOCK_POOLS } from "../lib/constants";
+import { RECENT_PREDICTIONS, QUICK_STAKES } from "../lib/constants";
+import { useAppContext } from "../contexts/AppContext";
 
 export function meta({ params }: Route.MetaArgs) {
   return [
@@ -28,9 +29,11 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
   >(null);
   const [stakeAmount, setStakeAmount] = useState("");
 
+  const { getPoolById } = useAppContext();
+
   // Find the actual pool data based on the ID
   const poolId = parseInt(params.id);
-  const poolData = MOCK_POOLS.find((p) => p.id === poolId);
+  const poolData = getPoolById(poolId);
 
   // Create pool object with additional fields needed for the detail page
   const pool = poolData
@@ -45,15 +48,15 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
         timeRemaining: poolData.timeRemaining,
         totalStake: poolData.totalStake,
         participants: poolData.participants,
-        odds: poolData.odds,
+        odds: poolData.odds || { yes: 0.5, no: 0.5 },
         status:
           poolData.status === "LIVE" ? "Open for predictions" : poolData.status,
         question: poolData.question,
         description: `Join this prediction pool for ${poolData.title}. ${poolData.question} Help determine the outcome and potentially earn rewards based on your prediction accuracy.`,
         releaseDate: "Dec 15, 2024",
         expectedDuration: "12 min",
-        yesPool: Math.round(poolData.totalStake * poolData.odds.yes),
-        noPool: Math.round(poolData.totalStake * poolData.odds.no),
+        yesPool: Math.round(poolData.totalStake * (poolData.odds?.yes || 0)),
+        noPool: Math.round(poolData.totalStake * (poolData.odds?.no || 0)),
         platformFee: "3.5%",
         creatorRoyalty: "0.1%",
         creatorPledge: "15% AdSense",
@@ -94,7 +97,9 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
   const potentialPayout =
     selectedPrediction && stakeAmountNumber > 0
       ? stakeAmountNumber *
-        (selectedPrediction === "yes" ? 1 / pool.odds.yes : 1 / pool.odds.no)
+        (selectedPrediction === "yes"
+          ? 1 / pool.odds?.yes || 0
+          : 1 / pool.odds?.no || 0)
       : 0;
 
   const potentialProfit = potentialPayout - stakeAmountNumber;
@@ -222,10 +227,10 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                     YES
                   </div>
                   <div className="text-2xl font-bold text-green-800 mb-1">
-                    {pool.odds.yes}
+                    {pool.odds?.yes || 0}
                   </div>
                   <div className="text-sm text-green-600 mb-1">
-                    {Math.round(pool.odds.yes * 100)}% chance
+                    {Math.round(pool.odds?.yes || 0 * 100)}% chance
                   </div>
                   <div className="text-sm text-green-600">1.47x payout</div>
                 </div>
@@ -246,10 +251,10 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                 <div className="text-center">
                   <div className="text-lg font-bold text-red-700 mb-1">NO</div>
                   <div className="text-2xl font-bold text-red-800 mb-1">
-                    {pool.odds.no}
+                    {pool.odds?.no || 0}
                   </div>
                   <div className="text-sm text-red-600 mb-1">
-                    {Math.round(pool.odds.no * 100)}% chance
+                    {Math.round(pool.odds?.no || 0 * 100)}% chance
                   </div>
                   <div className="text-sm text-red-600">3.13x payout</div>
                 </div>

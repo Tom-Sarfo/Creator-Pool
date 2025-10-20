@@ -1,6 +1,35 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
-import { CREATOR_POOLS_DATA, MOCK_POOLS } from "../lib/constants";
+import { ALL_VIDEOS } from "../lib/constants";
 import type { ToastData } from "../components/Toast";
+
+export interface UnifiedVideo {
+  id: number;
+  title: string;
+  thumbnail: string;
+  status: string; 
+  views: number;
+  likes: number;
+  duration: string;
+  uploadDate: string;
+
+  // Creator info
+  creator: string;
+  creatorVerified: boolean;
+  creatorSubs: string;
+  category: string;
+
+  // Pool info - initially null/0 for unlisted videos
+  poolId: number | null;
+  poolStatus: string | null;
+  poolQuestion: string | null;
+  poolParticipants: number;
+  poolTotalStake: number;
+  poolTimeRemaining: string | null;
+  poolTargetViews: number | null;
+  poolCurrentViews: number;
+  poolCreatedAt: string | null;
+  poolOdds: { yes: number; no: number } | null;
+}
 
 // Pool interfaces
 export interface Pool {
@@ -35,9 +64,14 @@ interface AppState {
   theme: "light" | "dark";
   setTheme: (theme: "light" | "dark") => void;
 
-  // Pool state
+  // Unified video/pool state
+  videos: UnifiedVideo[];
+  setVideos: (videos: UnifiedVideo[]) => void;
+  updateVideo: (id: number, updates: Partial<UnifiedVideo>) => void;
+  getVideoById: (id: number) => UnifiedVideo | undefined;
+
+  // Pool state (derived from videos)
   pools: Pool[];
-  setPools: (pools: Pool[]) => void;
   addPool: (pool: Omit<Pool, "id">) => void;
   updatePool: (id: number, updates: Partial<Pool>) => void;
   deletePool: (id: number) => void;
@@ -56,17 +90,44 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
-  // Combine both pool datasets and initialize state
-  const initialPools: Pool[] = [
-    ...CREATOR_POOLS_DATA.map((pool) => ({
-      ...pool,
-      title: pool.videoTitle, // Map videoTitle to title for consistency
-    })),
-    ...MOCK_POOLS,
-  ];
-
-  const [pools, setPools] = useState<Pool[]>(initialPools);
+  // Initialize with unified video data
+  const [videos, setVideos] = useState<UnifiedVideo[]>(ALL_VIDEOS);
   const [toasts, setToasts] = useState<ToastData[]>([]);
+
+  // Derive pools from videos that have pool data
+  const pools: Pool[] = videos
+    .filter((video) => video.poolId !== null && video.poolStatus !== null)
+    .map((video) => ({
+      id: video.poolId!,
+      title: video.title,
+      videoTitle: video.title,
+      videoId: video.id,
+      creator: video.creator,
+      creatorVerified: video.creatorVerified,
+      creatorSubs: video.creatorSubs,
+      thumbnail: video.thumbnail,
+      category: video.category,
+      question: video.poolQuestion!,
+      participants: video.poolParticipants,
+      totalStake: video.poolTotalStake,
+      timeRemaining: video.poolTimeRemaining!,
+      status: video.poolStatus!,
+      createdAt: video.poolCreatedAt || undefined,
+      targetViews: video.poolTargetViews || undefined,
+      currentViews: video.poolCurrentViews,
+      odds: video.poolOdds || undefined,
+    }));
+
+  // Video management functions
+  const updateVideo = (id: number, updates: Partial<UnifiedVideo>) => {
+    setVideos((prev) =>
+      prev.map((video) => (video.id === id ? { ...video, ...updates } : video))
+    );
+  };
+
+  const getVideoById = (id: number): UnifiedVideo | undefined => {
+    return videos.find((video) => video.id === id);
+  };
 
   // Toast management functions
   const addToast = (toast: Omit<ToastData, "id">) => {
@@ -79,29 +140,79 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   };
 
-  // Pool management functions
+  // Pool management functions (working with unified video structure)
   const addPool = (newPool: Omit<Pool, "id">) => {
-    const id = pools.length > 0 ? Math.max(...pools.map((p) => p.id)) + 1 : 1;
-    const pool: Pool = { ...newPool, id };
-    setPools((prev) => [...prev, pool]);
+    const nextPoolId =
+      videos.reduce((maxId, video) => {
+        const videoPoolId = video.poolId || 0;
+        return videoPoolId > maxId ? videoPoolId : maxId;
+      }, 0) + 1;
+
+    // Find the video this pool is for and update it
+    if (newPool.videoId) {
+      const videoToUpdate = videos.find((v) => v.id === newPool.videoId);
+      if (videoToUpdate) {
+        updateVideo(videoToUpdate.id, {
+          poolId: nextPoolId,
+          poolStatus: newPool.status,
+          poolQuestion: newPool.question,
+          poolParticipants: newPool.participants,
+          poolTotalStake: newPool.totalStake,
+          poolTimeRemaining: newPool.timeRemaining,
+          poolTargetViews: newPool.targetViews || null,
+          poolCurrentViews: newPool.currentViews || 0,
+          poolCreatedAt: newPool.createdAt || null,
+          poolOdds: newPool.odds || null,
+        });
+      }
+    }
 
     // Show success toast
     addToast({
       type: "success",
       title: "Pool Created Successfully!",
-      message: `Your pool "${pool.title}" has been created and is now active.`,
+      message: `Your pool "${newPool.title}" is now live and accepting predictions.`,
       duration: 4000,
     });
   };
 
   const updatePool = (id: number, updates: Partial<Pool>) => {
-    setPools((prev) =>
-      prev.map((pool) => (pool.id === id ? { ...pool, ...updates } : pool))
-    );
+    // Find the video with this pool ID and update its pool data
+    const videoWithPool = videos.find((v) => v.poolId === id);
+    if (videoWithPool) {
+      updateVideo(videoWithPool.id, {
+        poolStatus: updates.status || videoWithPool.poolStatus,
+        poolQuestion: updates.question || videoWithPool.poolQuestion,
+        poolParticipants:
+          updates.participants ?? videoWithPool.poolParticipants,
+        poolTotalStake: updates.totalStake ?? videoWithPool.poolTotalStake,
+        poolTimeRemaining:
+          updates.timeRemaining || videoWithPool.poolTimeRemaining,
+        poolTargetViews: updates.targetViews ?? videoWithPool.poolTargetViews,
+        poolCurrentViews:
+          updates.currentViews ?? videoWithPool.poolCurrentViews,
+        poolOdds: updates.odds || videoWithPool.poolOdds,
+      });
+    }
   };
 
   const deletePool = (id: number) => {
-    setPools((prev) => prev.filter((pool) => pool.id !== id));
+    // Find the video with this pool ID and remove its pool data
+    const videoWithPool = videos.find((v) => v.poolId === id);
+    if (videoWithPool) {
+      updateVideo(videoWithPool.id, {
+        poolId: null,
+        poolStatus: null,
+        poolQuestion: null,
+        poolParticipants: 0,
+        poolTotalStake: 0,
+        poolTimeRemaining: null,
+        poolTargetViews: null,
+        poolCurrentViews: 0,
+        poolCreatedAt: null,
+        poolOdds: null,
+      });
+    }
   };
 
   const getPoolById = (id: number): Pool | undefined => {
@@ -139,8 +250,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setSidebarOpen,
         theme,
         setTheme,
+        videos,
+        setVideos,
+        updateVideo,
+        getVideoById,
         pools,
-        setPools,
         addPool,
         updatePool,
         deletePool,

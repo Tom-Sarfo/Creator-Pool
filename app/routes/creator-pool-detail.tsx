@@ -44,7 +44,8 @@ import {
   faGlobe,
   faLink,
 } from "@fortawesome/free-solid-svg-icons";
-import { MOCK_POOLS, RECENT_PREDICTIONS } from "../lib/constants";
+import { RECENT_PREDICTIONS } from "../lib/constants";
+import { useAppContext } from "../contexts/AppContext";
 
 export function meta({ params }: Route.MetaArgs) {
   return [
@@ -65,11 +66,25 @@ export default function CreatorPoolDetailPage({
   const [showPledgeModal, setShowPledgeModal] = useState(false);
   const [predictionFilter, setPredictionFilter] = useState("all");
 
+  const { getPoolById, pools } = useAppContext();
+
   // Get status from URL search params (e.g., ?status=settled)
   const statusParam = searchParams.get("status") || "active";
 
-  // Find the pool data - for now using MOCK_POOLS as base data
-  const poolData = MOCK_POOLS.find((p) => p.id === poolId) || MOCK_POOLS[0];
+  // Find the pool data from context - fallback to first pool if not found
+  const poolData =
+    getPoolById(poolId) ||
+    (pools.length > 0
+      ? pools[0]
+      : {
+          id: poolId,
+          title: "Pool not found",
+          question: "Pool data not available",
+          participants: 0,
+          totalStake: 0,
+          timeRemaining: "N/A",
+          status: "unknown",
+        });
 
   // Function to get pool data based on status
   const getPoolDataByStatus = (baseData: any, status: string) => {

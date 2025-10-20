@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Link, useNavigate } from "react-router";
-import { CATEGORIES, MOCK_POOLS } from "../lib/constants";
+import { CATEGORIES } from "../lib/constants";
+import { useAppContext } from "../contexts/AppContext";
 
 export default function PredictorPools() {
   const navigate = useNavigate();
@@ -12,9 +13,8 @@ export default function PredictorPools() {
     [key: number]: "yes" | "no" | null;
   }>({});
 
+  const { pools } = useAppContext();
   const categories = CATEGORIES;
-
-  const pools = MOCK_POOLS;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -220,10 +220,10 @@ export default function PredictorPools() {
                 >
                   <div className="text-xs text-green-600 font-medium">YES</div>
                   <div className="text-sm font-bold text-green-700">
-                    {pool.odds.yes}
+                    {pool.odds?.yes || 0}
                   </div>
                   <div className="text-xs text-green-600">
-                    {Math.round(pool.odds.yes * 100)}% chance
+                    {Math.round(pool.odds?.yes || 0 * 100)}% chance
                   </div>
                 </button>
                 <button
@@ -236,10 +236,10 @@ export default function PredictorPools() {
                 >
                   <div className="text-xs text-red-600 font-medium">NO</div>
                   <div className="text-sm font-bold text-red-700">
-                    {pool.odds.no}
+                    {pool.odds?.no || 0}
                   </div>
                   <div className="text-xs text-red-600">
-                    {Math.round(pool.odds.no * 100)}% chance
+                    {Math.round(pool.odds?.no || 0 * 100)}% chance
                   </div>
                 </button>
               </div>

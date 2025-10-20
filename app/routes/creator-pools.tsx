@@ -15,7 +15,6 @@ import {
 import Tabs from "../components/Tabs";
 import EnablePoolModal from "../components/EnablePoolModal";
 import StatsCard from "../components/StatsCard";
-import { CREATOR_POOLS_DATA, RECENT_VIDEOS } from "../lib/constants";
 import { extractDurationAndTimeRemaining } from "../lib/utils";
 import { useAppContext } from "../contexts/AppContext";
 import type { Pool } from "../contexts/AppContext";
@@ -34,7 +33,7 @@ export default function CreatorPools() {
   const [activeTab, setActiveTab] = useState("active");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const { pools, addPool, filteredPools } = useAppContext();
+  const { pools, addPool, filteredPools, videos } = useAppContext();
 
   // Get filtered pools using context function
   const currentPools = filteredPools(
@@ -87,10 +86,8 @@ export default function CreatorPools() {
   // Moved: extractDurationAndTimeRemaining to app/lib/utils.ts
 
   const handleCreatePool = (poolData: any) => {
-    // Find the selected video from RECENT_VIDEOS
-    const selectedVideo = RECENT_VIDEOS.find(
-      (video) => video.id === poolData.videoId
-    );
+    // Find the selected video from unified videos data
+    const selectedVideo = videos.find((video) => video.id === poolData.videoId);
 
     // Extract video title from the selected video or use default
     const videoTitle =
@@ -108,7 +105,12 @@ export default function CreatorPools() {
     const { duration, timeRemaining, totalDays } =
       extractDurationAndTimeRemaining(questionText);
 
-    // Create new pool object
+    // According to PRD: Pools on unlisted videos should be ACTIVE immediately
+    // to allow predictions before the video goes live
+    const isUnlistedVideo =
+      selectedVideo && selectedVideo.status === "unlisted";
+
+    // Create new pool object - always active for prediction on unlisted videos
     const newPool: Omit<Pool, "id"> = {
       title: videoTitle,
       videoTitle: videoTitle,
@@ -116,8 +118,8 @@ export default function CreatorPools() {
       question: questionText,
       participants: 0,
       totalStake: poolData.pledgeAmount || 0,
-      timeRemaining: timeRemaining,
-      status: "active",
+      timeRemaining: timeRemaining, // Use actual countdown for unlisted videos
+      status: "active", // Always active to allow predictions during unlisted stage
       createdAt: new Date().toISOString(),
       targetViews: targetViews,
       currentViews: 0,

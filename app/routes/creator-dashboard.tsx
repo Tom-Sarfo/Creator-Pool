@@ -2,24 +2,19 @@ import type { Route } from "./+types/creator-dashboard";
 import { Link } from "react-router";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faVideo,
-  faChartBar,
-  faDollarSign,
+  
   faTrophy,
   faPlay,
   faEye,
   faHeart,
   faCalendar,
-  faSync,
   faEllipsisV,
   faPlus,
-  faLayerGroup,
   faUsersRectangle,
   faCoins,
-  faCheckCircle,
 } from "@fortawesome/free-solid-svg-icons";
 import { useState } from "react";
-import { RECENT_VIDEOS, CREATOR_STATS } from "../lib/constants";
+import { CREATOR_STATS } from "../lib/constants";
 import { extractDurationAndTimeRemaining } from "../lib/utils";
 import Tabs from "../components/Tabs";
 import EnablePoolModal from "../components/EnablePoolModal";
@@ -42,9 +37,8 @@ export default function CreatorDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<any>(null);
   const stats = CREATOR_STATS;
-  const videos = RECENT_VIDEOS;
 
-  const { addPool, pools, filteredPools } = useAppContext();
+  const { addPool, pools, filteredPools, updatePool, videos } = useAppContext();
 
   // Get videos with their pool status based on actual pools data
   const getVideosWithPoolStatus = () => {
@@ -54,14 +48,23 @@ export default function CreatorDashboard() {
         (pool) => pool.videoId === video.id && pool.status === "active"
       );
 
-      // Find if this video has any pool (active, settled, etc.)
+      // Find if this video has any pool (active, settled, ready, etc.)
       const anyPool = pools.find((pool) => pool.videoId === video.id);
+
+      const isEffectivelyActive =
+        activePool ||
+        (video.status === "unlisted" && anyPool && anyPool.status === "active");
+
+      // Use the actual pool status if there is one, otherwise videos without pools are available for pool creation
+      const poolStatus = anyPool ? anyPool.status : "available";
 
       return {
         ...video,
-        poolStatus: activePool ? "active" : anyPool ? "settled" : "ready",
+        poolStatus: isEffectivelyActive ? "active" : poolStatus,
         hasPool: !!anyPool,
         poolData: activePool || anyPool,
+        // Override the original status for display purposes
+        effectiveStatus: isEffectivelyActive ? "active" : video.status,
       };
     });
   };
@@ -76,7 +79,10 @@ export default function CreatorDashboard() {
           (video) => video.poolStatus === "active"
         );
       case "unlisted":
-        return videosWithStatus.filter((video) => video.status === "unlisted");
+        // Show videos that are available for pool creation (unlisted without pools)
+        return videosWithStatus.filter(
+          (video) => video.poolStatus === "available"
+        );
       default:
         return videosWithStatus;
     }
@@ -89,19 +95,17 @@ export default function CreatorDashboard() {
     (video) => video.poolStatus === "active"
   ).length;
   const unlistedVideoCount = videosWithStatus.filter(
-    (video) => video.status === "unlisted"
+    (video) => video.poolStatus === "available"
   ).length;
 
   const getPoolStatusColor = (poolStatus: string) => {
     switch (poolStatus) {
       case "active":
         return "bg-green-100 text-green-800";
-      case "closing":
-        return "bg-yellow-100 text-yellow-800";
       case "settled":
         return "bg-blue-100 text-blue-800";
-      case "ready":
-        return "bg-orange-100 text-orange-800";
+      case "available":
+        return "bg-purple-100 text-purple-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -130,7 +134,7 @@ export default function CreatorDashboard() {
     {
       id: "all",
       name: "All Videos",
-      count: stats.totalVideos,
+      count: videos.length,
     },
     {
       id: "active",
@@ -157,9 +161,9 @@ export default function CreatorDashboard() {
   // Moved: extractDurationAndTimeRemaining to app/lib/utils.ts
 
   const handleEnablePool = (poolData: any) => {
-    // Find the selected video from RECENT_VIDEOS if videoId is provided
+    // Find the selected video from unified videos data if videoId is provided
     const selectedVideoData = poolData.videoId
-      ? RECENT_VIDEOS.find((video) => video.id === poolData.videoId)
+      ? videos.find((video) => video.id === poolData.videoId)
       : selectedVideo;
 
     // Get video title from the selected video or use default
@@ -181,7 +185,11 @@ export default function CreatorDashboard() {
     const { duration, timeRemaining, totalDays } =
       extractDurationAndTimeRemaining(questionText);
 
-    // Create new pool object
+   
+    const isUnlistedVideo =
+      selectedVideoData && selectedVideoData.status === "unlisted";
+
+    // Create new pool object - always active for prediction on unlisted videos
     const newPool: Omit<Pool, "id"> = {
       title: videoTitle,
       videoTitle: videoTitle,
@@ -189,8 +197,8 @@ export default function CreatorDashboard() {
       question: questionText,
       participants: 0,
       totalStake: poolData.pledgeAmount || 0,
-      timeRemaining: timeRemaining,
-      status: "active",
+      timeRemaining: timeRemaining, // Use actual countdown for unlisted videos
+      status: "active", // Always active to allow predictions during unlisted stage
       createdAt: new Date().toISOString(),
       targetViews: targetViews,
       currentViews: 0,
@@ -224,7 +232,7 @@ export default function CreatorDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
         <StatsCard
           title="Total Videos"
-          value={stats.totalVideos}
+          value={videos.length}
           icon={faPlay}
           iconColor="text-blue-600"
           iconBgColor="bg-blue-100"
@@ -276,10 +284,7 @@ export default function CreatorDashboard() {
         {/* Video List */}
         <div className="divide-y divide-gray-200">
           {filteredVideos.map((video) => (
-            <div
-              key={video.id}
-              className={`p-4 sm:p-6 ${video.hasPool && video.status === "unlisted" ? "opacity-50 bg-gray-50" : ""}`}
-            >
+            <div key={video.id} className="p-4 sm:p-6">
               <div className="flex items-start space-x-4">
                 {/* Video Thumbnail */}
                 <div className="flex-shrink-0 relative">
@@ -340,19 +345,6 @@ export default function CreatorDashboard() {
                           </span>
                         </div>
                       )}
-                      {video.poolStatus === "closing" && (
-                        <div className="flex items-center space-x-2">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${getPoolStatusColor(video.poolStatus)}`}
-                          >
-                            Pool Closing Soon
-                          </span>
-                          <span className="text-xs text-gray-600">
-                            ${video.poolStake.toLocaleString()} pool •{" "}
-                            {video.timeRemaining}
-                          </span>
-                        </div>
-                      )}
                       {video.poolStatus === "settled" && video.poolData && (
                         <div className="flex items-center space-x-2">
                           <span
@@ -366,12 +358,12 @@ export default function CreatorDashboard() {
                           </span>
                         </div>
                       )}
-                      {video.poolStatus === "ready" && (
+                      {video.poolStatus === "available" && (
                         <div className="flex items-center space-x-2">
                           <span
                             className={`px-2 py-1 rounded-full text-xs font-medium ${getPoolStatusColor(video.poolStatus)}`}
                           >
-                            Ready for Pool
+                            Available for Pool
                           </span>
                           <span className="text-xs text-gray-600">
                             Perfect for predictions
@@ -390,14 +382,6 @@ export default function CreatorDashboard() {
                           View Pool
                         </Link>
                       )}
-                      {video.poolStatus === "closing" && (
-                        <Link
-                          to={`/creator/pool/${video.id}?status=active`}
-                          className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors"
-                        >
-                          View Pool
-                        </Link>
-                      )}
                       {video.poolStatus === "settled" && video.poolData && (
                         <Link
                           to={`/creator/pool/${video.poolData.id}?status=settled`}
@@ -406,7 +390,7 @@ export default function CreatorDashboard() {
                           View Results
                         </Link>
                       )}
-                      {video.poolStatus === "ready" && !video.hasPool && (
+                      {video.poolStatus === "available" && (
                         <button
                           onClick={() => handleEnablePoolClick(video)}
                           className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-1"
@@ -414,15 +398,6 @@ export default function CreatorDashboard() {
                           <FontAwesomeIcon icon={faPlus} className="w-4 h-4" />
                           <span>Enable Prediction Pool</span>
                         </button>
-                      )}
-                      {video.hasPool && video.status === "unlisted" && (
-                        <div className="px-4 py-2 bg-gray-100 text-gray-500 text-sm font-medium rounded-lg flex items-center space-x-1">
-                          <FontAwesomeIcon
-                            icon={faCheckCircle}
-                            className="w-4 h-4"
-                          />
-                          <span>Pool Created</span>
-                        </div>
                       )}
                       <button className="p-2 text-gray-400 hover:text-gray-600">
                         <FontAwesomeIcon
@@ -472,7 +447,7 @@ export default function CreatorDashboard() {
         <div className="px-4 sm:px-6 py-4 border-t border-gray-200">
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-700">
-              Showing 1-{filteredVideos.length} of {stats.totalVideos} videos
+              Showing 1-{filteredVideos.length} of {videos.length} videos
             </p>
             <div className="flex items-center space-x-2">
               <button className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50">

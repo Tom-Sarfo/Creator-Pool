@@ -8,7 +8,8 @@ import {
 import { Link, useNavigate } from "react-router";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useState } from "react";
-import { CATEGORIES, MOCK_POOLS } from "../lib/constants";
+import { CATEGORIES } from "../lib/constants";
+import { useAppContext } from "../contexts/AppContext";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -24,9 +25,10 @@ export default function PoolsPage() {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState("all");
 
+  const { pools: allPools } = useAppContext();
   const categories = CATEGORIES;
 
-  const pools = MOCK_POOLS.slice(0, 3); // Use first 3 pools for this page
+  const pools = allPools.slice(0, 3); // Use first 3 pools for this page
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -190,19 +192,19 @@ export default function PoolsPage() {
                         YES
                       </div>
                       <div className="text-sm font-bold text-green-700">
-                        {pool.odds.yes}
+                        {pool.odds?.yes || 0}
                       </div>
                       <div className="text-xs text-green-600">
-                        {Math.round(pool.odds.yes * 100)}% chance
+                        {Math.round(pool.odds?.yes || 0 * 100)}% chance
                       </div>
                     </div>
                     <div className="flex-1 bg-red-50 border border-red-200 rounded-lg p-2 text-center">
                       <div className="text-xs text-red-600 font-medium">NO</div>
                       <div className="text-sm font-bold text-red-700">
-                        {pool.odds.no}
+                        {pool.odds?.no || 0}
                       </div>
                       <div className="text-xs text-red-600">
-                        {Math.round(pool.odds.no * 100)}% chance
+                        {Math.round(pool.odds?.no || 0 * 100)}% chance
                       </div>
                     </div>
                   </div>
