@@ -1,11 +1,13 @@
 import type { Route } from "./+types/creator-pools";
 import { useState } from "react";
+import { Link } from "react-router";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faLightbulb,
   faPlus,
   faChartBar,
   faUsers,
+  faUsersRectangle,
   faDollarSign,
   faTrophy,
   faBullseye,
@@ -118,7 +120,7 @@ export default function CreatorPools() {
             <div className="flex-shrink-0">
               <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
                 <FontAwesomeIcon
-                  icon={faChartBar}
+                  icon={faUsersRectangle}
                   className="w-5 h-5 text-green-600"
                 />
               </div>
@@ -312,13 +314,19 @@ export default function CreatorPools() {
 
               {/* Action buttons under progress bar */}
               <div className="flex space-x-2">
-                <button className="bg-white text-gray-600 border border-gray-300 text-sm py-2 px-4 rounded-md hover:bg-gray-50 transition-colors">
+                <Link
+                  to={`/creator/pool/${pool.id}?status=${pool.status}`}
+                  className="bg-white text-gray-600 border border-gray-300 text-sm py-2 px-4 rounded-md hover:bg-gray-50 transition-colors"
+                >
                   View Details
-                </button>
+                </Link>
                 {pool.status === "active" && (
-                  <button className="bg-purple-600 text-white text-sm py-2 px-4 rounded-md hover:bg-purple-700 transition-colors">
+                  <Link
+                    to={`/creator/pool/${pool.id}?status=active`}
+                    className="bg-purple-600 text-white text-sm py-2 px-4 rounded-md hover:bg-purple-700 transition-colors"
+                  >
                     Manage Pool
-                  </button>
+                  </Link>
                 )}
               </div>
             </div>

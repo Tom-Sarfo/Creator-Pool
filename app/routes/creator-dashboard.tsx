@@ -14,6 +14,7 @@ import {
   faEllipsisV,
   faPlus,
   faLayerGroup,
+  faUsersRectangle,
   faCoins,
 } from "@fortawesome/free-solid-svg-icons";
 import { useState } from "react";
@@ -170,7 +171,7 @@ export default function CreatorDashboard() {
             <div className="flex-shrink-0">
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <FontAwesomeIcon
-                  icon={faLayerGroup}
+                  icon={faUsersRectangle}
                   className="w-6 h-6 text-green-600"
                 />
               </div>
@@ -346,19 +347,28 @@ export default function CreatorDashboard() {
                     {/* Action Button and Menu */}
                     <div className="flex items-center space-x-2 ml-4">
                       {video.poolStatus === "active" && (
-                        <button className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors">
+                        <Link
+                          to={`/creator/pool/${video.id}?status=active`}
+                          className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                        >
                           View Pool
-                        </button>
+                        </Link>
                       )}
                       {video.poolStatus === "closing" && (
-                        <button className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors">
+                        <Link
+                          to={`/creator/pool/${video.id}?status=active`}
+                          className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                        >
                           View Pool
-                        </button>
+                        </Link>
                       )}
                       {video.poolStatus === "settled" && (
-                        <button className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                        <Link
+                          to={`/creator/pool/${video.id}?status=settled`}
+                          className="px-4 py-2 bg-white text-gray-700 border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                        >
                           View Results
-                        </button>
+                        </Link>
                       )}
                       {video.poolStatus === "ready" && (
                         <button

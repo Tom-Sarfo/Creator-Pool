@@ -9,9 +9,10 @@ export default [
   route("dashboard", "routes/dashboard.tsx"),
   route("creator", "routes/creator-layout.tsx", [
     index("routes/creator-dashboard.tsx"),
-    route("videos", "routes/creator-videos.tsx"),
     route("pools", "routes/creator-pools.tsx"),
+    route("pool/:id", "routes/creator-pool-detail.tsx"),
     route("analytics", "routes/creator-analytics.tsx"),
+    route("wallet", "routes/creator-wallet.tsx"),
     route("settings", "routes/creator-settings.tsx"),
   ]),
   route("predictor", "routes/predictor-layout.tsx", [

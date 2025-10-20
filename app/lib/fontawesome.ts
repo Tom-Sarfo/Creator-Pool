@@ -36,6 +36,7 @@ import {
   faArrowDown,
   faBrain,
   faUsers,
+  faUsersRectangle,
   faChevronRight,
 } from "@fortawesome/free-solid-svg-icons";
 import { faYoutube } from "@fortawesome/free-brands-svg-icons";
@@ -82,6 +83,7 @@ library.add(
   faArrowDown,
   faBrain,
   faUsers,
+  faUsersRectangle,
   faChevronRight,
   faYoutube
 );

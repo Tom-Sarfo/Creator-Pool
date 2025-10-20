@@ -11,8 +11,10 @@ import {
   faSearch,
   faBell,
   faChartLine,
-  faVideo,
   faCog,
+  faWallet,
+  faHome,
+  faUsersRectangle,
 } from "@fortawesome/free-solid-svg-icons";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
@@ -36,14 +38,14 @@ export default function CreatorLayout() {
     if (location.pathname === "/creator") {
       return "Creator Hub";
     }
-    if (location.pathname.startsWith("/creator/videos")) {
-      return "Videos";
-    }
     if (location.pathname.startsWith("/creator/pools")) {
       return "Pools";
     }
     if (location.pathname.startsWith("/creator/analytics")) {
       return "Analytics";
+    }
+    if (location.pathname.startsWith("/creator/wallet")) {
+      return "Wallet";
     }
     if (location.pathname.startsWith("/creator/settings")) {
       return "Settings";
@@ -52,10 +54,10 @@ export default function CreatorLayout() {
   };
 
   const navigation = [
-    { name: "Dashboard", href: "/creator", icon: faChartLine },
-    { name: "Videos", href: "/creator/videos", icon: faVideo },
-    { name: "Pools", href: "/creator/pools", icon: faChartLine },
+    { name: "Dashboard", href: "/creator", icon: faHome },
+    { name: "Pools", href: "/creator/pools", icon: faUsersRectangle },
     { name: "Analytics", href: "/creator/analytics", icon: faChartLine },
+    { name: "Wallet", href: "/creator/wallet", icon: faWallet },
     { name: "Settings", href: "/creator/settings", icon: faCog },
   ];
 

@@ -15,6 +15,7 @@ import {
   faUser,
   faTimes,
   faBrain,
+  faUsersRectangle,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
@@ -24,7 +25,7 @@ export default function PredictorLayout() {
 
   const navigation = [
     { name: "Dashboard", href: "/predictor", icon: faHome },
-    { name: "Active Pools", href: "/predictor/pools", icon: faChartLine },
+    { name: "Active Pools", href: "/predictor/pools", icon: faUsersRectangle },
     {
       name: "My Predictions",
       href: "/predictor/predictions",
@@ -48,9 +49,12 @@ export default function PredictorLayout() {
             />
             <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-white shadow-xl">
               <div className="flex h-16 items-center justify-between px-4">
-                <h1 className="text-xl font-bold text-gray-900">
+                <Link
+                  to="/"
+                  className="text-xl font-bold text-gray-900 hover:opacity-80 transition-opacity"
+                >
                   Creator Pool
-                </h1>
+                </Link>
                 <button
                   onClick={() => setSidebarOpen(false)}
                   className="text-gray-400 hover:text-gray-600"

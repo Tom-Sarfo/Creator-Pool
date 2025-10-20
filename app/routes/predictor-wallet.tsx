@@ -22,6 +22,10 @@ export default function PredictorWallet() {
         return "💰";
       case "withdrawal":
         return "💸";
+      case "royalty":
+        return "👑";
+      case "pledge":
+        return "🤝";
       default:
         return "📊";
     }

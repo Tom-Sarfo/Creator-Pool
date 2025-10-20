@@ -1,7 +1,7 @@
 // Navigation constants
 export const PREDICTOR_NAVIGATION = [
   { name: "Dashboard", href: "/predictor", icon: "home" },
-  { name: "Active Pools", href: "/predictor/pools", icon: "chart-line" },
+  { name: "Active Pools", href: "/predictor/pools", icon: "users-rectangle" },
   {
     name: "My Predictions",
     href: "/predictor/predictions",
@@ -12,16 +12,16 @@ export const PREDICTOR_NAVIGATION = [
 ];
 
 export const CREATOR_NAVIGATION = [
-  { name: "Dashboard", href: "/creator", icon: "chart-line" },
-  { name: "Videos", href: "/creator/videos", icon: "video" },
-  { name: "Pools", href: "/creator/pools", icon: "chart-line" },
+  { name: "Dashboard", href: "/creator", icon: "home" },
+  { name: "Pools", href: "/creator/pools", icon: "users-rectangle" },
   { name: "Analytics", href: "/creator/analytics", icon: "chart-line" },
+  { name: "Wallet", href: "/creator/wallet", icon: "wallet" },
   { name: "Settings", href: "/creator/settings", icon: "cog" },
 ];
 
 export const DASHBOARD_NAVIGATION = [
   { name: "Dashboard", href: "/dashboard", icon: "home" },
-  { name: "Active Pools", href: "/predictor/pools", icon: "chart-line" },
+  { name: "Active Pools", href: "/predictor/pools", icon: "users-rectangle" },
   {
     name: "My Predictions",
     href: "/predictor/predictions",
@@ -710,75 +710,6 @@ export const CREATOR_ANALYTICS_MONTHLY_DATA = [
   { month: "Apr", pools: 3, participants: 52, earnings: 10.0 },
 ];
 
-// Creator videos data
-export const CREATOR_VIDEOS_DATA = [
-  {
-    id: 1,
-    title: "My Latest Gaming Video - Epic Win!",
-    thumbnail:
-      "https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=160&h=90&fit=crop&crop=center",
-    views: 12500,
-    likes: 450,
-    publishedAt: "2024-01-15",
-    status: "published",
-    poolStatus: "active",
-    poolSize: 450,
-    poolParticipants: 23,
-  },
-  {
-    id: 2,
-    title: "Tutorial: How to Build a React App",
-    thumbnail:
-      "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=160&h=90&fit=crop&crop=center",
-    views: 8900,
-    likes: 320,
-    publishedAt: "2024-01-12",
-    status: "published",
-    poolStatus: "settled",
-    poolSize: 320,
-    poolParticipants: 18,
-  },
-  {
-    id: 3,
-    title: "Unlisted: Secret Project Reveal",
-    thumbnail:
-      "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=160&h=90&fit=crop&crop=center",
-    views: 0,
-    likes: 0,
-    publishedAt: "2024-01-10",
-    status: "unlisted",
-    poolStatus: "pending",
-    poolSize: 0,
-    poolParticipants: 0,
-  },
-  {
-    id: 4,
-    title: "React Hooks Explained - Complete Guide",
-    thumbnail:
-      "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=160&h=90&fit=crop&crop=center",
-    views: 15600,
-    likes: 520,
-    publishedAt: "2024-01-08",
-    status: "published",
-    poolStatus: "none",
-    poolSize: 0,
-    poolParticipants: 0,
-  },
-  {
-    id: 5,
-    title: "Draft: Advanced JavaScript Concepts",
-    thumbnail:
-      "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=160&h=90&fit=crop&crop=center",
-    views: 0,
-    likes: 0,
-    publishedAt: "2024-01-05",
-    status: "draft",
-    poolStatus: "none",
-    poolSize: 0,
-    poolParticipants: 0,
-  },
-];
-
 // Creator settings data
 export const CREATOR_SETTINGS_DATA = {
   displayName: "Creator Name",
@@ -948,6 +879,74 @@ export const PREDICTOR_WALLET_PAYMENT_METHODS = [
     id: 2,
     type: "paypal",
     name: "PayPal (user@example.com)",
+    isDefault: false,
+    status: "verified",
+  },
+];
+
+// Creator wallet data
+export const CREATOR_WALLET_DATA = {
+  balance: 5670.25,
+  totalEarnings: 9840.75,
+  totalPledged: 3200.0,
+  pendingWithdrawals: 150.0,
+};
+
+export const CREATOR_WALLET_TRANSACTIONS = [
+  {
+    id: 1,
+    type: "royalty",
+    amount: 89.5,
+    description: "Pool royalties: iPhone Review",
+    date: "2 hours ago",
+    status: "completed",
+  },
+  {
+    id: 2,
+    type: "pledge",
+    amount: -1245.0,
+    description: "Pledge deposit: Gaming Video Pool",
+    date: "1 day ago",
+    status: "completed",
+  },
+  {
+    id: 3,
+    type: "withdrawal",
+    amount: -500.0,
+    description: "Withdrawal to bank account",
+    date: "3 days ago",
+    status: "completed",
+  },
+  {
+    id: 4,
+    type: "royalty",
+    amount: 156.2,
+    description: "Pool royalties: React Tutorial",
+    date: "1 week ago",
+    status: "completed",
+  },
+  {
+    id: 5,
+    type: "deposit",
+    amount: 1000.0,
+    description: "Stripe deposit to wallet",
+    date: "1 week ago",
+    status: "completed",
+  },
+];
+
+export const CREATOR_WALLET_PAYMENT_METHODS = [
+  {
+    id: 1,
+    type: "bank",
+    name: "Chase Bank ****5678",
+    isDefault: true,
+    status: "verified",
+  },
+  {
+    id: 2,
+    type: "stripe",
+    name: "Visa Card ****4242",
     isDefault: false,
     status: "verified",
   },
