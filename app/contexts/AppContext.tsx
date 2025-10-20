@@ -6,7 +6,7 @@ export interface UnifiedVideo {
   id: number;
   title: string;
   thumbnail: string;
-  status: string; 
+  status: string;
   views: number;
   likes: number;
   duration: string;

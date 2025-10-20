@@ -6,46 +6,92 @@ import {
   faPlay,
   faCalendar,
   faClock,
-  faTag,
   faCheckCircle,
   faEye,
   faHeart,
   faComment,
   faThumbsUp,
-  faShare,
-  faBookmark,
-  faBell,
   faQuestionCircle,
   faChartLine,
   faUsers,
   faDollarSign,
-  faEdit,
-  faTrash,
   faPause,
-  faStop,
-  faExclamationTriangle,
   faDownload,
   faExternalLinkAlt,
   faInfoCircle,
-  faFilter,
-  faSort,
-  faSearch,
   faArrowUp,
-  faArrowDown,
   faArrowLeft,
   faFlag,
   faBan,
-  faCheck,
-  faTimes,
-  faCalendarAlt,
-  faLayerGroup,
   faCoins,
+  faBullseye,
+  faExclamationTriangle,
   faTrophy,
-  faGlobe,
-  faLink,
 } from "@fortawesome/free-solid-svg-icons";
-import { RECENT_PREDICTIONS } from "../lib/constants";
+import {
+  RECENT_PREDICTIONS,
+  STATUS_COLORS,
+  STATUS_TIMELINE,
+} from "../lib/constants";
 import { useAppContext } from "../contexts/AppContext";
+
+const getStatusColor = (status: string) =>
+  STATUS_COLORS[status?.toLowerCase() as keyof typeof STATUS_COLORS] ||
+  "bg-gray-100 text-gray-800";
+
+const getProgressIcon = (phase: any) => (
+  <FontAwesomeIcon
+    icon={phase.completed ? faCheckCircle : faClock}
+    className={`w-4 h-4 ${phase.completed ? "text-purple-600" : "text-gray-400"}`}
+  />
+);
+
+const calculatePoolMetrics = (poolData: any, videoData: any) => {
+  const currentViews =
+    poolData.currentViews !== undefined
+      ? poolData.currentViews
+      : videoData?.views || 0;
+  const targetViews = poolData.targetViews || 0;
+  const progress =
+    targetViews > 0 ? Math.min((currentViews / targetViews) * 100, 100) : 0;
+
+  const totalStake = poolData.totalStake || 0;
+  const progressRatio = targetViews > 0 ? currentViews / targetViews : 0;
+  const yesBias = Math.min(0.85, 0.55 + progressRatio * 0.3);
+
+  const yesPool = totalStake ? Math.round(totalStake * yesBias) : 0;
+  const noPool = totalStake - yesPool;
+  const yesPercentage =
+    totalStake > 0 ? Math.round((yesPool / totalStake) * 100) : 50;
+  const noPercentage = 100 - yesPercentage;
+
+  const totalParticipants = poolData.participants || 0;
+  const yesStakers = Math.round(totalParticipants * (yesPercentage / 100));
+  const noStakers = totalParticipants - yesStakers;
+
+  const viewGrowthRate = (() => {
+    if (targetViews === 0 || currentViews === 0) return "+0.0%";
+    const baseGrowth = 8.5;
+    const growthFactor = progressRatio > 0.8 ? 1.5 : 1.0;
+    const randomVariation = 0.8 + Math.random() * 0.4;
+    return `+${(baseGrowth * growthFactor * randomVariation).toFixed(1)}%`;
+  })();
+
+  return {
+    currentViews,
+    progress,
+    platformFee: totalStake ? Math.round(totalStake * 0.05 * 100) / 100 : 0,
+    creatorRoyalty: totalStake ? Math.round(totalStake * 0.01 * 100) / 100 : 0,
+    creatorPledge: totalStake ? Math.round(totalStake * 0.15 * 100) / 100 : 0,
+    yesPool,
+    noPool,
+    yesPercentage,
+    noPercentage,
+    yesStakers,
+    noStakers,
+    viewGrowthRate,
+  };
+};
 
 export function meta({ params }: Route.MetaArgs) {
   return [
@@ -66,213 +112,95 @@ export default function CreatorPoolDetailPage({
   const [showPledgeModal, setShowPledgeModal] = useState(false);
   const [predictionFilter, setPredictionFilter] = useState("all");
 
-  const { getPoolById, pools } = useAppContext();
-
-  // Get status from URL search params (e.g., ?status=settled)
+  const { getPoolById, pools, getVideoById } = useAppContext();
   const statusParam = searchParams.get("status") || "active";
 
-  // Find the pool data from context - fallback to first pool if not found
-  const poolData =
-    getPoolById(poolId) ||
-    (pools.length > 0
-      ? pools[0]
-      : {
-          id: poolId,
-          title: "Pool not found",
-          question: "Pool data not available",
-          participants: 0,
-          totalStake: 0,
-          timeRemaining: "N/A",
-          status: "unknown",
-        });
-
-  // Function to get pool data based on status
-  const getPoolDataByStatus = (baseData: any, status: string) => {
-    const statusMap = {
-      active: {
-        status: "ACTIVE",
-        timeRemaining: "4 days 12h",
-        pledgeStatus: "pending",
-        pledgeDeposited: 0,
-        currentViews: 342000,
-        progress: 68.4,
-        timeline: [
-          {
-            phase: "Pool Created",
-            date: "Dec 10, 2024",
-            completed: true,
-            icon: "check",
-            description: "Pool configuration completed",
-          },
-          {
-            phase: "Video Published",
-            date: "Dec 15, 2024",
-            completed: true,
-            icon: "play",
-            description: "Video went live on YouTube",
-          },
-          {
-            phase: "Predictions Close",
-            date: "Dec 16, 2024",
-            completed: true,
-            icon: "clock",
-            description: "Prediction period ended",
-          },
-          {
-            phase: "Settlement",
-            date: "Dec 22, 2024",
-            completed: false,
-            icon: "clock",
-            description:
-              "Platform automatically settles pool and disburses rewards",
-          },
-        ],
-      },
-      settled: {
-        status: "SETTLED",
-        timeRemaining: "Completed",
-        pledgeStatus: "pending",
-        pledgeDeposited: 0,
-        currentViews: 612000, // Final views exceeded target
-        progress: 122.4,
-        timeline: [
-          {
-            phase: "Pool Created",
-            date: "Dec 10, 2024",
-            completed: true,
-            icon: "check",
-            description: "Pool configuration completed",
-          },
-          {
-            phase: "Video Published",
-            date: "Dec 15, 2024",
-            completed: true,
-            icon: "play",
-            description: "Video went live on YouTube",
-          },
-          {
-            phase: "Predictions Close",
-            date: "Dec 16, 2024",
-            completed: true,
-            icon: "clock",
-            description: "Prediction period ended",
-          },
-          {
-            phase: "Settlement",
-            date: "Dec 22, 2024",
-            completed: true,
-            icon: "check",
-            description: "Pool settled automatically - Target exceeded!",
-          },
-        ],
-      },
-      expired: {
-        status: "EXPIRED",
-        timeRemaining: "Expired",
-        pledgeStatus: "disbursed",
-        pledgeDeposited: 1245,
-        currentViews: 380000, // Below target
-        progress: 76.0,
-        timeline: [
-          {
-            phase: "Pool Created",
-            date: "Dec 10, 2024",
-            completed: true,
-            icon: "check",
-            description: "Pool configuration completed",
-          },
-          {
-            phase: "Video Published",
-            date: "Dec 15, 2024",
-            completed: true,
-            icon: "play",
-            description: "Video went live on YouTube",
-          },
-          {
-            phase: "Predictions Close",
-            date: "Dec 16, 2024",
-            completed: true,
-            icon: "clock",
-            description: "Prediction period ended",
-          },
-          {
-            phase: "Settlement",
-            date: "Dec 22, 2024",
-            completed: true,
-            icon: "check",
-            description: "Pool settled - Target not reached",
-          },
-        ],
-      },
+  const poolData = getPoolById(poolId) ||
+    pools[0] || {
+      id: poolId,
+      title: "Pool not found",
+      question: "Pool data not available",
+      participants: 0,
+      totalStake: 0,
+      timeRemaining: "N/A",
+      status: "unknown",
     };
 
-    return statusMap[status as keyof typeof statusMap] || statusMap.active;
-  };
+  console.log("poolData", poolData);
 
-  const statusData = getPoolDataByStatus(poolData, statusParam);
+  const videoData = poolData.videoId ? getVideoById(poolData.videoId) : null;
+  const statusData =
+    STATUS_TIMELINE[statusParam as keyof typeof STATUS_TIMELINE] ||
+    STATUS_TIMELINE.active;
 
-  // Create comprehensive pool object with creator-specific data based on PRD requirements
+  const metrics = calculatePoolMetrics(poolData, videoData);
+
   const pool = {
+    ...metrics,
     id: poolData.id,
-    title: poolData.title,
-    creator: poolData.creator,
-    creatorVerified: poolData.creatorVerified,
-    creatorSubs: poolData.creatorSubs,
-    thumbnail: poolData.thumbnail,
-    category: poolData.category,
-    status: statusData.status, // ACTIVE, SETTLING, SETTLED, EXPIRED, PAUSED
-    timeRemaining: statusData.timeRemaining,
-    totalStake: 12450,
-    participants: 847,
+    title: poolData.title || poolData.videoTitle || "Untitled Pool",
+    creator: poolData.creator || videoData?.creator || "Unknown Creator",
+    creatorVerified:
+      poolData.creatorVerified || videoData?.creatorVerified || false,
+    creatorSubs: poolData.creatorSubs || videoData?.creatorSubs || "0 subs",
+    thumbnail: poolData.thumbnail || videoData?.thumbnail || "",
+    category: poolData.category || videoData?.category || "general",
+    status: poolData.status || "unknown",
+    timeRemaining: poolData.timeRemaining || statusData.timeRemaining,
+    totalStake: poolData.totalStake || 0,
+    participants: poolData.participants || 0,
     odds: poolData.odds,
-    question: "Will this video reach 500K views within 7 days of release?",
-    targetViews: 500000,
-    targetTimeframe: "7 days",
-    description: poolData.title,
-    youtubeUrl: "https://youtube.com/watch?v=example",
-    youtubeId: "example123",
-    releaseDate: "Dec 15, 2024",
-    expectedDuration: "12 min",
-
-    // PRD-specific data
-    poolDuration: "7 days", // Min: 24h, Max: 14d, Default: 7d
-    createdAt: "2024-12-10T10:00:00Z",
-    closesAt: "2024-12-22T10:00:00Z",
-    publishedAt: "2024-12-15T14:30:00Z",
-
-    // Revenue breakdown per PRD
-    platformFee: 622.5, // 5% of total pool
-    creatorRoyalty: 124.5, // 1% of total pool
-    creatorPledge: 1245, // 15% AdSense pledge amount
-    pledgeStatus: statusData.pledgeStatus, // pending, deposited, disbursed
-    pledgeDeposited: statusData.pledgeDeposited, // amount actually deposited to platform
-    creatorWalletBalance: 5000, // creator's current wallet balance
-
-    // Pool distribution
-    yesPool: 8964,
-    noPool: 3486,
-    yesPercentage: 72,
-    noPercentage: 28,
-    yesStakers: 589,
-    noStakers: 258,
-
-    // Video metrics (updated via YouTube API)
-    currentViews: statusData.currentViews,
-    currentLikes: 18200,
-    currentComments: 1200,
-    likeRatio: "94%",
-    viewGrowthRate: "+12.3%",
-    progress: statusData.progress, // % of target reached
-
-    // Timeline data
+    question: poolData.question || "Prediction question not available",
+    targetViews: poolData.targetViews || 0,
+    targetTimeframe: poolData.duration ? `${poolData.duration} days` : "7 days",
+    description: poolData.title || poolData.videoTitle || "Pool description",
+    youtubeUrl: videoData?.id
+      ? `https://youtube.com/watch?v=video${videoData.id}`
+      : "https://youtube.com/watch?v=example",
+    youtubeId: `video${videoData?.id || poolData.videoId || "unknown"}`,
+    releaseDate: poolData.createdAt
+      ? new Date(poolData.createdAt).toLocaleDateString()
+      : "Unknown",
+    expectedDuration: videoData?.duration || "Unknown duration",
+    poolDuration: poolData.duration ? `${poolData.duration} days` : "7 days",
+    createdAt: poolData.createdAt || new Date().toISOString(),
+    closesAt: poolData.createdAt
+      ? new Date(
+          new Date(poolData.createdAt).getTime() +
+            (poolData.duration || 7) * 24 * 60 * 60 * 1000
+        ).toISOString()
+      : new Date().toISOString(),
+    publishedAt: videoData?.uploadDate || new Date().toISOString(),
+    pledgeStatus: statusData.pledgeStatus,
+    pledgeDeposited: statusData.pledgeDeposited,
+    creatorWalletBalance: 5000,
+    currentLikes: videoData?.likes || 0,
+    currentComments: Math.round((videoData?.likes || 0) * 0.06),
+    likeRatio: videoData?.likes
+      ? `${Math.round((videoData.likes / Math.max(videoData.views, 1)) * 100)}%`
+      : "0%",
     timeline: statusData.timeline,
-
-    // Performance metrics
     dailyStats: [
-      { date: "Dec 16", views: 156000, predictions: 145 },
-      { date: "Dec 17", views: 234000, predictions: 189 },
-      { date: "Dec 18", views: 298000, predictions: 201 },
-      { date: "Dec 19", views: 342000, predictions: 312 },
+      {
+        date: "Dec 16",
+        views: Math.round((poolData.currentViews || 0) * 0.25),
+        predictions: Math.round((poolData.participants || 0) * 0.17),
+      },
+      {
+        date: "Dec 17",
+        views: Math.round((poolData.currentViews || 0) * 0.38),
+        predictions: Math.round((poolData.participants || 0) * 0.22),
+      },
+      {
+        date: "Dec 18",
+        views: Math.round((poolData.currentViews || 0) * 0.49),
+        predictions: Math.round((poolData.participants || 0) * 0.24),
+      },
+      {
+        date: "Dec 19",
+        views: poolData.currentViews || 0,
+        predictions: poolData.participants || 0,
+      },
     ],
   };
 
@@ -304,41 +232,14 @@ export default function CreatorPoolDetailPage({
     },
   ];
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "ACTIVE":
-        return "bg-green-100 text-green-800";
-      case "SETTLING":
-        return "bg-blue-100 text-blue-800";
-      case "SETTLED":
-        return "bg-purple-100 text-purple-800";
-      case "EXPIRED":
-        return "bg-gray-100 text-gray-800";
-      case "PAUSED":
-        return "bg-yellow-100 text-yellow-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getProgressIcon = (phase: any) => {
-    if (phase.completed) {
-      return (
-        <FontAwesomeIcon
-          icon={faCheckCircle}
-          className="w-4 h-4 text-purple-600"
-        />
-      );
-    }
-    return <FontAwesomeIcon icon={faClock} className="w-4 h-4 text-gray-400" />;
-  };
-
   const tabs = [
     { id: "overview", label: "Overview", count: null },
     { id: "predictions", label: "Predictions", count: pool.participants },
     { id: "analytics", label: "Analytics", count: null },
     { id: "settings", label: "Pool Settings", count: null },
   ];
+
+  console.log("pool.totalStake", pool.totalStake);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -374,7 +275,7 @@ export default function CreatorPoolDetailPage({
 
               {/* Action buttons - responsive sizing */}
               <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-                {pool.status === "ACTIVE" && (
+                {pool.status?.toLowerCase() === "active" && (
                   <button className="px-3 sm:px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center justify-center space-x-2 text-sm">
                     <FontAwesomeIcon icon={faPause} className="w-4 h-4" />
                     <span className="hidden sm:inline">Pause Pool</span>
@@ -897,30 +798,44 @@ export default function CreatorPoolDetailPage({
               </h3>
 
               <div className="space-y-4 mb-6">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Total Pool Size:</span>
-                  <span className="font-medium">
-                    ${pool.totalStake.toLocaleString()}
+                <div className="flex">
+                  <span className="text-gray-600">
+                    Total Pool Size:{" "}
+                    <span className="font-medium">
+                      ${pool.totalStake.toLocaleString()}
+                    </span>
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Total Predictors:</span>
-                  <span className="font-medium">
-                    {pool.participants.toLocaleString()}
+                  <span className="text-gray-600">
+                    Total Predictors:{" "}
+                    <span className="font-medium">
+                      {pool.participants.toLocaleString()}
+                    </span>
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Platform Fee (5%):</span>
-                  <span className="font-medium">${pool.platformFee}</span>
+                  <span className="text-gray-600">
+                    Platform Fee (5%):{" "}
+                    <span className="font-medium">
+                      ${pool.platformFee.toFixed(2)}
+                    </span>
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Your Royalty (1%):</span>
-                  <span className="font-medium">${pool.creatorRoyalty}</span>
+                  <span className="text-gray-600">
+                    Your Royalty (1%):{" "}
+                    <span className="font-medium">
+                      ${pool.creatorRoyalty.toFixed(2)}
+                    </span>
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Creator Pledge:</span>
-                  <span className="font-medium">
-                    ${pool.creatorPledge.toLocaleString()}
+                  <span className="text-gray-600">
+                    Creator Pledge:{" "}
+                    <span className="font-medium">
+                      ${pool.totalStake.toLocaleString()}
+                    </span>
                   </span>
                 </div>
               </div>
@@ -1011,91 +926,6 @@ export default function CreatorPoolDetailPage({
                   </p>
                 </div>
               </div>
-            </div>
-
-            {/* Quick Stats */}
-            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Quick Stats
-              </h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600 flex items-center space-x-2">
-                    <FontAwesomeIcon icon={faEye} className="w-4 h-4" />
-                    <span>Current Views</span>
-                  </span>
-                  <span className="font-medium">
-                    {pool.currentViews.toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600 flex items-center space-x-2">
-                    <FontAwesomeIcon icon={faThumbsUp} className="w-4 h-4" />
-                    <span>Likes</span>
-                  </span>
-                  <span className="font-medium">
-                    {pool.currentLikes.toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600 flex items-center space-x-2">
-                    <FontAwesomeIcon icon={faComment} className="w-4 h-4" />
-                    <span>Comments</span>
-                  </span>
-                  <span className="font-medium">
-                    {pool.currentComments.toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600 flex items-center space-x-2">
-                    <FontAwesomeIcon icon={faArrowUp} className="w-4 h-4" />
-                    <span>Growth Rate</span>
-                  </span>
-                  <span className="font-medium text-green-600">
-                    {pool.viewGrowthRate}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Recent Activity */}
-            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Recent Activity
-              </h3>
-              <div className="space-y-3">
-                {recentPredictions.slice(0, 4).map((prediction, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between py-2"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          {prediction.user}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {prediction.time}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p
-                        className={`text-sm font-medium ${prediction.prediction === "YES" ? "text-green-600" : "text-red-600"}`}
-                      >
-                        {prediction.prediction}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        ${prediction.amount}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <button className="w-full mt-4 py-2 text-sm text-purple-600 hover:text-purple-700 transition-colors">
-                View All Activity
-              </button>
             </div>
           </div>
         </div>

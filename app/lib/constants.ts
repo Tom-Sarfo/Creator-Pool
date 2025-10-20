@@ -1055,3 +1055,130 @@ export const PLEDGE_OPTIONS = [
     amount: "15%",
   },
 ];
+
+// Pool status constants
+export const STATUS_COLORS = {
+  active: "bg-green-100 text-green-800",
+  settling: "bg-blue-100 text-blue-800",
+  settled: "bg-purple-100 text-purple-800",
+  expired: "bg-gray-100 text-gray-800",
+  paused: "bg-yellow-100 text-yellow-800",
+} as const;
+
+export const STATUS_TIMELINE = {
+  active: {
+    status: "ACTIVE",
+    timeRemaining: "4 days 12h",
+    pledgeStatus: "pending",
+    pledgeDeposited: 0,
+    currentViews: 342000,
+    progress: 68.4,
+    timeline: [
+      {
+        phase: "Pool Created",
+        date: "Dec 10, 2024",
+        completed: true,
+        icon: "check",
+        description: "Pool configuration completed",
+      },
+      {
+        phase: "Video Published",
+        date: "Dec 15, 2024",
+        completed: true,
+        icon: "play",
+        description: "Video went live on YouTube",
+      },
+      {
+        phase: "Predictions Close",
+        date: "Dec 16, 2024",
+        completed: true,
+        icon: "clock",
+        description: "Prediction period ended",
+      },
+      {
+        phase: "Settlement",
+        date: "Dec 22, 2024",
+        completed: false,
+        icon: "clock",
+        description:
+          "Platform automatically settles pool and disburses rewards",
+      },
+    ],
+  },
+  settled: {
+    status: "SETTLED",
+    timeRemaining: "Completed",
+    pledgeStatus: "deposited",
+    pledgeDeposited: 1245,
+    currentViews: 612000,
+    progress: 122.4,
+    timeline: [
+      {
+        phase: "Pool Created",
+        date: "Dec 10, 2024",
+        completed: true,
+        icon: "check",
+        description: "Pool configuration completed",
+      },
+      {
+        phase: "Video Published",
+        date: "Dec 15, 2024",
+        completed: true,
+        icon: "play",
+        description: "Video went live on YouTube",
+      },
+      {
+        phase: "Predictions Close",
+        date: "Dec 16, 2024",
+        completed: true,
+        icon: "clock",
+        description: "Prediction period ended",
+      },
+      {
+        phase: "Settlement",
+        date: "Dec 22, 2024",
+        completed: true,
+        icon: "check",
+        description: "Pool settled automatically - Target exceeded!",
+      },
+    ],
+  },
+  expired: {
+    status: "EXPIRED",
+    timeRemaining: "Expired",
+    pledgeStatus: "disbursed",
+    pledgeDeposited: 1245,
+    currentViews: 380000,
+    progress: 76.0,
+    timeline: [
+      {
+        phase: "Pool Created",
+        date: "Dec 10, 2024",
+        completed: true,
+        icon: "check",
+        description: "Pool configuration completed",
+      },
+      {
+        phase: "Video Published",
+        date: "Dec 15, 2024",
+        completed: true,
+        icon: "play",
+        description: "Video went live on YouTube",
+      },
+      {
+        phase: "Predictions Close",
+        date: "Dec 16, 2024",
+        completed: true,
+        icon: "clock",
+        description: "Prediction period ended",
+      },
+      {
+        phase: "Settlement",
+        date: "Dec 22, 2024",
+        completed: true,
+        icon: "check",
+        description: "Pool settled - Target not reached",
+      },
+    ],
+  },
+} as const;
