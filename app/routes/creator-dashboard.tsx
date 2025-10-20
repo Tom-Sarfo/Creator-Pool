@@ -2,7 +2,6 @@ import type { Route } from "./+types/creator-dashboard";
 import { Link } from "react-router";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  
   faTrophy,
   faPlay,
   faEye,
@@ -185,7 +184,6 @@ export default function CreatorDashboard() {
     const { duration, timeRemaining, totalDays } =
       extractDurationAndTimeRemaining(questionText);
 
-   
     const isUnlistedVideo =
       selectedVideoData && selectedVideoData.status === "unlisted";
 
@@ -217,7 +215,7 @@ export default function CreatorDashboard() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen">
+    <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen w-full">
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
@@ -285,10 +283,10 @@ export default function CreatorDashboard() {
         <div className="divide-y divide-gray-200">
           {filteredVideos.map((video) => (
             <div key={video.id} className="p-4 sm:p-6">
-              <div className="flex items-start space-x-4">
+              <div className="flex items-start space-x-3 sm:space-x-4">
                 {/* Video Thumbnail */}
                 <div className="flex-shrink-0 relative">
-                  <div className="w-16 h-12 bg-gray-200 rounded-md overflow-hidden relative">
+                  <div className="w-16 h-12 sm:w-20 sm:h-14 bg-gray-200 rounded-md overflow-hidden relative">
                     <img
                       src={video.thumbnail}
                       alt={video.title}
@@ -308,60 +306,73 @@ export default function CreatorDashboard() {
                 </div>
 
                 {/* Video Info */}
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 pr-2">
                   <h3 className="text-sm font-medium text-gray-900 mb-1 line-clamp-2">
                     {video.title}
                   </h3>
 
                   {/* Video Stats */}
-                  <div className="flex items-center space-x-4 text-xs text-gray-500 mb-2">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 mb-2">
                     <div className="flex items-center space-x-1">
-                      <FontAwesomeIcon icon={faEye} className="w-3 h-3" />
-                      <span>{formatViews(video.views)} views</span>
+                      <FontAwesomeIcon
+                        icon={faEye}
+                        className="w-3 h-3 flex-shrink-0"
+                      />
+                      <span className="truncate">
+                        {formatViews(video.views)} views
+                      </span>
                     </div>
                     <div className="flex items-center space-x-1">
-                      <FontAwesomeIcon icon={faHeart} className="w-3 h-3" />
-                      <span>{formatLikes(video.likes)} likes</span>
+                      <FontAwesomeIcon
+                        icon={faHeart}
+                        className="w-3 h-3 flex-shrink-0"
+                      />
+                      <span className="truncate">
+                        {formatLikes(video.likes)} likes
+                      </span>
                     </div>
                     <div className="flex items-center space-x-1">
-                      <FontAwesomeIcon icon={faCalendar} className="w-3 h-3" />
-                      <span>{video.uploadDate}</span>
+                      <FontAwesomeIcon
+                        icon={faCalendar}
+                        className="w-3 h-3 flex-shrink-0"
+                      />
+                      <span className="truncate">{video.uploadDate}</span>
                     </div>
                   </div>
 
                   {/* Pool Status and Action */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
+                  <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+                    <div className="flex-1 min-w-0">
                       {video.poolStatus === "active" && video.poolData && (
-                        <div className="flex items-center space-x-2">
+                        <div className="flex flex-col space-y-1 sm:flex-row sm:items-center sm:space-x-2 sm:space-y-0">
                           <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${getPoolStatusColor(video.poolStatus)}`}
+                            className={`px-2 py-1 rounded-full text-xs font-medium w-fit ${getPoolStatusColor(video.poolStatus)}`}
                           >
                             Active Pool
                           </span>
-                          <span className="text-xs text-gray-600">
+                          <span className="text-xs text-gray-600 break-words">
                             ${video.poolData.totalStake.toLocaleString()} pool •{" "}
                             {video.poolData.participants} predictions
                           </span>
                         </div>
                       )}
                       {video.poolStatus === "settled" && video.poolData && (
-                        <div className="flex items-center space-x-2">
+                        <div className="flex flex-col space-y-1 sm:flex-row sm:items-center sm:space-x-2 sm:space-y-0">
                           <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${getPoolStatusColor(video.poolStatus)}`}
+                            className={`px-2 py-1 rounded-full text-xs font-medium w-fit ${getPoolStatusColor(video.poolStatus)}`}
                           >
                             Pool Settled
                           </span>
-                          <span className="text-xs text-gray-600">
+                          <span className="text-xs text-gray-600 break-words">
                             Target reached • +$
                             {video.poolData.creatorEarnings || 0} earned
                           </span>
                         </div>
                       )}
                       {video.poolStatus === "available" && (
-                        <div className="flex items-center space-x-2">
+                        <div className="flex flex-col space-y-1 sm:flex-row sm:items-center sm:space-x-2 sm:space-y-0">
                           <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${getPoolStatusColor(video.poolStatus)}`}
+                            className={`px-2 py-1 rounded-full text-xs font-medium w-fit ${getPoolStatusColor(video.poolStatus)}`}
                           >
                             Available for Pool
                           </span>
@@ -373,33 +384,41 @@ export default function CreatorDashboard() {
                     </div>
 
                     {/* Action Button and Menu */}
-                    <div className="flex items-center space-x-2 ml-4">
+                    <div className="flex items-center space-x-2 sm:ml-4 flex-shrink-0">
                       {video.poolStatus === "active" && video.poolData && (
                         <Link
                           to={`/creator/pool/${video.poolData.id}?status=active`}
-                          className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                          className="px-3 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors whitespace-nowrap"
                         >
-                          View Pool
+                          <span className="hidden sm:inline">View Pool</span>
+                          <span className="sm:hidden">View</span>
                         </Link>
                       )}
                       {video.poolStatus === "settled" && video.poolData && (
                         <Link
                           to={`/creator/pool/${video.poolData.id}?status=settled`}
-                          className="px-4 py-2 bg-white text-gray-700 border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                          className="px-3 py-2 bg-white text-gray-700 border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap"
                         >
-                          View Results
+                          <span className="hidden sm:inline">View Results</span>
+                          <span className="sm:hidden">Results</span>
                         </Link>
                       )}
                       {video.poolStatus === "available" && (
                         <button
                           onClick={() => handleEnablePoolClick(video)}
-                          className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-1"
+                          className="px-3 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-1 whitespace-nowrap"
                         >
-                          <FontAwesomeIcon icon={faPlus} className="w-4 h-4" />
-                          <span>Enable Prediction Pool</span>
+                          <FontAwesomeIcon
+                            icon={faPlus}
+                            className="w-4 h-4 flex-shrink-0"
+                          />
+                          <span className="hidden sm:inline">
+                            Enable Prediction Pool
+                          </span>
+                          <span className="sm:hidden">Enable Pool</span>
                         </button>
                       )}
-                      <button className="p-2 text-gray-400 hover:text-gray-600">
+                      <button className="p-2 text-gray-400 hover:text-gray-600 flex-shrink-0">
                         <FontAwesomeIcon
                           icon={faEllipsisV}
                           className="w-4 h-4"

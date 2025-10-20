@@ -149,7 +149,7 @@ export default function CreatorLayout() {
         </div>
 
         {/* Main content */}
-        <div className="lg:pl-64">
+        <div className="lg:pl-64 w-full overflow-hidden">
           {/* Top header */}
           <Header
             title={getPageTitle()}
@@ -161,7 +161,7 @@ export default function CreatorLayout() {
           />
 
           {/* Page content */}
-          <main className="flex-1">
+          <main className="flex-1 w-full">
             <Outlet />
           </main>
         </div>
