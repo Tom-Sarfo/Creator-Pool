@@ -217,7 +217,7 @@ export default function CreatorPools() {
             className="relative bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6"
           >
             {/* Status badges at the top right */}
-            <div className="absolute top-4 right-4 flex items-center space-x-2">
+            <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex items-center space-x-1 sm:space-x-2">
               <span className={getStatusBadge(pool.status)}>{pool.status}</span>
               {pool.result && (
                 <span className={getResultBadge(pool.result)}>
@@ -226,38 +226,40 @@ export default function CreatorPools() {
               )}
             </div>
 
-            <div className="pr-24">
+            <div className="pr-16 sm:pr-24">
               {/* Title and question */}
-              <div className="mb-3">
-                <h3 className="text-lg font-medium text-gray-900 mb-1">
+              <div className="mb-3 pr-2">
+                <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-1 line-clamp-2 leading-tight">
                   {pool.videoTitle}
                 </h3>
-                <p className="text-sm text-gray-600 mb-2">{pool.question}</p>
+                <p className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2">
+                  {pool.question}
+                </p>
               </div>
 
               {/* Stats grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm mb-4">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4 mb-4">
                 <div>
-                  <p className="text-gray-500">Participants</p>
-                  <p className="font-medium text-gray-900">
+                  <p className="text-xs text-gray-500 mb-1">Participants</p>
+                  <p className="text-sm sm:text-base font-medium text-gray-900">
                     {pool.participants}
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Total Staked</p>
-                  <p className="font-medium text-gray-900">
+                  <p className="text-xs text-gray-500 mb-1">Total Staked</p>
+                  <p className="text-sm sm:text-base font-medium text-gray-900">
                     ${pool.totalStake}
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Target Views</p>
-                  <p className="font-medium text-gray-900">
+                  <p className="text-xs text-gray-500 mb-1">Target Views</p>
+                  <p className="text-sm sm:text-base font-medium text-gray-900">
                     {(pool.targetViews || 0).toLocaleString()}
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Current Views</p>
-                  <p className="font-medium text-gray-900">
+                  <p className="text-xs text-gray-500 mb-1">Current Views</p>
+                  <p className="text-sm sm:text-base font-medium text-gray-900">
                     {(pool.currentViews || 0).toLocaleString()}
                   </p>
                 </div>
@@ -265,32 +267,34 @@ export default function CreatorPools() {
 
               {/* Time remaining */}
               <div className="mb-4">
-                <p className="text-sm text-gray-500">Time Remaining</p>
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-xs sm:text-sm text-gray-500 mb-1">
+                  Time Remaining
+                </p>
+                <p className="text-sm sm:text-base font-medium text-gray-900">
                   {pool.timeRemaining}
                 </p>
               </div>
 
               {/* Progress bar - extended to full width */}
-              <div className="mb-4">
-                <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
-                  <span>
+              <div className="mb-4 -mx-4 sm:mx-0 px-4 sm:px-0">
+                <div className="flex items-center justify-between text-xs sm:text-sm text-gray-500 mb-2">
+                  <span className="truncate mr-2">
                     {pool.status === "active"
                       ? "Progress to target"
                       : pool.status === "settled"
                         ? "Final progress"
                         : "Final progress"}
                   </span>
-                  <span>
+                  <span className="flex-shrink-0">
                     {Math.round(
                       ((pool.currentViews || 0) / (pool.targetViews || 1)) * 100
                     )}
                     %
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
+                <div className="w-full bg-gray-200 rounded-full h-2 sm:h-3">
                   <div
-                    className={`h-3 rounded-full ${
+                    className={`h-2 sm:h-3 rounded-full ${
                       pool.status === "active"
                         ? "bg-purple-600"
                         : pool.status === "settled"
@@ -319,19 +323,21 @@ export default function CreatorPools() {
               )}
 
               {/* Action buttons under progress bar */}
-              <div className="flex space-x-2">
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 -mx-4 sm:mx-0 px-4 sm:px-0">
                 <Link
                   to={`/creator/pool/${pool.id}?status=${pool.status}`}
-                  className="bg-white text-gray-600 border border-gray-300 text-sm py-2 px-4 rounded-md hover:bg-gray-50 transition-colors"
+                  className="bg-white text-gray-600 border border-gray-300 text-sm py-2 px-3 sm:px-4 rounded-md hover:bg-gray-50 transition-colors text-center w-full sm:w-auto"
                 >
-                  View Details
+                  <span className="hidden sm:inline">View Details</span>
+                  <span className="sm:hidden">View</span>
                 </Link>
                 {pool.status === "active" && (
                   <Link
                     to={`/creator/pool/${pool.id}?status=active`}
-                    className="bg-purple-600 text-white text-sm py-2 px-4 rounded-md hover:bg-purple-700 transition-colors"
+                    className="bg-purple-600 text-white text-sm py-2 px-3 sm:px-4 rounded-md hover:bg-purple-700 transition-colors text-center w-full sm:w-auto"
                   >
-                    Manage Pool
+                    <span className="hidden sm:inline">Manage Pool</span>
+                    <span className="sm:hidden">Manage</span>
                   </Link>
                 )}
               </div>
