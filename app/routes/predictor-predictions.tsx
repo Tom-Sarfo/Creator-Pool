@@ -96,46 +96,42 @@ export default function PredictorPredictions() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard
           title="Total Predictions"
-          value={25}
+          value="25"
           icon={faBrain}
-          iconBgColor="bg-blue-50"
           iconColor="text-blue-600"
-          iconSize="large"
-          roundedClass="rounded-xl"
-          containerPadding="p-6"
+          iconBgColor="bg-blue-50"
+          size="medium"
+          variant="rounded-xl"
         />
 
         <StatsCard
           title="Win Rate"
           value="78.7%"
           icon={faBullseye}
-          iconBgColor="bg-green-50"
           iconColor="text-green-600"
-          iconSize="large"
-          roundedClass="rounded-xl"
-          containerPadding="p-6"
+          iconBgColor="bg-green-50"
+          size="medium"
+          variant="rounded-xl"
         />
 
         <StatsCard
           title="Total Earnings"
           value="$1,247.50"
           icon={faDollarSign}
-          iconBgColor="bg-yellow-50"
           iconColor="text-yellow-600"
-          iconSize="large"
-          roundedClass="rounded-xl"
-          containerPadding="p-6"
+          iconBgColor="bg-yellow-50"
+          size="medium"
+          variant="rounded-xl"
         />
 
         <StatsCard
           title="Active Now"
-          value={8}
+          value="8"
           icon={faClock}
-          iconBgColor="bg-purple-50"
           iconColor="text-purple-600"
-          iconSize="large"
-          roundedClass="rounded-xl"
-          containerPadding="p-6"
+          iconBgColor="bg-purple-50"
+          size="medium"
+          variant="rounded-xl"
         />
       </div>
 

@@ -5,71 +5,88 @@ interface StatsCardProps {
   title: string;
   value: string | number;
   icon: IconProp;
-  iconBgColor?: string;
-  iconColor?: string;
-  iconSize?: "small" | "medium" | "large";
-  className?: string;
-  roundedClass?: string;
-  shadowClass?: string;
-  containerPadding?: string;
+  iconColor: string;
+  iconBgColor: string;
+  size?: "small" | "large" | "medium";
+  variant?: "default" | "rounded-xl";
 }
 
 export default function StatsCard({
   title,
   value,
   icon,
-  iconBgColor = "bg-blue-100",
-  iconColor = "text-blue-600",
-  iconSize = "medium",
-  className = "",
-  roundedClass = "rounded-lg",
-  shadowClass = "shadow-sm",
-  containerPadding,
+  iconColor,
+  iconBgColor,
+  size = "large",
+  variant = "default",
 }: StatsCardProps) {
-  const iconSizes = {
-    small: "w-4 h-4",
-    medium: "w-5 h-5",
-    large: "w-6 h-6",
-  };
+  // Container classes based on size
+  const containerClasses =
+    size === "large" ? "p-4 sm:p-6" : size === "medium" ? "p-6" : "p-4";
 
-  const iconContainerSizes = {
-    small: "w-8 h-8",
-    medium: "w-8 h-8",
-    large: "w-12 h-12",
-  };
+  // Icon container size
+  const iconSize =
+    size === "large"
+      ? "w-12 h-12"
+      : size === "medium"
+        ? "p-3" // Special handling for medium
+        : "w-8 h-8";
 
-  const valueTextSizes = {
-    small: "text-xl font-semibold",
-    medium: "text-xl font-semibold",
-    large: "text-3xl font-bold",
-  };
+  // Icon size
+  const iconInnerSize =
+    size === "large" ? "w-6 h-6" : size === "medium" ? "w-6 h-6" : "w-5 h-5";
 
-  const defaultContainerPadding = {
-    small: "p-4",
-    medium: "p-4",
-    large: "p-4 sm:p-6",
-  };
+  // Text margin
+  const textMargin =
+    size === "large" ? "ml-4" : size === "medium" ? "ml-4" : "ml-3";
 
-  const paddingClass = containerPadding || defaultContainerPadding[iconSize];
+  // Value text size
+  const valueSize =
+    size === "large"
+      ? "text-3xl font-bold"
+      : size === "medium"
+        ? "text-2xl font-bold"
+        : "text-xl font-semibold";
+
+  // Card variant styles
+  const cardClasses =
+    variant === "rounded-xl"
+      ? "bg-white rounded-xl shadow-sm border border-gray-200"
+      : "bg-white rounded-lg shadow-sm border border-gray-200";
+
+  // Icon container classes
+  const iconContainerClasses =
+    size === "medium"
+      ? `${iconSize} ${iconBgColor} rounded-lg flex items-center justify-center`
+      : `${iconSize} ${iconBgColor} rounded-lg flex items-center justify-center`;
+
+  // Title text color for different variants
+  const titleColor =
+    variant === "rounded-xl"
+      ? "text-sm font-medium text-gray-600"
+      : "text-sm font-medium text-gray-500";
 
   return (
-    <div
-      className={`bg-white ${roundedClass} ${shadowClass} border border-gray-200 ${paddingClass} ${className}`}
-    >
-      <div className="flex items-center">
-        <div className="flex-shrink-0">
-          <div
-            className={`${iconContainerSizes[iconSize]} ${iconBgColor} rounded-lg flex items-center justify-center`}
-          >
-            <FontAwesomeIcon
-              icon={icon}
-              className={`${iconSizes[iconSize]} ${iconColor}`}
-            />
+    <div className={cardClasses}>
+      <div className={containerClasses}>
+        <div className="flex items-center">
+          <div className="flex-shrink-0">
+            <div className={iconContainerClasses}>
+              <FontAwesomeIcon
+                icon={icon}
+                className={`${iconInnerSize} ${iconColor}`}
+              />
+            </div>
           </div>
-        </div>
-        <div className="ml-3 sm:ml-4 flex-1">
-          <p className="text-sm font-medium text-gray-500">{title}</p>
-          <p className={`${valueTextSizes[iconSize]} text-gray-900`}>{value}</p>
+          <div className={`${textMargin} flex-1`}>
+            <p className={titleColor}>{title}</p>
+            <p className={`${valueSize} text-gray-900`}>
+              {typeof value === "number" &&
+              title.toLowerCase().includes("amount")
+                ? `$${value.toLocaleString()}`
+                : value}
+            </p>
+          </div>
         </div>
       </div>
     </div>

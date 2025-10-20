@@ -12,6 +12,8 @@ import { rootAuthLoader } from "@clerk/react-router/server";
 import type { Route } from "./+types/root";
 import "./app.css";
 import "./lib/fontawesome";
+import { AppProvider } from "./contexts/AppContext";
+import AppWrapper from "./components/AppWrapper";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -51,7 +53,9 @@ export async function loader(args: Route.LoaderArgs) {
 export default function App({ loaderData }: Route.ComponentProps) {
   return (
     <ClerkProvider loaderData={loaderData}>
-      <Outlet />
+      <AppProvider>
+        <AppWrapper />
+      </AppProvider>
     </ClerkProvider>
   );
 }

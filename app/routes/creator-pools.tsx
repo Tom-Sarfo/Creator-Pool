@@ -15,7 +15,10 @@ import {
 import Tabs from "../components/Tabs";
 import EnablePoolModal from "../components/EnablePoolModal";
 import StatsCard from "../components/StatsCard";
-import { CREATOR_POOLS_DATA } from "../lib/constants";
+import { CREATOR_POOLS_DATA, RECENT_VIDEOS } from "../lib/constants";
+import { extractDurationAndTimeRemaining } from "../lib/utils";
+import { useAppContext } from "../contexts/AppContext";
+import type { Pool } from "../contexts/AppContext";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -31,32 +34,30 @@ export default function CreatorPools() {
   const [activeTab, setActiveTab] = useState("active");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const pools = CREATOR_POOLS_DATA;
+  const { pools, addPool, filteredPools } = useAppContext();
+
+  // Get filtered pools using context function
+  const currentPools = filteredPools(
+    activeTab as "active" | "settled" | "expired" | "all"
+  );
 
   const tabs = [
     {
       id: "active",
       name: "Active",
-      count: pools.filter((p) => p.status === "active").length,
+      count: filteredPools("active").length,
     },
     {
       id: "settled",
       name: "Settled",
-      count: pools.filter((p) => p.status === "settled").length,
+      count: filteredPools("settled").length,
     },
     {
       id: "expired",
       name: "Expired",
-      count: pools.filter((p) => p.status === "expired").length,
+      count: filteredPools("expired").length,
     },
   ];
-
-  const filteredPools = pools.filter((pool) => {
-    if (activeTab === "active") return pool.status === "active";
-    if (activeTab === "settled") return pool.status === "settled";
-    if (activeTab === "expired") return pool.status === "expired";
-    return true;
-  });
 
   const getStatusBadge = (status: string) => {
     const styles = {
@@ -83,10 +84,55 @@ export default function CreatorPools() {
     setIsModalOpen(false);
   };
 
+  // Moved: extractDurationAndTimeRemaining to app/lib/utils.ts
+
   const handleCreatePool = (poolData: any) => {
-    // Handle pool creation logic here
-    console.log("Creating pool:", poolData);
-    // You can add API call to create the pool here
+    // Find the selected video from RECENT_VIDEOS
+    const selectedVideo = RECENT_VIDEOS.find(
+      (video) => video.id === poolData.videoId
+    );
+
+    // Extract video title from the selected video or use default
+    const videoTitle =
+      selectedVideo?.title || `Pool for Video ${poolData.videoId}`;
+
+    // Extract target views and duration from question text
+    const questionText =
+      poolData.question?.text || "Will this video reach target views?";
+    const targetMatch = questionText.match(/([\d,]+)\s*views?/i);
+    const targetViews = targetMatch
+      ? parseInt(targetMatch[1].replace(/,/g, ""))
+      : 50000;
+
+    // Extract duration and calculate time remaining
+    const { duration, timeRemaining, totalDays } =
+      extractDurationAndTimeRemaining(questionText);
+
+    // Create new pool object
+    const newPool: Omit<Pool, "id"> = {
+      title: videoTitle,
+      videoTitle: videoTitle,
+      videoId: poolData.videoId, // Store the video ID for tracking
+      question: questionText,
+      participants: 0,
+      totalStake: poolData.pledgeAmount || 0,
+      timeRemaining: timeRemaining,
+      status: "active",
+      createdAt: new Date().toISOString(),
+      targetViews: targetViews,
+      currentViews: 0,
+      duration: totalDays,
+      // Add additional properties based on the selected video if available
+      ...(selectedVideo && {
+        thumbnail: selectedVideo.thumbnail,
+      }),
+    };
+
+    // Add pool to context state
+    addPool(newPool);
+
+    // Close modal after successful creation
+    handleCloseModal();
   };
 
   return (
@@ -120,27 +166,27 @@ export default function CreatorPools() {
           title="Active Pools"
           value={pools.filter((p) => p.status === "active").length}
           icon={faUsersRectangle}
-          iconBgColor="bg-green-100"
           iconColor="text-green-600"
-          iconSize="medium"
+          iconBgColor="bg-green-100"
+          size="small"
         />
 
         <StatsCard
           title="Total Participants"
           value={pools.reduce((sum, pool) => sum + pool.participants, 0)}
           icon={faUsers}
-          iconBgColor="bg-blue-100"
           iconColor="text-blue-600"
-          iconSize="medium"
+          iconBgColor="bg-blue-100"
+          size="small"
         />
 
         <StatsCard
           title="Total Staked"
           value={`$${pools.reduce((sum, pool) => sum + pool.totalStake, 0).toLocaleString()}`}
           icon={faDollarSign}
-          iconBgColor="bg-purple-100"
           iconColor="text-purple-600"
-          iconSize="medium"
+          iconBgColor="bg-purple-100"
+          size="small"
         />
 
         <StatsCard
@@ -150,9 +196,9 @@ export default function CreatorPools() {
             .reduce((sum, pool) => sum + (pool.creatorEarnings || 0), 0)
             .toFixed(2)}`}
           icon={faDollarSign}
-          iconBgColor="bg-yellow-100"
           iconColor="text-yellow-600"
-          iconSize="medium"
+          iconBgColor="bg-yellow-100"
+          size="small"
         />
       </div>
 
@@ -163,7 +209,7 @@ export default function CreatorPools() {
 
       {/* Pools list */}
       <div className="space-y-4">
-        {filteredPools.map((pool) => (
+        {currentPools.map((pool) => (
           <div
             key={pool.id}
             className="relative bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6"
@@ -204,13 +250,13 @@ export default function CreatorPools() {
                 <div>
                   <p className="text-gray-500">Target Views</p>
                   <p className="font-medium text-gray-900">
-                    {pool.targetViews.toLocaleString()}
+                    {(pool.targetViews || 0).toLocaleString()}
                   </p>
                 </div>
                 <div>
                   <p className="text-gray-500">Current Views</p>
                   <p className="font-medium text-gray-900">
-                    {pool.currentViews.toLocaleString()}
+                    {(pool.currentViews || 0).toLocaleString()}
                   </p>
                 </div>
               </div>
@@ -234,7 +280,10 @@ export default function CreatorPools() {
                         : "Final progress"}
                   </span>
                   <span>
-                    {Math.round((pool.currentViews / pool.targetViews) * 100)}%
+                    {Math.round(
+                      ((pool.currentViews || 0) / (pool.targetViews || 1)) * 100
+                    )}
+                    %
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-3">
@@ -247,7 +296,7 @@ export default function CreatorPools() {
                           : "bg-gray-500"
                     }`}
                     style={{
-                      width: `${Math.min((pool.currentViews / pool.targetViews) * 100, 100)}%`,
+                      width: `${Math.min(((pool.currentViews || 0) / (pool.targetViews || 1)) * 100, 100)}%`,
                     }}
                   ></div>
                 </div>
@@ -290,7 +339,7 @@ export default function CreatorPools() {
       </div>
 
       {/* Empty state */}
-      {filteredPools.length === 0 && (
+      {currentPools.length === 0 && (
         <div className="text-center py-12">
           <FontAwesomeIcon
             icon={faBullseye}

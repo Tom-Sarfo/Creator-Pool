@@ -16,13 +16,16 @@ import {
   faLayerGroup,
   faUsersRectangle,
   faCoins,
+  faCheckCircle,
 } from "@fortawesome/free-solid-svg-icons";
 import { useState } from "react";
 import { RECENT_VIDEOS, CREATOR_STATS } from "../lib/constants";
+import { extractDurationAndTimeRemaining } from "../lib/utils";
 import Tabs from "../components/Tabs";
 import EnablePoolModal from "../components/EnablePoolModal";
 import StatsCard from "../components/StatsCard";
-import Pagination from "../components/Pagination";
+import { useAppContext } from "../contexts/AppContext";
+import type { Pool } from "../contexts/AppContext";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -37,45 +40,55 @@ export function meta({}: Route.MetaArgs) {
 export default function CreatorDashboard() {
   const [activeTab, setActiveTab] = useState("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedVideo, setSelectedVideo] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [selectedVideo, setSelectedVideo] = useState<any>(null);
   const stats = CREATOR_STATS;
   const videos = RECENT_VIDEOS;
 
+  const { addPool, pools, filteredPools } = useAppContext();
+
+  // Get videos with their pool status based on actual pools data
+  const getVideosWithPoolStatus = () => {
+    return videos.map((video) => {
+      // Find if this video has an active pool
+      const activePool = pools.find(
+        (pool) => pool.videoId === video.id && pool.status === "active"
+      );
+
+      // Find if this video has any pool (active, settled, etc.)
+      const anyPool = pools.find((pool) => pool.videoId === video.id);
+
+      return {
+        ...video,
+        poolStatus: activePool ? "active" : anyPool ? "settled" : "ready",
+        hasPool: !!anyPool,
+        poolData: activePool || anyPool,
+      };
+    });
+  };
+
   // Filter videos based on active tab
   const getFilteredVideos = () => {
+    const videosWithStatus = getVideosWithPoolStatus();
+
     switch (activeTab) {
       case "active":
-        return videos.filter(
-          (video) =>
-            video.poolStatus === "active" || video.poolStatus === "closing"
+        return videosWithStatus.filter(
+          (video) => video.poolStatus === "active"
         );
       case "unlisted":
-        return videos.filter((video) => video.status === "unlisted");
+        return videosWithStatus.filter((video) => video.status === "unlisted");
       default:
-        return videos;
+        return videosWithStatus;
     }
   };
 
   const filteredVideos = getFilteredVideos();
-  const totalVideos = filteredVideos.length;
+  const videosWithStatus = getVideosWithPoolStatus();
 
-  // Pagination logic
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedVideos = filteredVideos.slice(startIndex, endIndex);
-
-  // Reset to first page when tab changes
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-    setCurrentPage(1);
-  };
-
-  const activeVideoCount = videos.filter(
-    (video) => video.poolStatus === "active" || video.poolStatus === "closing"
+  const activeVideoCount = videosWithStatus.filter(
+    (video) => video.poolStatus === "active"
   ).length;
-  const unlistedVideoCount = videos.filter(
+  const unlistedVideoCount = videosWithStatus.filter(
     (video) => video.status === "unlisted"
   ).length;
 
@@ -141,14 +154,58 @@ export default function CreatorDashboard() {
     setSelectedVideo(null);
   };
 
-  const handleEnablePool = (poolData: any) => {
-    // Handle pool creation/enabling logic here
-    console.log("Enabling pool:", poolData);
-    // You can add API call to create the pool here
-  };
+  // Moved: extractDurationAndTimeRemaining to app/lib/utils.ts
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+  const handleEnablePool = (poolData: any) => {
+    // Find the selected video from RECENT_VIDEOS if videoId is provided
+    const selectedVideoData = poolData.videoId
+      ? RECENT_VIDEOS.find((video) => video.id === poolData.videoId)
+      : selectedVideo;
+
+    // Get video title from the selected video or use default
+    const videoTitle =
+      selectedVideoData?.title ||
+      (selectedVideo
+        ? selectedVideo.title
+        : `Pool for Video ${poolData.videoId}`);
+
+    // Extract target views and duration from question text
+    const questionText =
+      poolData.question?.text || "Will this video reach target views?";
+    const targetMatch = questionText.match(/([\d,]+)\s*views?/i);
+    const targetViews = targetMatch
+      ? parseInt(targetMatch[1].replace(/,/g, ""))
+      : 50000;
+
+    // Extract duration and calculate time remaining
+    const { duration, timeRemaining, totalDays } =
+      extractDurationAndTimeRemaining(questionText);
+
+    // Create new pool object
+    const newPool: Omit<Pool, "id"> = {
+      title: videoTitle,
+      videoTitle: videoTitle,
+      videoId: poolData.videoId, // Store the video ID for tracking
+      question: questionText,
+      participants: 0,
+      totalStake: poolData.pledgeAmount || 0,
+      timeRemaining: timeRemaining,
+      status: "active",
+      createdAt: new Date().toISOString(),
+      targetViews: targetViews,
+      currentViews: 0,
+      duration: totalDays,
+      // Add additional properties based on the selected video if available
+      ...(selectedVideoData && {
+        thumbnail: selectedVideoData.thumbnail,
+      }),
+    };
+
+    // Add pool to context state
+    addPool(newPool);
+
+    // Close modal after successful creation
+    handleCloseModal();
   };
 
   return (
@@ -169,36 +226,39 @@ export default function CreatorDashboard() {
           title="Total Videos"
           value={stats.totalVideos}
           icon={faPlay}
-          iconBgColor="bg-blue-100"
           iconColor="text-blue-600"
-          iconSize="large"
+          iconBgColor="bg-blue-100"
+          size="large"
         />
 
         <StatsCard
           title="Active Pools"
-          value={stats.activePools}
+          value={filteredPools("active").length}
           icon={faUsersRectangle}
-          iconBgColor="bg-green-100"
           iconColor="text-green-600"
-          iconSize="large"
+          iconBgColor="bg-green-100"
+          size="large"
         />
 
         <StatsCard
           title="Total Pledged Amount"
-          value={`$${stats.totalPledgedAmount}`}
+          value={`$${pools.reduce((sum, pool) => sum + pool.totalStake, 0).toLocaleString()}`}
           icon={faCoins}
-          iconBgColor="bg-purple-100"
           iconColor="text-purple-600"
-          iconSize="large"
+          iconBgColor="bg-purple-100"
+          size="large"
         />
 
         <StatsCard
           title="Total Royalties Earned"
-          value={`$${stats.totalRoyaltiesEarned}`}
+          value={`$${pools
+            .filter((p) => p.creatorEarnings)
+            .reduce((sum, pool) => sum + (pool.creatorEarnings || 0), 0)
+            .toFixed(2)}`}
           icon={faTrophy}
-          iconBgColor="bg-red-100"
           iconColor="text-red-600"
-          iconSize="large"
+          iconBgColor="bg-red-100"
+          size="large"
         />
       </div>
 
@@ -209,14 +269,17 @@ export default function CreatorDashboard() {
           <Tabs
             tabs={videoTabs}
             activeTab={activeTab}
-            onTabChange={handleTabChange}
+            onTabChange={setActiveTab}
           />
         </div>
 
         {/* Video List */}
         <div className="divide-y divide-gray-200">
-          {paginatedVideos.map((video) => (
-            <div key={video.id} className="p-4 sm:p-6">
+          {filteredVideos.map((video) => (
+            <div
+              key={video.id}
+              className={`p-4 sm:p-6 ${video.hasPool && video.status === "unlisted" ? "opacity-50 bg-gray-50" : ""}`}
+            >
               <div className="flex items-start space-x-4">
                 {/* Video Thumbnail */}
                 <div className="flex-shrink-0 relative">
@@ -264,7 +327,7 @@ export default function CreatorDashboard() {
                   {/* Pool Status and Action */}
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      {video.poolStatus === "active" && (
+                      {video.poolStatus === "active" && video.poolData && (
                         <div className="flex items-center space-x-2">
                           <span
                             className={`px-2 py-1 rounded-full text-xs font-medium ${getPoolStatusColor(video.poolStatus)}`}
@@ -272,8 +335,8 @@ export default function CreatorDashboard() {
                             Active Pool
                           </span>
                           <span className="text-xs text-gray-600">
-                            ${video.poolStake.toLocaleString()} pool •{" "}
-                            {video.poolParticipants} predictions
+                            ${video.poolData.totalStake.toLocaleString()} pool •{" "}
+                            {video.poolData.participants} predictions
                           </span>
                         </div>
                       )}
@@ -290,7 +353,7 @@ export default function CreatorDashboard() {
                           </span>
                         </div>
                       )}
-                      {video.poolStatus === "settled" && (
+                      {video.poolStatus === "settled" && video.poolData && (
                         <div className="flex items-center space-x-2">
                           <span
                             className={`px-2 py-1 rounded-full text-xs font-medium ${getPoolStatusColor(video.poolStatus)}`}
@@ -298,7 +361,8 @@ export default function CreatorDashboard() {
                             Pool Settled
                           </span>
                           <span className="text-xs text-gray-600">
-                            Target reached • +${video.earnedAmount} earned
+                            Target reached • +$
+                            {video.poolData.creatorEarnings || 0} earned
                           </span>
                         </div>
                       )}
@@ -318,9 +382,9 @@ export default function CreatorDashboard() {
 
                     {/* Action Button and Menu */}
                     <div className="flex items-center space-x-2 ml-4">
-                      {video.poolStatus === "active" && (
+                      {video.poolStatus === "active" && video.poolData && (
                         <Link
-                          to={`/creator/pool/${video.id}?status=active`}
+                          to={`/creator/pool/${video.poolData.id}?status=active`}
                           className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors"
                         >
                           View Pool
@@ -334,15 +398,15 @@ export default function CreatorDashboard() {
                           View Pool
                         </Link>
                       )}
-                      {video.poolStatus === "settled" && (
+                      {video.poolStatus === "settled" && video.poolData && (
                         <Link
-                          to={`/creator/pool/${video.id}?status=settled`}
+                          to={`/creator/pool/${video.poolData.id}?status=settled`}
                           className="px-4 py-2 bg-white text-gray-700 border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
                         >
                           View Results
                         </Link>
                       )}
-                      {video.poolStatus === "ready" && (
+                      {video.poolStatus === "ready" && !video.hasPool && (
                         <button
                           onClick={() => handleEnablePoolClick(video)}
                           className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-1"
@@ -350,6 +414,15 @@ export default function CreatorDashboard() {
                           <FontAwesomeIcon icon={faPlus} className="w-4 h-4" />
                           <span>Enable Prediction Pool</span>
                         </button>
+                      )}
+                      {video.hasPool && video.status === "unlisted" && (
+                        <div className="px-4 py-2 bg-gray-100 text-gray-500 text-sm font-medium rounded-lg flex items-center space-x-1">
+                          <FontAwesomeIcon
+                            icon={faCheckCircle}
+                            className="w-4 h-4"
+                          />
+                          <span>Pool Created</span>
+                        </div>
                       )}
                       <button className="p-2 text-gray-400 hover:text-gray-600">
                         <FontAwesomeIcon
@@ -361,16 +434,30 @@ export default function CreatorDashboard() {
                   </div>
 
                   {/* Progress Bar for Active Pools */}
-                  {video.poolStatus === "active" && (
+                  {video.poolStatus === "active" && video.poolData && (
                     <div className="mt-2">
                       <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-                        <span>Progress to 50K views</span>
-                        <span>57.4%</span>
+                        <span>
+                          Progress to{" "}
+                          {video.poolData.targetViews?.toLocaleString() ||
+                            "target"}{" "}
+                          views
+                        </span>
+                        <span>
+                          {Math.round(
+                            ((video.poolData.currentViews || 0) /
+                              (video.poolData.targetViews || 1)) *
+                              100
+                          )}
+                          %
+                        </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
                           className="bg-purple-600 h-2 rounded-full"
-                          style={{ width: "57.4%" }}
+                          style={{
+                            width: `${Math.min(((video.poolData.currentViews || 0) / (video.poolData.targetViews || 1)) * 100, 100)}%`,
+                          }}
                         ></div>
                       </div>
                     </div>
@@ -382,13 +469,34 @@ export default function CreatorDashboard() {
         </div>
 
         {/* Pagination */}
-        <Pagination
-          currentPage={currentPage}
-          totalItems={totalVideos}
-          itemsPerPage={itemsPerPage}
-          onPageChange={handlePageChange}
-          itemsLabel="videos"
-        />
+        <div className="px-4 sm:px-6 py-4 border-t border-gray-200">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-700">
+              Showing 1-{filteredVideos.length} of {stats.totalVideos} videos
+            </p>
+            <div className="flex items-center space-x-2">
+              <button className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50">
+                Previous
+              </button>
+              <button className="px-3 py-1 text-sm bg-purple-600 text-white rounded">
+                1
+              </button>
+              <button className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900">
+                2
+              </button>
+              <button className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900">
+                3
+              </button>
+              <span className="px-2 text-sm text-gray-500">...</span>
+              <button className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900">
+                42
+              </button>
+              <button className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900">
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Enable Pool Modal */}
