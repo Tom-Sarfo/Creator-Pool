@@ -22,6 +22,7 @@ import {
   PREDICTOR_LOST_PREDICTIONS_DATA,
 } from "../lib/constants";
 import Tabs from "../components/Tabs";
+import StatsCard from "../components/StatsCard";
 
 export default function PredictorPredictions() {
   const [activeTab, setActiveTab] = useState("active");
@@ -93,69 +94,49 @@ export default function PredictorPredictions() {
 
       {/* Stats Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-blue-50 rounded-lg">
-              <FontAwesomeIcon
-                icon={faBrain}
-                className="w-6 h-6 text-blue-600"
-              />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">
-                Total Predictions
-              </p>
-              <p className="text-2xl font-bold text-gray-900">25</p>
-            </div>
-          </div>
-        </div>
+        <StatsCard
+          title="Total Predictions"
+          value={25}
+          icon={faBrain}
+          iconBgColor="bg-blue-50"
+          iconColor="text-blue-600"
+          iconSize="large"
+          roundedClass="rounded-xl"
+          containerPadding="p-6"
+        />
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-green-50 rounded-lg">
-              <FontAwesomeIcon
-                icon={faBullseye}
-                className="w-6 h-6 text-green-600"
-              />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Win Rate</p>
-              <p className="text-2xl font-bold text-gray-900">78.7%</p>
-            </div>
-          </div>
-        </div>
+        <StatsCard
+          title="Win Rate"
+          value="78.7%"
+          icon={faBullseye}
+          iconBgColor="bg-green-50"
+          iconColor="text-green-600"
+          iconSize="large"
+          roundedClass="rounded-xl"
+          containerPadding="p-6"
+        />
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-yellow-50 rounded-lg">
-              <FontAwesomeIcon
-                icon={faDollarSign}
-                className="w-6 h-6 text-yellow-600"
-              />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">
-                Total Earnings
-              </p>
-              <p className="text-2xl font-bold text-gray-900">$1,247.50</p>
-            </div>
-          </div>
-        </div>
+        <StatsCard
+          title="Total Earnings"
+          value="$1,247.50"
+          icon={faDollarSign}
+          iconBgColor="bg-yellow-50"
+          iconColor="text-yellow-600"
+          iconSize="large"
+          roundedClass="rounded-xl"
+          containerPadding="p-6"
+        />
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-purple-50 rounded-lg">
-              <FontAwesomeIcon
-                icon={faClock}
-                className="w-6 h-6 text-purple-600"
-              />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Active Now</p>
-              <p className="text-2xl font-bold text-gray-900">8</p>
-            </div>
-          </div>
-        </div>
+        <StatsCard
+          title="Active Now"
+          value={8}
+          icon={faClock}
+          iconBgColor="bg-purple-50"
+          iconColor="text-purple-600"
+          iconSize="large"
+          roundedClass="rounded-xl"
+          containerPadding="p-6"
+        />
       </div>
 
       {/* Tabs */}

@@ -14,6 +14,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import Tabs from "../components/Tabs";
 import EnablePoolModal from "../components/EnablePoolModal";
+import StatsCard from "../components/StatsCard";
 import { CREATOR_POOLS_DATA } from "../lib/constants";
 
 export function meta({}: Route.MetaArgs) {
@@ -115,90 +116,44 @@ export default function CreatorPools() {
 
       {/* Stats summary */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                <FontAwesomeIcon
-                  icon={faUsersRectangle}
-                  className="w-5 h-5 text-green-600"
-                />
-              </div>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-500">Active Pools</p>
-              <p className="text-xl font-semibold text-gray-900">
-                {pools.filter((p) => p.status === "active").length}
-              </p>
-            </div>
-          </div>
-        </div>
+        <StatsCard
+          title="Active Pools"
+          value={pools.filter((p) => p.status === "active").length}
+          icon={faUsersRectangle}
+          iconBgColor="bg-green-100"
+          iconColor="text-green-600"
+          iconSize="medium"
+        />
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                <FontAwesomeIcon
-                  icon={faUsers}
-                  className="w-5 h-5 text-blue-600"
-                />
-              </div>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-500">
-                Total Participants
-              </p>
-              <p className="text-xl font-semibold text-gray-900">
-                {pools.reduce((sum, pool) => sum + pool.participants, 0)}
-              </p>
-            </div>
-          </div>
-        </div>
+        <StatsCard
+          title="Total Participants"
+          value={pools.reduce((sum, pool) => sum + pool.participants, 0)}
+          icon={faUsers}
+          iconBgColor="bg-blue-100"
+          iconColor="text-blue-600"
+          iconSize="medium"
+        />
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                <FontAwesomeIcon
-                  icon={faDollarSign}
-                  className="w-5 h-5 text-purple-600"
-                />
-              </div>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-500">Total Staked</p>
-              <p className="text-xl font-semibold text-gray-900">
-                $
-                {pools
-                  .reduce((sum, pool) => sum + pool.totalStake, 0)
-                  .toLocaleString()}
-              </p>
-            </div>
-          </div>
-        </div>
+        <StatsCard
+          title="Total Staked"
+          value={`$${pools.reduce((sum, pool) => sum + pool.totalStake, 0).toLocaleString()}`}
+          icon={faDollarSign}
+          iconBgColor="bg-purple-100"
+          iconColor="text-purple-600"
+          iconSize="medium"
+        />
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <FontAwesomeIcon
-                  icon={faDollarSign}
-                  className="w-5 h-5 text-yellow-600"
-                />
-              </div>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-500">Total Earned</p>
-              <p className="text-xl font-semibold text-gray-900">
-                $
-                {pools
-                  .filter((p) => p.creatorEarnings)
-                  .reduce((sum, pool) => sum + (pool.creatorEarnings || 0), 0)
-                  .toFixed(2)}
-              </p>
-            </div>
-          </div>
-        </div>
+        <StatsCard
+          title="Total Earned"
+          value={`$${pools
+            .filter((p) => p.creatorEarnings)
+            .reduce((sum, pool) => sum + (pool.creatorEarnings || 0), 0)
+            .toFixed(2)}`}
+          icon={faDollarSign}
+          iconBgColor="bg-yellow-100"
+          iconColor="text-yellow-600"
+          iconSize="medium"
+        />
       </div>
 
       {/* Tabs */}

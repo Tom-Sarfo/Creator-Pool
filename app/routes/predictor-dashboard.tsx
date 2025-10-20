@@ -16,6 +16,7 @@ import {
   RECENT_POOLS,
   PREDICTOR_DASHBOARD_STATS,
 } from "../lib/constants";
+import StatsCard from "../components/StatsCard";
 
 export default function PredictorDashboard() {
   const stats = PREDICTOR_DASHBOARD_STATS;
@@ -52,79 +53,41 @@ export default function PredictorDashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <FontAwesomeIcon
-                icon={faChartBar}
-                className="w-6 h-6 text-blue-600"
-              />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">
-                Total Predictions
-              </p>
-              <p className="text-2xl font-bold text-gray-900">
-                {stats.totalPredictions}
-              </p>
-            </div>
-          </div>
-        </div>
+        <StatsCard
+          title="Total Predictions"
+          value={stats.totalPredictions}
+          icon={faChartBar}
+          iconBgColor="bg-blue-100"
+          iconColor="text-blue-600"
+          iconSize="large"
+        />
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <FontAwesomeIcon
-                icon={faBullseye}
-                className="w-6 h-6 text-green-600"
-              />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Win Rate</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {stats.winRate}%
-              </p>
-            </div>
-          </div>
-        </div>
+        <StatsCard
+          title="Win Rate"
+          value={`${stats.winRate}%`}
+          icon={faBullseye}
+          iconBgColor="bg-green-100"
+          iconColor="text-green-600"
+          iconSize="large"
+        />
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <FontAwesomeIcon
-                icon={faDollarSign}
-                className="w-6 h-6 text-yellow-600"
-              />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">
-                Total Earnings
-              </p>
-              <p className="text-2xl font-bold text-gray-900">
-                ${stats.totalEarnings}
-              </p>
-            </div>
-          </div>
-        </div>
+        <StatsCard
+          title="Total Earnings"
+          value={`$${stats.totalEarnings}`}
+          icon={faDollarSign}
+          iconBgColor="bg-yellow-100"
+          iconColor="text-yellow-600"
+          iconSize="large"
+        />
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <FontAwesomeIcon
-                icon={faBrain}
-                className="w-6 h-6 text-purple-600"
-              />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">
-                Active Predictions
-              </p>
-              <p className="text-2xl font-bold text-gray-900">
-                {stats.activePredictions}
-              </p>
-            </div>
-          </div>
-        </div>
+        <StatsCard
+          title="Active Predictions"
+          value={stats.activePredictions}
+          icon={faBrain}
+          iconBgColor="bg-purple-100"
+          iconColor="text-purple-600"
+          iconSize="large"
+        />
       </div>
 
       {/* Quick Actions */}

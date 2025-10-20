@@ -21,6 +21,8 @@ import { useState } from "react";
 import { RECENT_VIDEOS, CREATOR_STATS } from "../lib/constants";
 import Tabs from "../components/Tabs";
 import EnablePoolModal from "../components/EnablePoolModal";
+import StatsCard from "../components/StatsCard";
+import Pagination from "../components/Pagination";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -36,6 +38,8 @@ export default function CreatorDashboard() {
   const [activeTab, setActiveTab] = useState("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const stats = CREATOR_STATS;
   const videos = RECENT_VIDEOS;
 
@@ -55,6 +59,18 @@ export default function CreatorDashboard() {
   };
 
   const filteredVideos = getFilteredVideos();
+  const totalVideos = filteredVideos.length;
+
+  // Pagination logic
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedVideos = filteredVideos.slice(startIndex, endIndex);
+
+  // Reset to first page when tab changes
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setCurrentPage(1);
+  };
 
   const activeVideoCount = videos.filter(
     (video) => video.poolStatus === "active" || video.poolStatus === "closing"
@@ -131,6 +147,10 @@ export default function CreatorDashboard() {
     // You can add API call to create the pool here
   };
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen">
       {/* Page Header */}
@@ -145,89 +165,41 @@ export default function CreatorDashboard() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
-        {/* Total Videos */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <FontAwesomeIcon
-                  icon={faPlay}
-                  className="w-6 h-6 text-blue-600"
-                />
-              </div>
-            </div>
-            <div className="ml-4 flex-1">
-              <p className="text-sm font-medium text-gray-500">Total Videos</p>
-              <p className="text-3xl font-bold text-gray-900">
-                {stats.totalVideos}
-              </p>
-            </div>
-          </div>
-        </div>
+        <StatsCard
+          title="Total Videos"
+          value={stats.totalVideos}
+          icon={faPlay}
+          iconBgColor="bg-blue-100"
+          iconColor="text-blue-600"
+          iconSize="large"
+        />
 
-        {/* Active Pools */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <FontAwesomeIcon
-                  icon={faUsersRectangle}
-                  className="w-6 h-6 text-green-600"
-                />
-              </div>
-            </div>
-            <div className="ml-4 flex-1">
-              <p className="text-sm font-medium text-gray-500">Active Pools</p>
-              <p className="text-3xl font-bold text-gray-900">
-                {stats.activePools}
-              </p>
-            </div>
-          </div>
-        </div>
+        <StatsCard
+          title="Active Pools"
+          value={stats.activePools}
+          icon={faUsersRectangle}
+          iconBgColor="bg-green-100"
+          iconColor="text-green-600"
+          iconSize="large"
+        />
 
-        {/* Total Pledged Amount */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <FontAwesomeIcon
-                  icon={faCoins}
-                  className="w-6 h-6 text-purple-600"
-                />
-              </div>
-            </div>
-            <div className="ml-4 flex-1">
-              <p className="text-sm font-medium text-gray-500">
-                Total Pledged Amount
-              </p>
-              <p className="text-3xl font-bold text-gray-900">
-                ${stats.totalPledgedAmount}
-              </p>
-            </div>
-          </div>
-        </div>
+        <StatsCard
+          title="Total Pledged Amount"
+          value={`$${stats.totalPledgedAmount}`}
+          icon={faCoins}
+          iconBgColor="bg-purple-100"
+          iconColor="text-purple-600"
+          iconSize="large"
+        />
 
-        {/* Total Royalties Earned */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                <FontAwesomeIcon
-                  icon={faTrophy}
-                  className="w-6 h-6 text-red-600"
-                />
-              </div>
-            </div>
-            <div className="ml-4 flex-1">
-              <p className="text-sm font-medium text-gray-500">
-                Total Royalties Earned
-              </p>
-              <p className="text-3xl font-bold text-gray-900">
-                ${stats.totalRoyaltiesEarned}
-              </p>
-            </div>
-          </div>
-        </div>
+        <StatsCard
+          title="Total Royalties Earned"
+          value={`$${stats.totalRoyaltiesEarned}`}
+          icon={faTrophy}
+          iconBgColor="bg-red-100"
+          iconColor="text-red-600"
+          iconSize="large"
+        />
       </div>
 
       {/* Video List Section */}
@@ -237,13 +209,13 @@ export default function CreatorDashboard() {
           <Tabs
             tabs={videoTabs}
             activeTab={activeTab}
-            onTabChange={setActiveTab}
+            onTabChange={handleTabChange}
           />
         </div>
 
         {/* Video List */}
         <div className="divide-y divide-gray-200">
-          {filteredVideos.map((video) => (
+          {paginatedVideos.map((video) => (
             <div key={video.id} className="p-4 sm:p-6">
               <div className="flex items-start space-x-4">
                 {/* Video Thumbnail */}
@@ -410,34 +382,13 @@ export default function CreatorDashboard() {
         </div>
 
         {/* Pagination */}
-        <div className="px-4 sm:px-6 py-4 border-t border-gray-200">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-700">
-              Showing 1-{filteredVideos.length} of {stats.totalVideos} videos
-            </p>
-            <div className="flex items-center space-x-2">
-              <button className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50">
-                Previous
-              </button>
-              <button className="px-3 py-1 text-sm bg-purple-600 text-white rounded">
-                1
-              </button>
-              <button className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900">
-                2
-              </button>
-              <button className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900">
-                3
-              </button>
-              <span className="px-2 text-sm text-gray-500">...</span>
-              <button className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900">
-                42
-              </button>
-              <button className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900">
-                Next
-              </button>
-            </div>
-          </div>
-        </div>
+        <Pagination
+          currentPage={currentPage}
+          totalItems={totalVideos}
+          itemsPerPage={itemsPerPage}
+          onPageChange={handlePageChange}
+          itemsLabel="videos"
+        />
       </div>
 
       {/* Enable Pool Modal */}
