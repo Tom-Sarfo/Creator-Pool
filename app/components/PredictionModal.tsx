@@ -91,11 +91,12 @@ export default function PredictionModal({
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-full items-center justify-center p-4">
         <div
-          className="fixed inset-0 bg-gray-600 bg-opacity-75"
+          className="fixed inset-0 bg-black bg-opacity-80"
+          style={{ backgroundColor: "rgba(0, 0, 0, 0.8)" }}
           onClick={onClose}
         />
 
-        <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full">
+        <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full prediction-modal">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900">
@@ -179,7 +180,7 @@ export default function PredictionModal({
                     className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
                       stake === amount.toString()
                         ? "border-purple-500 bg-purple-50 text-purple-700"
-                        : "border-gray-300 hover:border-gray-400"
+                        : "border-gray-300 text-gray-700 bg-white hover:border-gray-400 hover:bg-gray-50"
                     }`}
                   >
                     ${amount}
@@ -202,7 +203,7 @@ export default function PredictionModal({
                   placeholder="Enter amount"
                   min="1"
                   max="500"
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:outline-none transition-colors"
                 />
               </div>
 
@@ -272,7 +273,7 @@ export default function PredictionModal({
             <button
               onClick={handleSubmit}
               disabled={!stake || !!error}
-              className="px-6 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              className="px-6 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
             >
               Place Prediction
             </button>

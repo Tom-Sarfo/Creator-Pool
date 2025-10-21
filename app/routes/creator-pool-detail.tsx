@@ -2,6 +2,7 @@ import type { Route } from "./+types/creator-pool-detail";
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useUser } from "@clerk/react-router";
 import {
   faPlay,
   faCalendar,
@@ -27,12 +28,9 @@ import {
   faBullseye,
   faExclamationTriangle,
   faTrophy,
+  faUser,
 } from "@fortawesome/free-solid-svg-icons";
-import {
-  RECENT_PREDICTIONS,
-  STATUS_COLORS,
-  STATUS_TIMELINE,
-} from "../lib/constants";
+import { STATUS_COLORS, STATUS_TIMELINE } from "../lib/constants";
 import { useAppContext } from "../contexts/AppContext";
 
 const getStatusColor = (status: string) =>
@@ -127,7 +125,9 @@ export default function CreatorPoolDetailPage({
   const [showPledgeModal, setShowPledgeModal] = useState(false);
   const [predictionFilter, setPredictionFilter] = useState("all");
 
-  const { getPoolById, pools, getVideoById } = useAppContext();
+  const { getPoolById, pools, getVideoById, getPredictionsByPoolId } =
+    useAppContext();
+  const { user } = useUser();
   const statusParam = searchParams.get("status") || "active";
 
   const poolData = getPoolById(poolId) ||
@@ -140,8 +140,6 @@ export default function CreatorPoolDetailPage({
       timeRemaining: "N/A",
       status: "unknown",
     };
-
-  console.log("poolData", poolData);
 
   const videoData = poolData.videoId ? getVideoById(poolData.videoId) : null;
   const statusData =
@@ -219,37 +217,27 @@ export default function CreatorPoolDetailPage({
     ],
   };
 
-  const recentPredictions = RECENT_PREDICTIONS;
+  // Get real predictions from the context
+  const poolPredictions = getPredictionsByPoolId(poolId);
 
-  // Extended predictions data with creator management features
-  const allPredictions = [
-    ...RECENT_PREDICTIONS,
-    {
-      user: "GamerPro89",
-      time: "1 hour ago",
-      prediction: "YES",
-      amount: 250,
-      status: "active",
-    },
-    {
-      user: "TechEnthusiast",
-      time: "2 hours ago",
-      prediction: "NO",
-      amount: 100,
-      status: "active",
-    },
-    {
-      user: "CreatorFan123",
-      time: "3 hours ago",
-      prediction: "YES",
-      amount: 75,
-      status: "active",
-    },
-  ];
+  // Transform predictions to display format
+  const allPredictions = poolPredictions.map((prediction) => ({
+    id: prediction.id,
+    user: prediction.predictorName || "Anonymous User",
+    time: new Date(prediction.predictedAt).toLocaleString(),
+    prediction: prediction.choice.toUpperCase(),
+    amount: prediction.stake,
+    status: prediction.result || "active",
+    potentialPayout: prediction.potentialPayout,
+    actualPayout: prediction.actualPayout,
+  }));
+
+  // If no real predictions, show a message
+  const hasPredictions = allPredictions.length > 0;
 
   const tabs = [
     { id: "overview", label: "Overview", count: null },
-    { id: "predictions", label: "Predictions", count: pool.participants },
+    { id: "predictions", label: "Predictions", count: allPredictions.length },
     { id: "analytics", label: "Analytics", count: null },
     { id: "settings", label: "Pool Settings", count: null },
   ];
@@ -555,61 +543,99 @@ export default function CreatorPoolDetailPage({
                   </div>
 
                   <div className="space-y-4">
-                    {allPredictions.map((prediction, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-                      >
-                        <div className="flex items-center space-x-4">
-                          <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
-                          <div>
-                            <p className="font-medium text-gray-900">
-                              {prediction.user}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              {prediction.time}
-                            </p>
+                    {hasPredictions ? (
+                      allPredictions.map((prediction) => (
+                        <div
+                          key={prediction.id}
+                          className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+                        >
+                          <div className="flex items-center space-x-4">
+                            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                              <FontAwesomeIcon
+                                icon={faUser}
+                                className="w-5 h-5 text-purple-600"
+                              />
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">
+                                {prediction.user}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                {prediction.time}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-6">
+                            <div className="text-center">
+                              <p
+                                className={`font-medium ${prediction.prediction === "YES" ? "text-green-600" : "text-red-600"}`}
+                              >
+                                {prediction.prediction}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                Prediction
+                              </p>
+                            </div>
+                            <div className="text-center">
+                              <p className="font-medium text-gray-900">
+                                ${prediction.amount}
+                              </p>
+                              <p className="text-sm text-gray-500">Stake</p>
+                            </div>
+                            {prediction.potentialPayout && (
+                              <div className="text-center">
+                                <p className="font-medium text-green-600">
+                                  ${prediction.potentialPayout}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  Potential
+                                </p>
+                              </div>
+                            )}
+                            <div className="flex space-x-2">
+                              <button className="p-2 text-gray-400 hover:text-red-600">
+                                <FontAwesomeIcon
+                                  icon={faFlag}
+                                  className="w-4 h-4"
+                                />
+                              </button>
+                              <button className="p-2 text-gray-400 hover:text-blue-600">
+                                <FontAwesomeIcon
+                                  icon={faBan}
+                                  className="w-4 h-4"
+                                />
+                              </button>
+                            </div>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-6">
-                          <div className="text-center">
-                            <p
-                              className={`font-medium ${prediction.prediction === "YES" ? "text-green-600" : "text-red-600"}`}
-                            >
-                              {prediction.prediction}
-                            </p>
-                            <p className="text-sm text-gray-500">Prediction</p>
-                          </div>
-                          <div className="text-center">
-                            <p className="font-medium text-gray-900">
-                              ${prediction.amount}
-                            </p>
-                            <p className="text-sm text-gray-500">Stake</p>
-                          </div>
-                          <div className="flex space-x-2">
-                            <button className="p-2 text-gray-400 hover:text-red-600">
-                              <FontAwesomeIcon
-                                icon={faFlag}
-                                className="w-4 h-4"
-                              />
-                            </button>
-                            <button className="p-2 text-gray-400 hover:text-blue-600">
-                              <FontAwesomeIcon
-                                icon={faBan}
-                                className="w-4 h-4"
-                              />
-                            </button>
-                          </div>
-                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-12 bg-gray-50 rounded-lg">
+                        <FontAwesomeIcon
+                          icon={faUsers}
+                          className="w-12 h-12 text-gray-400 mx-auto mb-4"
+                        />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                          No Predictions Yet
+                        </h3>
+                        <p className="text-gray-500 mb-4">
+                          This pool hasn't received any predictions yet. Share
+                          your pool to get started!
+                        </p>
+                        <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                          Share Pool
+                        </button>
                       </div>
-                    ))}
+                    )}
                   </div>
 
-                  <div className="mt-6 flex justify-center">
-                    <button className="px-6 py-2 text-sm text-purple-600 hover:text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-50">
-                      Load More Predictions
-                    </button>
-                  </div>
+                  {hasPredictions && (
+                    <div className="mt-6 flex justify-center">
+                      <button className="px-6 py-2 text-sm text-purple-600 hover:text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-50">
+                        Load More Predictions
+                      </button>
+                    </div>
+                  )}
                 </div>
               </>
             )}

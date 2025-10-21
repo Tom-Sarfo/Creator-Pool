@@ -1,11 +1,19 @@
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Link } from "react-router";
+import { useUser } from "@clerk/react-router";
 import { CATEGORIES } from "../lib/constants";
 import { useAppContext } from "../contexts/AppContext";
 import type { Pool } from "../contexts/AppContext";
 import PredictionModal from "../components/PredictionModal";
 import { calculateDynamicOdds } from "../lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 
 export default function PredictorPools() {
   const [activeTab, setActiveTab] = useState("active");
@@ -18,6 +26,7 @@ export default function PredictorPools() {
   >();
 
   const { pools, addPrediction, addToast, calculatePoolOdds } = useAppContext();
+  const { user } = useUser();
   const categories = CATEGORIES;
 
   const getStatusColor = (status: string) => {
@@ -35,9 +44,16 @@ export default function PredictorPools() {
     }
   };
 
-  const filteredPools = pools.filter(
-    (pool) => selectedCategory === "all" || pool.category === selectedCategory
-  );
+  const filteredPools = pools.filter((pool) => {
+    const matchesCategory =
+      selectedCategory === "all" || pool.category === selectedCategory;
+    const matchesSearch =
+      searchQuery === "" ||
+      pool.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      pool.creator?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      pool.question?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   const handlePredictClick = (pool: Pool, choice: "yes" | "no") => {
     setSelectedPool(pool);
@@ -54,8 +70,8 @@ export default function PredictorPools() {
     // Add prediction via context
     addPrediction({
       poolId: selectedPool.id,
-      predictorId: "current-user-id", // TODO: Get from auth context
-      predictorName: "Current User", // TODO: Get from auth context
+      predictorId: user?.id || "anonymous",
+      predictorName: user?.fullName || user?.firstName || "Anonymous User",
       choice: prediction.choice,
       stake: prediction.stake,
       predictedAt: new Date().toISOString(),
@@ -120,7 +136,7 @@ export default function PredictorPools() {
                 placeholder="Search Pool"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full sm:w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full sm:w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:outline-none transition-colors"
               />
               <FontAwesomeIcon
                 icon="search"
@@ -131,21 +147,20 @@ export default function PredictorPools() {
         </div>
       </div>
 
-      {/* Category Chips */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        {categories.map((category) => (
-          <button
-            key={category.id}
-            onClick={() => setSelectedCategory(category.id)}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              selectedCategory === category.id
-                ? "bg-purple-600 text-white"
-                : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-            }`}
-          >
-            {category.name}
-          </button>
-        ))}
+      {/* Category Filter */}
+      <div className="flex justify-center mb-6">
+        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Select category" />
+          </SelectTrigger>
+          <SelectContent>
+            {categories.map((category) => (
+              <SelectItem key={category.id} value={category.id}>
+                {category.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Pools Grid */}

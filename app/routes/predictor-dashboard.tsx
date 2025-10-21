@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useUser } from "@clerk/react-router";
 import {
   faBullseye,
   faChartLine,
@@ -16,10 +17,11 @@ import { useAppContext } from "../contexts/AppContext";
 
 export default function PredictorDashboard() {
   const { pools, predictions, getPredictionsByPredictor } = useAppContext();
+  const { user } = useUser();
 
   // Calculate stats from actual prediction data
   const userPredictions = predictions.filter(
-    (p) => p.predictorId === "current-user-id"
+    (p) => p.predictorId === (user?.id || "anonymous")
   );
 
   const stats = {

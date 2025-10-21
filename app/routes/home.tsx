@@ -75,7 +75,7 @@ export default function Home() {
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
             Join prediction pools for upcoming videos, showcase your insights,
-            and earn rewards when you're right. It's not gambling—it's community
+            and earn rewards when you're right. It's not gambling it's community
             engagement.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

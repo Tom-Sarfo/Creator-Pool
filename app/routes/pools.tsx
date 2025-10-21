@@ -10,6 +10,13 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useState } from "react";
 import { CATEGORIES } from "../lib/constants";
 import { useAppContext } from "../contexts/AppContext";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -24,6 +31,7 @@ export function meta({}: Route.MetaArgs) {
 export default function PoolsPage() {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { pools: allPools } = useAppContext();
   const categories = CATEGORIES;
@@ -45,9 +53,16 @@ export default function PoolsPage() {
     }
   };
 
-  const filteredPools = pools.filter(
-    (pool) => selectedCategory === "all" || pool.category === selectedCategory
-  );
+  const filteredPools = pools.filter((pool) => {
+    const matchesCategory =
+      selectedCategory === "all" || pool.category === selectedCategory;
+    const matchesSearch =
+      searchQuery === "" ||
+      pool.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      pool.creator?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      pool.question?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -103,19 +118,36 @@ export default function PoolsPage() {
             </p>
           </div>
 
-          {/* Category Filter */}
-          <div className="flex justify-center mb-8">
-            <select
+          {/* Search and Category Filter */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search pools..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full sm:w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:outline-none transition-colors"
+              />
+              <FontAwesomeIcon
+                icon="search"
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4"
+              />
+            </div>
+            <Select
               value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              onValueChange={setSelectedCategory}
             >
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Pools Grid */}

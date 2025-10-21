@@ -94,3 +94,11 @@ export function extractDurationAndTimeRemaining(questionText: string) {
   // Default fallback
   return { duration: 7, timeRemaining: "7 days", totalDays: 7 };
 }
+
+// shadcn/ui utility functions
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
