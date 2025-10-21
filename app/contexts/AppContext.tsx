@@ -354,7 +354,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const calculatePoolOdds = (poolId: number): { yes: number; no: number } => {
     const videoWithPool = videos.find((v) => v.poolId === poolId);
     if (!videoWithPool) {
-      return { yes: 2.0, no: 2.0 };
+      return { yes: 0.5, no: 0.5 };
     }
     return calculateDynamicOdds(
       videoWithPool.poolYesStake || 0,

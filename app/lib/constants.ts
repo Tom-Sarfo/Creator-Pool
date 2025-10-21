@@ -50,8 +50,8 @@ export const ALL_VIDEOS = [
     thumbnail:
       "https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=300&h=200&fit=crop&crop=center",
     status: "unlisted", // First 3 videos are published
-    views: 247000,
-    likes: 12400,
+    views: 0,
+    likes: 0,
     duration: "12:34",
     uploadDate: "2 days ago",
 
@@ -85,10 +85,10 @@ export const ALL_VIDEOS = [
     thumbnail:
       "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=300&h=200&fit=crop&crop=center",
     status: "unlisted",
-    views: 89000,
-    likes: 4200,
+    views: 0,
+    likes: 0,
     duration: "18:42",
-    uploadDate: "5 days ago",
+    uploadDate: "1 day ago",
 
     creator: "GameMaster Elite",
     creatorVerified: true,
@@ -118,10 +118,10 @@ export const ALL_VIDEOS = [
     thumbnail:
       "https://images.unsplash.com/photo-1581833971358-2c8b550f87b3?w=300&h=200&fit=crop&crop=center",
     status: "unlisted",
-    views: 156000,
-    likes: 8700,
+    views: 0,
+    likes: 0,
     duration: "8:15",
-    uploadDate: "1 week ago",
+    uploadDate: "6 hours ago",
 
     creator: "FitLife Coach",
     creatorVerified: true,

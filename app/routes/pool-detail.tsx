@@ -11,6 +11,7 @@ import {
 import { useSearchParams } from "react-router";
 import { RECENT_PREDICTIONS, QUICK_STAKES } from "../lib/constants";
 import { useAppContext } from "../contexts/AppContext";
+import { calculatePotentialPayout } from "../lib/utils";
 
 export function meta({ params }: Route.MetaArgs) {
   return [
@@ -96,10 +97,12 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
   const stakeAmountNumber = parseFloat(stakeAmount) || 0;
   const potentialPayout =
     selectedPrediction && stakeAmountNumber > 0
-      ? stakeAmountNumber *
-        (selectedPrediction === "yes"
-          ? 1 / pool.odds?.yes || 0
-          : 1 / pool.odds?.no || 0)
+      ? calculatePotentialPayout(
+          stakeAmountNumber,
+          selectedPrediction === "yes"
+            ? pool.odds?.yes || 0
+            : pool.odds?.no || 0
+        )
       : 0;
 
   const potentialProfit = potentialPayout - stakeAmountNumber;
