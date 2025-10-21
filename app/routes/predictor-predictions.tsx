@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useUser } from "@clerk/react-router";
 import {
   faChartBar,
   faBullseye,
@@ -27,13 +28,31 @@ export default function PredictorPredictions() {
     pools,
     getPredictionsByPredictor,
   } = useAppContext();
+  const { user } = useUser();
 
-  const userPredictions = getPredictionsByPredictor("current-user-id");
+  const userPredictions = getPredictionsByPredictor(user?.id || "anonymous");
   const activePredictions = userPredictions.filter(
     (p) => p.result === "pending"
   );
   const wonPredictions = userPredictions.filter((p) => p.result === "won");
   const lostPredictions = userPredictions.filter((p) => p.result === "lost");
+
+  // Calculate real stats from user predictions
+  const totalPredictions = userPredictions.length;
+  const activePredictionsCount = userPredictions.filter(
+    (p) => p.result === "pending"
+  ).length;
+  const settledPredictions = userPredictions.filter(
+    (p) => p.result !== "pending"
+  );
+  const winRate =
+    settledPredictions.length > 0
+      ? Math.round((wonPredictions.length / settledPredictions.length) * 100)
+      : 0;
+  const totalEarnings = wonPredictions.reduce(
+    (sum, p) => sum + (p.actualPayout || 0),
+    0
+  );
 
   // Helper function to get pool data for a prediction
   const getPoolForPrediction = (prediction: any) => {
@@ -105,7 +124,7 @@ export default function PredictorPredictions() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard
           title="Total Predictions"
-          value="25"
+          value={totalPredictions.toString()}
           icon={faBrain}
           iconColor="text-blue-600"
           iconBgColor="bg-blue-50"
@@ -115,7 +134,7 @@ export default function PredictorPredictions() {
 
         <StatsCard
           title="Win Rate"
-          value="78.7%"
+          value={`${winRate}%`}
           icon={faBullseye}
           iconColor="text-green-600"
           iconBgColor="bg-green-50"
@@ -125,7 +144,7 @@ export default function PredictorPredictions() {
 
         <StatsCard
           title="Total Earnings"
-          value="$1,247.50"
+          value={`$${totalEarnings.toFixed(2)}`}
           icon={faDollarSign}
           iconColor="text-yellow-600"
           iconBgColor="bg-yellow-50"
@@ -135,7 +154,7 @@ export default function PredictorPredictions() {
 
         <StatsCard
           title="Active Now"
-          value="8"
+          value={activePredictionsCount.toString()}
           icon={faClock}
           iconColor="text-purple-600"
           iconBgColor="bg-purple-50"
