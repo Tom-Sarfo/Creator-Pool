@@ -55,41 +55,56 @@ const calculatePoolMetrics = (poolData: any, videoData: any) => {
   const progress =
     targetViews > 0 ? Math.min((currentViews / targetViews) * 100, 100) : 0;
 
-  const totalStake = poolData.totalStake || 0;
-  const progressRatio = targetViews > 0 ? currentViews / targetViews : 0;
-  const yesBias = Math.min(0.85, 0.55 + progressRatio * 0.3);
+  // Separate creator pledge from total stake
+  const totalPoolAmount = poolData.totalStake || 0; // This includes both creator pledge and predictor stakes
+  const creatorPledge = poolData.creatorPledge || 0; // Creator's pledged amount (separate)
 
-  const yesPool = totalStake ? Math.round(totalStake * yesBias) : 0;
-  const noPool = totalStake - yesPool;
+  // Calculate YES/NO distribution from actual predictor stakes
+  const yesStake = poolData.yesStake || 0;
+  const noStake = poolData.noStake || 0;
+  const predictorStakes = yesStake + noStake;
+
   const yesPercentage =
-    totalStake > 0 ? Math.round((yesPool / totalStake) * 100) : 50;
+    predictorStakes > 0 ? Math.round((yesStake / predictorStakes) * 100) : 0;
   const noPercentage = 100 - yesPercentage;
 
   const totalParticipants = poolData.participants || 0;
-  const yesStakers = Math.round(totalParticipants * (yesPercentage / 100));
-  const noStakers = totalParticipants - yesStakers;
+  const yesStakers = poolData.yesCount || 0;
+  const noStakers = poolData.noCount || 0;
 
   const viewGrowthRate = (() => {
     if (targetViews === 0 || currentViews === 0) return "+0.0%";
     const baseGrowth = 8.5;
+    const progressRatio = targetViews > 0 ? currentViews / targetViews : 0;
     const growthFactor = progressRatio > 0.8 ? 1.5 : 1.0;
     const randomVariation = 0.8 + Math.random() * 0.4;
     return `+${(baseGrowth * growthFactor * randomVariation).toFixed(1)}%`;
   })();
 
+  // Calculate fees and royalties based on total pool amount (including creator pledge)
+  const totalPoolForFees = totalPoolAmount;
+
   return {
     currentViews,
     progress,
-    platformFee: totalStake ? Math.round(totalStake * 0.05 * 100) / 100 : 0,
-    creatorRoyalty: totalStake ? Math.round(totalStake * 0.01 * 100) / 100 : 0,
-    creatorPledge: totalStake ? Math.round(totalStake * 0.15 * 100) / 100 : 0,
-    yesPool,
-    noPool,
+    platformFee: totalPoolForFees
+      ? Math.round(totalPoolForFees * 0.05 * 100) / 100
+      : 0,
+    creatorRoyalty: totalPoolForFees
+      ? Math.round(totalPoolForFees * 0.01 * 100) / 100
+      : 0,
+    creatorPledge:
+      creatorPledge ||
+      (totalPoolForFees ? Math.round(totalPoolForFees * 0.15 * 100) / 100 : 0),
+    yesPool: yesStake,
+    noPool: noStake,
     yesPercentage,
     noPercentage,
     yesStakers,
     noStakers,
     viewGrowthRate,
+    predictorStakes, // Total amount staked by predictors (excluding creator pledge)
+    totalPoolAmount, // Total pool amount (including creator pledge)
   };
 };
 
@@ -147,7 +162,7 @@ export default function CreatorPoolDetailPage({
     category: poolData.category || videoData?.category || "general",
     status: poolData.status || "unknown",
     timeRemaining: poolData.timeRemaining || statusData.timeRemaining,
-    totalStake: poolData.totalStake || 0,
+    totalStake: metrics.totalPoolAmount || 0, // Use the calculated total pool amount
     participants: poolData.participants || 0,
     odds: poolData.odds,
     question: poolData.question || "Prediction question not available",
@@ -816,6 +831,22 @@ export default function CreatorPoolDetailPage({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">
+                    Predictor Stakes:{" "}
+                    <span className="font-medium">
+                      ${pool.predictorStakes.toLocaleString()}
+                    </span>
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">
+                    Creator Pledge:{" "}
+                    <span className="font-medium">
+                      ${pool.creatorPledge.toLocaleString()}
+                    </span>
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">
                     Platform Fee (5%):{" "}
                     <span className="font-medium">
                       ${pool.platformFee.toFixed(2)}
@@ -827,14 +858,6 @@ export default function CreatorPoolDetailPage({
                     Your Royalty (1%):{" "}
                     <span className="font-medium">
                       ${pool.creatorRoyalty.toFixed(2)}
-                    </span>
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">
-                    Creator Pledge:{" "}
-                    <span className="font-medium">
-                      ${pool.totalStake.toLocaleString()}
                     </span>
                   </span>
                 </div>
@@ -886,45 +909,66 @@ export default function CreatorPoolDetailPage({
 
               {/* Pool Distribution */}
               <div className="space-y-3">
-                <h4 className="font-medium text-gray-900">Pool Distribution</h4>
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-green-600">
-                      YES ({pool.yesPercentage}%)
-                    </span>
-                    <span className="text-green-600">
-                      ${pool.yesPool.toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-green-500 h-2 rounded-full"
-                      style={{ width: `${pool.yesPercentage}%` }}
-                    ></div>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {pool.yesStakers} stakers
-                  </p>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium text-gray-900">
+                    Prediction Distribution
+                  </h4>
+                  <span className="text-xs text-gray-500">
+                    Based on predictor stakes only
+                  </span>
                 </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-red-600">
-                      NO ({pool.noPercentage}%)
-                    </span>
-                    <span className="text-red-600">
-                      ${pool.noPool.toLocaleString()}
-                    </span>
+                {pool.predictorStakes > 0 ? (
+                  <>
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-green-600">
+                          YES ({pool.yesPercentage}%)
+                        </span>
+                        <span className="text-green-600">
+                          ${pool.yesPool.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-green-500 h-2 rounded-full"
+                          style={{ width: `${pool.yesPercentage}%` }}
+                        ></div>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {pool.yesStakers} stakers
+                      </p>
+                    </div>
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-red-600">
+                          NO ({pool.noPercentage}%)
+                        </span>
+                        <span className="text-red-600">
+                          ${pool.noPool.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-red-500 h-2 rounded-full"
+                          style={{ width: `${pool.noPercentage}%` }}
+                        ></div>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {pool.noStakers} stakers
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-500 mb-2">
+                      No predictions yet
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      Prediction distribution will appear once predictors start
+                      making stakes
+                    </p>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-red-500 h-2 rounded-full"
-                      style={{ width: `${pool.noPercentage}%` }}
-                    ></div>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {pool.noStakers} stakers
-                  </p>
-                </div>
+                )}
               </div>
             </div>
           </div>

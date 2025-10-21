@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { ALL_VIDEOS } from "../lib/constants";
+import { calculateDynamicOdds } from "../lib/utils";
 import type { ToastData } from "../components/Toast";
 
 export interface UnifiedVideo {
@@ -24,11 +25,41 @@ export interface UnifiedVideo {
   poolQuestion: string | null;
   poolParticipants: number;
   poolTotalStake: number;
+  poolCreatorPledge: number; // Creator's pledged amount
+  poolPredictorStakes: number; // Total amount staked by predictors
   poolTimeRemaining: string | null;
   poolTargetViews: number | null;
   poolCurrentViews: number;
   poolCreatedAt: string | null;
   poolOdds: { yes: number; no: number } | null;
+  poolYesStake: number;
+  poolNoStake: number;
+  poolYesCount: number;
+  poolNoCount: number;
+}
+
+// Prediction interfaces
+export interface Prediction {
+  id: number;
+  poolId: number;
+  predictorId: string; // User ID
+  predictorName: string;
+  choice: "yes" | "no";
+  stake: number;
+  predictedAt: string;
+  potentialPayout?: number;
+  actualPayout?: number;
+  result?: "won" | "lost" | "pending";
+  settledAt?: string;
+}
+
+export interface PredictorPoolStats {
+  yesStake: number;
+  noStake: number;
+  yesCount: number;
+  noCount: number;
+  yesPercentage: number;
+  noPercentage: number;
 }
 
 // Pool interfaces
@@ -44,7 +75,9 @@ export interface Pool {
   category?: string;
   question: string;
   participants: number;
-  totalStake: number;
+  totalStake: number; // Total pool amount (includes both predictor stakes and creator pledge)
+  creatorPledge?: number; // Creator's pledged amount (separate from predictor stakes)
+  predictorStakes?: number; // Total amount staked by predictors only
   timeRemaining: string;
   status: string;
   createdAt?: string;
@@ -54,6 +87,11 @@ export interface Pool {
   odds?: { yes: number; no: number };
   result?: string;
   creatorEarnings?: number;
+  predictions?: Prediction[]; // Individual predictions on this pool
+  yesStake?: number; // Total stake on YES
+  noStake?: number; // Total stake on NO
+  yesCount?: number; // Number of YES predictors
+  noCount?: number; // Number of NO predictors
 }
 
 interface AppState {
@@ -78,6 +116,14 @@ interface AppState {
   getPoolById: (id: number) => Pool | undefined;
   filteredPools: (filter: "active" | "settled" | "expired" | "all") => Pool[];
 
+  // Prediction state
+  predictions: Prediction[];
+  addPrediction: (prediction: Omit<Prediction, "id">) => void;
+  updatePrediction: (id: number, updates: Partial<Prediction>) => void;
+  getPredictionsByPoolId: (poolId: number) => Prediction[];
+  getPredictionsByPredictor: (predictorId: string) => Prediction[];
+  calculatePoolOdds: (poolId: number) => { yes: number; no: number };
+
   // Toast state
   toasts: ToastData[];
   addToast: (toast: Omit<ToastData, "id">) => void;
@@ -93,6 +139,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Initialize with unified video data
   const [videos, setVideos] = useState<UnifiedVideo[]>(ALL_VIDEOS);
   const [toasts, setToasts] = useState<ToastData[]>([]);
+  const [predictions, setPredictions] = useState<Prediction[]>([]);
 
   // Derive pools from videos that have pool data
   const pools: Pool[] = videos
@@ -110,12 +157,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       question: video.poolQuestion!,
       participants: video.poolParticipants,
       totalStake: video.poolTotalStake,
+      creatorPledge: video.poolCreatorPledge || 0,
+      predictorStakes: video.poolPredictorStakes || 0,
       timeRemaining: video.poolTimeRemaining!,
       status: video.poolStatus!,
       createdAt: video.poolCreatedAt || undefined,
       targetViews: video.poolTargetViews || undefined,
       currentViews: video.poolCurrentViews,
       odds: video.poolOdds || undefined,
+      yesStake: video.poolYesStake || 0,
+      noStake: video.poolNoStake || 0,
+      yesCount: video.poolYesCount || 0,
+      noCount: video.poolNoCount || 0,
+      predictions: predictions.filter((p) => p.poolId === video.poolId),
     }));
 
   // Video management functions
@@ -158,11 +212,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
           poolQuestion: newPool.question,
           poolParticipants: newPool.participants,
           poolTotalStake: newPool.totalStake,
+          poolCreatorPledge: newPool.creatorPledge || 0,
+          poolPredictorStakes: newPool.predictorStakes || 0,
           poolTimeRemaining: newPool.timeRemaining,
           poolTargetViews: newPool.targetViews || null,
           poolCurrentViews: newPool.currentViews || 0,
           poolCreatedAt: newPool.createdAt || null,
           poolOdds: newPool.odds || null,
+          poolYesStake: newPool.yesStake || 0,
+          poolNoStake: newPool.noStake || 0,
+          poolYesCount: newPool.yesCount || 0,
+          poolNoCount: newPool.noCount || 0,
         });
       }
     }
@@ -186,12 +246,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
         poolParticipants:
           updates.participants ?? videoWithPool.poolParticipants,
         poolTotalStake: updates.totalStake ?? videoWithPool.poolTotalStake,
+        poolCreatorPledge:
+          updates.creatorPledge ?? videoWithPool.poolCreatorPledge,
+        poolPredictorStakes:
+          updates.predictorStakes ?? videoWithPool.poolPredictorStakes,
         poolTimeRemaining:
           updates.timeRemaining || videoWithPool.poolTimeRemaining,
         poolTargetViews: updates.targetViews ?? videoWithPool.poolTargetViews,
         poolCurrentViews:
           updates.currentViews ?? videoWithPool.poolCurrentViews,
         poolOdds: updates.odds || videoWithPool.poolOdds,
+        poolYesStake: updates.yesStake ?? videoWithPool.poolYesStake,
+        poolNoStake: updates.noStake ?? videoWithPool.poolNoStake,
+        poolYesCount: updates.yesCount ?? videoWithPool.poolYesCount,
+        poolNoCount: updates.noCount ?? videoWithPool.poolNoCount,
       });
     }
   };
@@ -206,11 +274,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
         poolQuestion: null,
         poolParticipants: 0,
         poolTotalStake: 0,
+        poolCreatorPledge: 0,
+        poolPredictorStakes: 0,
         poolTimeRemaining: null,
         poolTargetViews: null,
         poolCurrentViews: 0,
         poolCreatedAt: null,
         poolOdds: null,
+        poolYesStake: 0,
+        poolNoStake: 0,
+        poolYesCount: 0,
+        poolNoCount: 0,
       });
     }
   };
@@ -243,6 +317,83 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  // Prediction management functions
+  const addPrediction = (newPrediction: Omit<Prediction, "id">) => {
+    const nextPredictionId =
+      predictions.length > 0
+        ? Math.max(...predictions.map((p) => p.id)) + 1
+        : 1;
+
+    const prediction: Prediction = {
+      ...newPrediction,
+      id: nextPredictionId,
+    };
+
+    setPredictions((prev) => [...prev, prediction]);
+
+    // Update pool aggregates
+    updatePoolStakes(prediction.poolId, prediction.choice, prediction.stake);
+  };
+
+  const updatePrediction = (id: number, updates: Partial<Prediction>) => {
+    setPredictions((prev) =>
+      prev.map((prediction) =>
+        prediction.id === id ? { ...prediction, ...updates } : prediction
+      )
+    );
+  };
+
+  const getPredictionsByPoolId = (poolId: number): Prediction[] => {
+    return predictions.filter((p) => p.poolId === poolId);
+  };
+
+  const getPredictionsByPredictor = (predictorId: string): Prediction[] => {
+    return predictions.filter((p) => p.predictorId === predictorId);
+  };
+
+  const calculatePoolOdds = (poolId: number): { yes: number; no: number } => {
+    const videoWithPool = videos.find((v) => v.poolId === poolId);
+    if (!videoWithPool) {
+      return { yes: 2.0, no: 2.0 };
+    }
+    return calculateDynamicOdds(
+      videoWithPool.poolYesStake || 0,
+      videoWithPool.poolNoStake || 0
+    );
+  };
+
+  const updatePoolStakes = (
+    poolId: number,
+    choice: "yes" | "no",
+    stake: number
+  ) => {
+    const videoWithPool = videos.find((v) => v.poolId === poolId);
+    if (!videoWithPool) return;
+
+    const updates: Partial<UnifiedVideo> = {
+      poolParticipants: videoWithPool.poolParticipants + 1,
+      poolPredictorStakes: videoWithPool.poolPredictorStakes + stake,
+      poolTotalStake: videoWithPool.poolTotalStake + stake,
+    };
+
+    if (choice === "yes") {
+      updates.poolYesStake = (videoWithPool.poolYesStake || 0) + stake;
+      updates.poolYesCount = (videoWithPool.poolYesCount || 0) + 1;
+    } else {
+      updates.poolNoStake = (videoWithPool.poolNoStake || 0) + stake;
+      updates.poolNoCount = (videoWithPool.poolNoCount || 0) + 1;
+    }
+
+    // Recalculate odds
+    const newOdds = calculateDynamicOdds(
+      updates.poolYesStake || videoWithPool.poolYesStake || 0,
+      updates.poolNoStake || videoWithPool.poolNoStake || 0
+    );
+    updates.poolOdds = newOdds;
+
+    updateVideo(videoWithPool.id, updates);
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -260,6 +411,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         deletePool,
         getPoolById,
         filteredPools,
+        predictions,
+        addPrediction,
+        updatePrediction,
+        getPredictionsByPoolId,
+        getPredictionsByPredictor,
+        calculatePoolOdds,
         toasts,
         addToast,
         removeToast,

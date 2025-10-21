@@ -150,16 +150,24 @@ export default function EnablePoolModal({
                   <img
                     src={displayVideo.thumbnail}
                     alt={displayVideo.title}
-                    className="w-48 h-32 object-cover rounded-lg"
+                    className="w-48 h-32 object-cover rounded-lg border border-gray-200"
+                    onError={(e) => {
+                      // Fallback if image fails to load
+                      e.currentTarget.src =
+                        "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&h=225&fit=crop";
+                    }}
                   />
-                  <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center rounded-lg">
-                    <div className="w-12 h-12 bg-white bg-opacity-90 rounded-full flex items-center justify-center">
+
+                  {/* Simple play button overlay - only on hover */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200">
+                    <div className="w-12 h-12 bg-white bg-opacity-90 rounded-full flex items-center justify-center shadow-lg">
                       <FontAwesomeIcon
                         icon={faPlay}
                         className="w-5 h-5 text-gray-800 ml-1"
                       />
                     </div>
                   </div>
+
                   {displayVideo.duration && (
                     <div className="absolute bottom-2 right-2 bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded">
                       {displayVideo.duration}

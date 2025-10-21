@@ -16,20 +16,29 @@ import {
   faThumbsDown,
   faBrain,
 } from "@fortawesome/free-solid-svg-icons";
-import {
-  PREDICTOR_ACTIVE_PREDICTIONS_DATA,
-  PREDICTOR_WON_PREDICTIONS_DATA,
-  PREDICTOR_LOST_PREDICTIONS_DATA,
-} from "../lib/constants";
 import Tabs from "../components/Tabs";
 import StatsCard from "../components/StatsCard";
+import { useAppContext } from "../contexts/AppContext";
 
 export default function PredictorPredictions() {
   const [activeTab, setActiveTab] = useState("active");
+  const {
+    predictions: allPredictions,
+    pools,
+    getPredictionsByPredictor,
+  } = useAppContext();
 
-  const activePredictions = PREDICTOR_ACTIVE_PREDICTIONS_DATA;
-  const wonPredictions = PREDICTOR_WON_PREDICTIONS_DATA;
-  const lostPredictions = PREDICTOR_LOST_PREDICTIONS_DATA;
+  const userPredictions = getPredictionsByPredictor("current-user-id");
+  const activePredictions = userPredictions.filter(
+    (p) => p.result === "pending"
+  );
+  const wonPredictions = userPredictions.filter((p) => p.result === "won");
+  const lostPredictions = userPredictions.filter((p) => p.result === "lost");
+
+  // Helper function to get pool data for a prediction
+  const getPoolForPrediction = (prediction: any) => {
+    return pools.find((p) => p.id === prediction.poolId);
+  };
 
   const tabs = [
     { id: "active", name: "Active", count: activePredictions.length },
@@ -43,11 +52,11 @@ export default function PredictorPredictions() {
   ];
 
   const getChoiceIcon = (choice: string) => {
-    return choice === "YES" ? faThumbsUp : faThumbsDown;
+    return choice?.toLowerCase() === "yes" ? faThumbsUp : faThumbsDown;
   };
 
   const getChoiceColor = (choice: string) => {
-    return choice === "YES"
+    return choice?.toLowerCase() === "yes"
       ? "text-green-600 bg-green-50 border-green-200"
       : "text-red-600 bg-red-50 border-red-200";
   };
@@ -159,198 +168,196 @@ export default function PredictorPredictions() {
             </div>
           ) : (
             <div className="space-y-4">
-              {predictions.map((prediction) => (
-                <div
-                  key={prediction.id}
-                  className="group relative bg-gray-50 rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all duration-200 p-6"
-                >
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:space-x-6 space-y-4 lg:space-y-0">
-                    {/* Video Thumbnail */}
-                    <div className="flex-shrink-0">
-                      <div className="relative">
-                        <img
-                          src={prediction.thumbnail}
-                          alt={prediction.title}
-                          className="w-32 h-20 lg:w-24 lg:h-16 object-cover rounded-lg"
-                        />
-                        <div className="absolute top-2 left-2 bg-black bg-opacity-60 rounded px-2 py-1">
-                          <FontAwesomeIcon
-                            icon={faPlay}
-                            className="w-3 h-3 text-white"
+              {predictions.map((prediction) => {
+                const pool = getPoolForPrediction(prediction);
+                if (!pool) return null;
+
+                return (
+                  <div
+                    key={prediction.id}
+                    className="group relative bg-gray-50 rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all duration-200 p-6"
+                  >
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:space-x-6 space-y-4 lg:space-y-0">
+                      {/* Video Thumbnail */}
+                      <div className="flex-shrink-0">
+                        <div className="relative">
+                          <img
+                            src={pool.thumbnail || ""}
+                            alt={pool.title || ""}
+                            className="w-32 h-20 lg:w-24 lg:h-16 object-cover rounded-lg"
                           />
+                          <div className="absolute top-2 left-2 bg-black bg-opacity-60 rounded px-2 py-1">
+                            <FontAwesomeIcon
+                              icon={faPlay}
+                              className="w-3 h-3 text-white"
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <span className="text-sm font-semibold text-gray-900">
-                              {prediction.creator}
-                            </span>
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              VERIFIED
-                            </span>
-                          </div>
-                          <h3 className="text-sm font-medium text-gray-900 mb-3 line-clamp-2">
-                            {prediction.title}
-                          </h3>
-
-                          {/* Status and Time Info */}
-                          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 mb-3">
-                            {activeTab === "active" ? (
-                              <>
-                                <div className="flex items-center space-x-1">
-                                  <FontAwesomeIcon
-                                    icon={faClock}
-                                    className="w-4 h-4"
-                                  />
-                                  <span>
-                                    {"timeRemaining" in prediction
-                                      ? prediction.timeRemaining
-                                      : "N/A"}
-                                  </span>
-                                </div>
-                                <div className="flex items-center space-x-1">
-                                  <FontAwesomeIcon
-                                    icon={faChartLine}
-                                    className="w-4 h-4"
-                                  />
-                                  <span>
-                                    {"progress" in prediction
-                                      ? prediction.progress
-                                      : 0}
-                                    % progress
-                                  </span>
-                                </div>
-                              </>
-                            ) : (
-                              <div className="flex items-center space-x-1">
-                                <FontAwesomeIcon
-                                  icon={faCalendar}
-                                  className="w-4 h-4"
-                                />
-                                <span>
-                                  {"settledAt" in prediction
-                                    ? prediction.settledAt
-                                    : "N/A"}
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <span className="text-sm font-semibold text-gray-900">
+                                {pool.creator}
+                              </span>
+                              {pool.creatorVerified && (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                  VERIFIED
                                 </span>
-                              </div>
-                            )}
+                              )}
+                            </div>
+                            <h3 className="text-sm font-medium text-gray-900 mb-3 line-clamp-2">
+                              {pool.title}
+                            </h3>
+
+                            {/* Status and Time Info */}
+                            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 mb-3">
+                              {activeTab === "active" ? (
+                                <>
+                                  <div className="flex items-center space-x-1">
+                                    <FontAwesomeIcon
+                                      icon={faClock}
+                                      className="w-4 h-4"
+                                    />
+                                    <span>{pool.timeRemaining || "N/A"}</span>
+                                  </div>
+                                  <div className="flex items-center space-x-1">
+                                    <FontAwesomeIcon
+                                      icon={faChartLine}
+                                      className="w-4 h-4"
+                                    />
+                                    <span>
+                                      {pool.currentViews && pool.targetViews
+                                        ? Math.round(
+                                            (pool.currentViews /
+                                              pool.targetViews) *
+                                              100
+                                          )
+                                        : 0}
+                                      % progress
+                                    </span>
+                                  </div>
+                                </>
+                              ) : (
+                                <div className="flex items-center space-x-1">
+                                  <FontAwesomeIcon
+                                    icon={faCalendar}
+                                    className="w-4 h-4"
+                                  />
+                                  <span>{prediction.settledAt || "N/A"}</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Progress Bar for Active Predictions */}
+                            {activeTab === "active" &&
+                              pool.currentViews &&
+                              pool.targetViews && (
+                                <div className="mb-3">
+                                  <div className="flex items-center justify-between text-sm text-gray-500 mb-1">
+                                    <span>Progress to target</span>
+                                    <span>
+                                      {Math.round(
+                                        (pool.currentViews / pool.targetViews) *
+                                          100
+                                      )}
+                                      %
+                                    </span>
+                                  </div>
+                                  <div className="w-full bg-gray-200 rounded-full h-2">
+                                    <div
+                                      className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                                      style={{
+                                        width: `${Math.min((pool.currentViews / pool.targetViews) * 100, 100)}%`,
+                                      }}
+                                    ></div>
+                                  </div>
+                                </div>
+                              )}
                           </div>
 
-                          {/* Progress Bar for Active Predictions */}
-                          {activeTab === "active" &&
-                            "progress" in prediction && (
-                              <div className="mb-3">
-                                <div className="flex items-center justify-between text-sm text-gray-500 mb-1">
-                                  <span>Progress to target</span>
-                                  <span>{prediction.progress || 0}%</span>
-                                </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                  <div
-                                    className="bg-purple-600 h-2 rounded-full transition-all duration-300"
-                                    style={{
-                                      width: `${Math.min(prediction.progress || 0, 100)}%`,
-                                    }}
-                                  ></div>
-                                </div>
-                              </div>
-                            )}
-                        </div>
-
-                        {/* Prediction Details */}
-                        <div className="mt-4 sm:mt-0 flex flex-col items-end space-y-3">
-                          {/* Choice and Result Badges */}
-                          <div className="flex flex-col sm:flex-row items-end space-y-2 sm:space-y-0 sm:space-x-2">
-                            <span
-                              className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getChoiceColor(prediction.myChoice)}`}
-                            >
-                              <FontAwesomeIcon
-                                icon={getChoiceIcon(prediction.myChoice)}
-                                className="w-3 h-3 mr-1"
-                              />
-                              {prediction.myChoice}
-                            </span>
-                            {"result" in prediction && prediction.result && (
+                          {/* Prediction Details */}
+                          <div className="mt-4 sm:mt-0 flex flex-col items-end space-y-3">
+                            {/* Choice and Result Badges */}
+                            <div className="flex flex-col sm:flex-row items-end space-y-2 sm:space-y-0 sm:space-x-2">
                               <span
-                                className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getResultColor(prediction.result)}`}
+                                className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getChoiceColor(prediction.choice)}`}
                               >
                                 <FontAwesomeIcon
-                                  icon={
-                                    prediction.result === "WON"
-                                      ? faCheckCircle
-                                      : faTimesCircle
-                                  }
+                                  icon={getChoiceIcon(prediction.choice)}
                                   className="w-3 h-3 mr-1"
                                 />
-                                {prediction.result}
+                                {prediction.choice.toUpperCase()}
                               </span>
-                            )}
-                          </div>
-
-                          {/* Stake and Payout */}
-                          <div className="text-right">
-                            <div className="text-sm text-gray-600 mb-1">
-                              Stake:{" "}
-                              <span className="font-medium">
-                                ${prediction.myStake}
-                              </span>
+                              {prediction.result &&
+                                prediction.result !== "pending" && (
+                                  <span
+                                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getResultColor(prediction.result.toUpperCase())}`}
+                                  >
+                                    <FontAwesomeIcon
+                                      icon={
+                                        prediction.result === "won"
+                                          ? faCheckCircle
+                                          : faTimesCircle
+                                      }
+                                      className="w-3 h-3 mr-1"
+                                    />
+                                    {prediction.result.toUpperCase()}
+                                  </span>
+                                )}
                             </div>
-                            {activeTab === "active" ? (
-                              <div className="text-lg font-bold text-gray-900">
-                                Potential: $
-                                {"potentialPayout" in prediction
-                                  ? prediction.potentialPayout
-                                  : 0}
+
+                            {/* Stake and Payout */}
+                            <div className="text-right">
+                              <div className="text-sm text-gray-600 mb-1">
+                                Stake:{" "}
+                                <span className="font-medium">
+                                  ${prediction.stake}
+                                </span>
                               </div>
-                            ) : (
-                              <div
-                                className={`text-lg font-bold flex items-center space-x-1 ${
-                                  "result" in prediction &&
-                                  prediction.result === "WON"
-                                    ? "text-green-600"
-                                    : "result" in prediction &&
-                                        prediction.result === "LOST"
-                                      ? "text-red-600"
-                                      : "text-gray-900"
-                                }`}
-                              >
-                                {"result" in prediction &&
-                                  prediction.result === "WON" && (
+                              {activeTab === "active" ? (
+                                <div className="text-lg font-bold text-gray-900">
+                                  Potential: ${prediction.potentialPayout || 0}
+                                </div>
+                              ) : (
+                                <div
+                                  className={`text-lg font-bold flex items-center space-x-1 ${
+                                    prediction.result === "won"
+                                      ? "text-green-600"
+                                      : prediction.result === "lost"
+                                        ? "text-red-600"
+                                        : "text-gray-900"
+                                  }`}
+                                >
+                                  {prediction.result === "won" && (
                                     <FontAwesomeIcon
                                       icon={faArrowUp}
                                       className="w-4 h-4"
                                     />
                                   )}
-                                {"result" in prediction &&
-                                  prediction.result === "LOST" && (
+                                  {prediction.result === "lost" && (
                                     <FontAwesomeIcon
                                       icon={faArrowDown}
                                       className="w-4 h-4"
                                     />
                                   )}
-                                <span>
-                                  {"result" in prediction &&
-                                  prediction.result === "WON"
-                                    ? "+"
-                                    : ""}
-                                  $
-                                  {"payout" in prediction
-                                    ? prediction.payout
-                                    : 0}
-                                </span>
-                              </div>
-                            )}
+                                  <span>
+                                    {prediction.result === "won" ? "+" : ""}$
+                                    {prediction.actualPayout || 0}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

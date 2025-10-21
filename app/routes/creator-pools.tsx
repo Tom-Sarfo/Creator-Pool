@@ -111,13 +111,16 @@ export default function CreatorPools() {
       selectedVideo && selectedVideo.status === "unlisted";
 
     // Create new pool object - always active for prediction on unlisted videos
+    const creatorPledgeAmount = poolData.pledgeAmount || 0;
     const newPool: Omit<Pool, "id"> = {
       title: videoTitle,
       videoTitle: videoTitle,
       videoId: poolData.videoId, // Store the video ID for tracking
       question: questionText,
       participants: 0,
-      totalStake: poolData.pledgeAmount || 0,
+      totalStake: creatorPledgeAmount, // Initially just the creator pledge
+      creatorPledge: creatorPledgeAmount, // Track creator pledge separately
+      predictorStakes: 0, // No predictor stakes initially
       timeRemaining: timeRemaining, // Use actual countdown for unlisted videos
       status: "active", // Always active to allow predictions during unlisted stage
       createdAt: new Date().toISOString(),

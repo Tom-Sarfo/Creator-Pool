@@ -11,16 +11,42 @@ import {
   faUsers,
   faChevronRight,
 } from "@fortawesome/free-solid-svg-icons";
-import {
-  PREDICTOR_QUICK_ACTIONS,
-  RECENT_POOLS,
-  PREDICTOR_DASHBOARD_STATS,
-} from "../lib/constants";
+import { PREDICTOR_QUICK_ACTIONS } from "../lib/constants";
+import { useAppContext } from "../contexts/AppContext";
 
 export default function PredictorDashboard() {
-  const stats = PREDICTOR_DASHBOARD_STATS;
+  const { pools, predictions, getPredictionsByPredictor } = useAppContext();
 
-  const recentPools = RECENT_POOLS;
+  // Calculate stats from actual prediction data
+  const userPredictions = predictions.filter(
+    (p) => p.predictorId === "current-user-id"
+  );
+
+  const stats = {
+    totalPredictions: userPredictions.length,
+    activePredictions: userPredictions.filter((p) => p.result === "pending")
+      .length,
+    winRate:
+      userPredictions.length > 0
+        ? Math.round(
+            (userPredictions.filter((p) => p.result === "won").length /
+              userPredictions.filter((p) => p.result !== "pending").length) *
+              100
+          ) || 0
+        : 0,
+    totalEarnings: userPredictions
+      .filter((p) => p.result === "won")
+      .reduce((sum, p) => sum + (p.actualPayout || 0), 0),
+  };
+
+  const recentPools = pools
+    .filter((p) => p.status === "active")
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt || 0).getTime() -
+        new Date(a.createdAt || 0).getTime()
+    )
+    .slice(0, 3);
 
   const quickActions = PREDICTOR_QUICK_ACTIONS.map((action) => ({
     ...action,
@@ -211,30 +237,39 @@ export default function PredictorDashboard() {
                   </div>
                 </div>
                 <div className="text-right">
-                  {pool.myStake > 0 ? (
-                    <div className="text-sm">
-                      <div className="font-medium text-gray-900">
-                        My Stake: ${pool.myStake}
-                      </div>
-                      <div
-                        className={`text-xs ${pool.myChoice === "YES" ? "text-green-600" : "text-red-600"}`}
-                      >
-                        {pool.myChoice}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-sm">
-                      <div className="text-gray-500 mb-1">Odds</div>
-                      <div className="flex space-x-2">
-                        <span className="text-green-600 font-medium">
-                          YES {pool.odds.yes}x
-                        </span>
-                        <span className="text-red-600 font-medium">
-                          NO {pool.odds.no}x
-                        </span>
-                      </div>
-                    </div>
-                  )}
+                  {(() => {
+                    const userPrediction = userPredictions.find(
+                      (p) => p.poolId === pool.id
+                    );
+                    if (userPrediction) {
+                      return (
+                        <div className="text-sm">
+                          <div className="font-medium text-gray-900">
+                            My Stake: ${userPrediction.stake}
+                          </div>
+                          <div
+                            className={`text-xs ${userPrediction.choice === "yes" ? "text-green-600" : "text-red-600"}`}
+                          >
+                            {userPrediction.choice.toUpperCase()}
+                          </div>
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <div className="text-sm">
+                          <div className="text-gray-500 mb-1">Odds</div>
+                          <div className="flex space-x-2">
+                            <span className="text-green-600 font-medium">
+                              YES {(pool.odds?.yes || 2.0).toFixed(1)}x
+                            </span>
+                            <span className="text-red-600 font-medium">
+                              NO {(pool.odds?.no || 2.0).toFixed(1)}x
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    }
+                  })()}
                 </div>
               </div>
             ))}

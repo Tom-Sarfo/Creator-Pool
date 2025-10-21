@@ -1,3 +1,52 @@
+// Prediction and odds calculation utilities
+export function calculateDynamicOdds(yesStake: number, noStake: number) {
+  const totalStake = yesStake + noStake;
+
+  if (totalStake === 0) {
+    return { yes: 2.0, no: 2.0 }; // Even odds when no stakes
+  }
+
+  // Calculate odds based on stake ratio
+  // Lower stake side gets higher odds (more attractive)
+  const yesOdds = totalStake / Math.max(yesStake, 1);
+  const noOdds = totalStake / Math.max(noStake, 1);
+
+  // Apply house edge (6% total: 5% platform + 1% creator)
+  const houseEdge = 0.94;
+
+  return {
+    yes: Math.max(1.01, Number((yesOdds * houseEdge).toFixed(2))),
+    no: Math.max(1.01, Number((noOdds * houseEdge).toFixed(2))),
+  };
+}
+
+export function calculatePotentialPayout(stake: number, odds: number): number {
+  return Number((stake * odds).toFixed(2));
+}
+
+export function validateStake(
+  stake: number,
+  poolTotalStake: number
+): {
+  valid: boolean;
+  error?: string;
+} {
+  if (stake < 1) {
+    return { valid: false, error: "Minimum stake is $1" };
+  }
+  if (stake > 500) {
+    return { valid: false, error: "Maximum stake is $500" };
+  }
+  const maxAllowed = poolTotalStake * 0.1;
+  if (stake > maxAllowed && poolTotalStake > 0) {
+    return {
+      valid: false,
+      error: `Cannot exceed 10% of pool size ($${maxAllowed.toFixed(2)})`,
+    };
+  }
+  return { valid: true };
+}
+
 // Utility to extract duration from question text and calculate time remaining
 export function extractDurationAndTimeRemaining(questionText: string) {
   // Patterns to match different time formats - ordered by specificity

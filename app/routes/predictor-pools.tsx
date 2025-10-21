@@ -1,19 +1,23 @@
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Link, useNavigate } from "react-router";
+import { Link } from "react-router";
 import { CATEGORIES } from "../lib/constants";
 import { useAppContext } from "../contexts/AppContext";
+import type { Pool } from "../contexts/AppContext";
+import PredictionModal from "../components/PredictionModal";
+import { calculateDynamicOdds } from "../lib/utils";
 
 export default function PredictorPools() {
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("active");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedPredictions, setSelectedPredictions] = useState<{
-    [key: number]: "yes" | "no" | null;
-  }>({});
+  const [showPredictionModal, setShowPredictionModal] = useState(false);
+  const [selectedPool, setSelectedPool] = useState<Pool | null>(null);
+  const [preselectedChoice, setPreselectedChoice] = useState<
+    "yes" | "no" | undefined
+  >();
 
-  const { pools } = useAppContext();
+  const { pools, addPrediction, addToast, calculatePoolOdds } = useAppContext();
   const categories = CATEGORIES;
 
   const getStatusColor = (status: string) => {
@@ -35,23 +39,39 @@ export default function PredictorPools() {
     (pool) => selectedCategory === "all" || pool.category === selectedCategory
   );
 
-  const handlePredictionSelect = (poolId: number, prediction: "yes" | "no") => {
-    setSelectedPredictions((prev) => ({
-      ...prev,
-      [poolId]: prev[poolId] === prediction ? null : prediction,
-    }));
+  const handlePredictClick = (pool: Pool, choice: "yes" | "no") => {
+    setSelectedPool(pool);
+    setPreselectedChoice(choice);
+    setShowPredictionModal(true);
   };
 
-  const handlePredict = (poolId: number) => {
-    // Get the selected prediction for this pool
-    const selectedPrediction = selectedPredictions[poolId];
+  const handlePredictionSubmit = (prediction: {
+    choice: "yes" | "no";
+    stake: number;
+  }) => {
+    if (!selectedPool) return;
 
-    // Navigate to pool detail page with prediction parameter
-    if (selectedPrediction) {
-      navigate(`/predictor/pool/${poolId}?prediction=${selectedPrediction}`);
-    } else {
-      navigate(`/predictor/pool/${poolId}`);
-    }
+    // Add prediction via context
+    addPrediction({
+      poolId: selectedPool.id,
+      predictorId: "current-user-id", // TODO: Get from auth context
+      predictorName: "Current User", // TODO: Get from auth context
+      choice: prediction.choice,
+      stake: prediction.stake,
+      predictedAt: new Date().toISOString(),
+      result: "pending",
+    });
+
+    // Show success toast
+    addToast({
+      type: "success",
+      title: "Prediction Placed!",
+      message: `You predicted ${prediction.choice.toUpperCase()} with $${prediction.stake}`,
+      duration: 4000,
+    });
+
+    setShowPredictionModal(false);
+    setSelectedPool(null);
   };
 
   return (
@@ -210,49 +230,38 @@ export default function PredictorPools() {
 
               {/* Odds */}
               <div className="flex space-x-2 mb-4">
-                <button
-                  onClick={() => handlePredictionSelect(pool.id, "yes")}
-                  className={`flex-1 rounded-lg p-2 text-center transition-all cursor-pointer ${
-                    selectedPredictions[pool.id] === "yes"
-                      ? "bg-green-200 border-2 border-green-500"
-                      : "bg-green-50 border border-green-200 hover:bg-green-100"
-                  }`}
-                >
-                  <div className="text-xs text-green-600 font-medium">YES</div>
-                  <div className="text-sm font-bold text-green-700">
-                    {pool.odds?.yes || 0}
-                  </div>
-                  <div className="text-xs text-green-600">
-                    {Math.round(pool.odds?.yes || 0 * 100)}% chance
-                  </div>
-                </button>
-                <button
-                  onClick={() => handlePredictionSelect(pool.id, "no")}
-                  className={`flex-1 rounded-lg p-2 text-center transition-all cursor-pointer ${
-                    selectedPredictions[pool.id] === "no"
-                      ? "bg-red-200 border-2 border-red-500"
-                      : "bg-red-50 border border-red-200 hover:bg-red-100"
-                  }`}
-                >
-                  <div className="text-xs text-red-600 font-medium">NO</div>
-                  <div className="text-sm font-bold text-red-700">
-                    {pool.odds?.no || 0}
-                  </div>
-                  <div className="text-xs text-red-600">
-                    {Math.round(pool.odds?.no || 0 * 100)}% chance
-                  </div>
-                </button>
+                {(() => {
+                  const odds =
+                    pool.odds ||
+                    calculateDynamicOdds(pool.yesStake || 0, pool.noStake || 0);
+                  return (
+                    <>
+                      <button
+                        onClick={() => handlePredictClick(pool, "yes")}
+                        className="flex-1 rounded-lg p-2 text-center transition-all cursor-pointer bg-green-50 border border-green-200 hover:bg-green-100"
+                      >
+                        <div className="text-xs text-green-600 font-medium">
+                          YES
+                        </div>
+                        <div className="text-sm font-bold text-green-700">
+                          {odds.yes.toFixed(2)}x
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => handlePredictClick(pool, "no")}
+                        className="flex-1 rounded-lg p-2 text-center transition-all cursor-pointer bg-red-50 border border-red-200 hover:bg-red-100"
+                      >
+                        <div className="text-xs text-red-600 font-medium">
+                          NO
+                        </div>
+                        <div className="text-sm font-bold text-red-700">
+                          {odds.no.toFixed(2)}x
+                        </div>
+                      </button>
+                    </>
+                  );
+                })()}
               </div>
-
-              {/* Action Button - Only show when a prediction is selected */}
-              {selectedPredictions[pool.id] && (
-                <button
-                  onClick={() => handlePredict(pool.id)}
-                  className="w-full bg-purple-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
-                >
-                  Predict {selectedPredictions[pool.id]?.toUpperCase()}
-                </button>
-              )}
             </div>
           </div>
         ))}
@@ -264,6 +273,21 @@ export default function PredictorPools() {
           Load More Pools
         </button>
       </div>
+
+      {/* Prediction Modal */}
+      {selectedPool && (
+        <PredictionModal
+          isOpen={showPredictionModal}
+          onClose={() => {
+            setShowPredictionModal(false);
+            setSelectedPool(null);
+            setPreselectedChoice(undefined);
+          }}
+          pool={selectedPool}
+          preselectedChoice={preselectedChoice}
+          onSubmit={handlePredictionSubmit}
+        />
+      )}
     </div>
   );
 }
