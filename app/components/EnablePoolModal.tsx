@@ -7,7 +7,6 @@ import {
   faClock,
   faRefresh,
   faQuestionCircle,
-  faChartLine,
   faRocket,
   faLightbulb,
   faShieldAlt,
@@ -384,57 +383,6 @@ export default function EnablePoolModal({
                       <p className="text-sm text-gray-900">{question.text}</p>
                     </button>
                   ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Estimated Pool Impact */}
-            <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <FontAwesomeIcon
-                  icon={faChartLine}
-                  className="w-5 h-5 text-gray-600"
-                />
-                <h3 className="text-lg font-medium text-gray-900">
-                  Estimated Pool Impact
-                </h3>
-              </div>
-
-              <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-green-600 mb-2">
-                    $1,240
-                  </div>
-                  <p className="text-sm text-gray-600">Expected Pool Size</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">
-                      Predicted Participants:
-                    </span>
-                    <span className="font-medium">~850</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Engagement Boost:</span>
-                    <span className="font-medium">+25%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-1">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-gray-600">Your pledge:</span>
-                    </div>
-                    <span className="font-medium">
-                      ${pledgeType === "fixed" ? customAmount : "0"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-1">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <span className="text-gray-600">User predictions:</span>
-                    </div>
-                    <span className="font-medium">~$1,040</span>
-                  </div>
                 </div>
               </div>
             </div>

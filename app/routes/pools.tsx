@@ -126,14 +126,20 @@ export default function PoolsPage() {
                 className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
               >
                 {/* Pool Image */}
-                <div className="relative">
+                <div className="relative group">
                   <img
                     src={pool.thumbnail}
                     alt={pool.title}
                     className="w-full h-48 object-cover"
+                    onError={(e) => {
+                      // Fallback if image fails to load
+                      e.currentTarget.src =
+                        "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&h=225&fit=crop";
+                    }}
                   />
-                  <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
-                    <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center">
+                  {/* Play button overlay - only visible on hover */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-lg">
                       <FontAwesomeIcon
                         icon="play"
                         className="w-6 h-6 text-white ml-1"
