@@ -250,11 +250,13 @@ export default function PredictorDashboard() {
                 key={pool.id}
                 className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
               >
-                <img
-                  src={pool.thumbnail}
-                  alt={pool.title}
-                  className="w-16 h-12 object-cover rounded"
-                />
+                <Link to={`/predictor/pool/${pool.id}`}>
+                  <img
+                    src={pool.thumbnail}
+                    alt={pool.title}
+                    className="w-16 h-12 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
+                  />
+                </Link>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-2 mb-1">
                     <span className="text-sm font-medium text-gray-900">
@@ -266,7 +268,11 @@ export default function PredictorDashboard() {
                       {getStatusLabel(pool.status)}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600 truncate">{pool.title}</p>
+                  <Link to={`/predictor/pool/${pool.id}`}>
+                    <p className="text-sm text-gray-600 truncate hover:text-purple-600 cursor-pointer transition-colors">
+                      {pool.title}
+                    </p>
+                  </Link>
                   <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
                     <div className="flex items-center space-x-1">
                       <FontAwesomeIcon icon={faClock} className="w-3 h-3" />

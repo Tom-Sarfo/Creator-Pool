@@ -204,16 +204,18 @@ export default function PredictorPools() {
           >
             {/* Pool Image */}
             <div className="relative group">
-              <img
-                src={pool.thumbnail}
-                alt={pool.title}
-                className="w-full h-48 object-cover"
-                onError={(e) => {
-                  // Fallback if image fails to load
-                  e.currentTarget.src =
-                    "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&h=225&fit=crop";
-                }}
-              />
+              <Link to={`/predictor/pool/${pool.id}`}>
+                <img
+                  src={pool.thumbnail}
+                  alt={pool.title}
+                  className="w-full h-48 object-cover cursor-pointer"
+                  onError={(e) => {
+                    // Fallback if image fails to load
+                    e.currentTarget.src =
+                      "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&h=225&fit=crop";
+                  }}
+                />
+              </Link>
               {/* Play button overlay - only visible on hover */}
               <PlayButtonOverlay />
               <div className="absolute top-3 left-3">
@@ -263,9 +265,11 @@ export default function PredictorPools() {
               </div>
 
               {/* Video Title */}
-              <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2">
-                {pool.title}
-              </h3>
+              <Link to={`/predictor/pool/${pool.id}`}>
+                <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2 hover:text-purple-600 cursor-pointer transition-colors">
+                  {pool.title}
+                </h3>
+              </Link>
 
               {/* Prediction Question */}
               <p className="text-xs text-gray-600 mb-3">{pool.question}</p>
