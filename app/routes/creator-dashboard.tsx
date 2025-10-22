@@ -42,28 +42,26 @@ export default function CreatorDashboard() {
   // Get videos with their pool status based on actual pools data
   const getVideosWithPoolStatus = () => {
     return videos.map((video) => {
-      // Find if this video has an active pool
-      const activePool = pools.find(
-        (pool) => pool.videoId === video.id && pool.status === "open"
-      );
-
-      // Find if this video has any pool (active, settled, ready, etc.)
+      // Find if this video has any pool
       const anyPool = pools.find((pool) => pool.videoId === video.id);
 
-      const isEffectivelyActive =
-        activePool ||
-        (video.status === "unlisted" && anyPool && anyPool.status === "open");
+      // Check if pool is in active states (open to closed)
+      const isActivePool =
+        anyPool &&
+        ["open", "awaiting_release", "live_tracking", "closed"].includes(
+          anyPool.status
+        );
 
       // Use the actual pool status if there is one, otherwise videos without pools are available for pool creation
       const poolStatus = anyPool ? anyPool.status : "available";
 
       return {
         ...video,
-        poolStatus: isEffectivelyActive ? "active" : poolStatus,
+        poolStatus: isActivePool ? "active" : poolStatus,
         hasPool: !!anyPool,
-        poolData: activePool || anyPool,
+        poolData: anyPool,
         // Override the original status for display purposes
-        effectiveStatus: isEffectivelyActive ? "active" : video.status,
+        effectiveStatus: isActivePool ? "active" : video.status,
       };
     });
   };
@@ -99,14 +97,39 @@ export default function CreatorDashboard() {
 
   const getPoolStatusColor = (poolStatus: string) => {
     switch (poolStatus) {
-      case "active":
+      case "open":
         return "bg-green-100 text-green-800";
-      case "settled":
+      case "awaiting_release":
+        return "bg-yellow-100 text-yellow-800";
+      case "live_tracking":
         return "bg-blue-100 text-blue-800";
-      case "available":
+      case "closed":
+        return "bg-orange-100 text-orange-800";
+      case "settled":
         return "bg-purple-100 text-purple-800";
+      case "available":
+        return "bg-gray-100 text-gray-800";
       default:
         return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getPoolStatusLabel = (poolStatus: string) => {
+    switch (poolStatus) {
+      case "open":
+        return "Open";
+      case "awaiting_release":
+        return "Awaiting Release";
+      case "live_tracking":
+        return "Live Tracking";
+      case "closed":
+        return "Closed";
+      case "settled":
+        return "Settled";
+      case "available":
+        return "Available for Pool";
+      default:
+        return poolStatus;
     }
   };
 
@@ -344,36 +367,38 @@ export default function CreatorDashboard() {
                   {/* Pool Status and Action */}
                   <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
                     <div className="flex-1 min-w-0">
-                      {video.poolStatus === "active" && video.poolData && (
+                      {video.hasPool && video.poolData && (
                         <div className="flex flex-col space-y-1 sm:flex-row sm:items-center sm:space-x-2 sm:space-y-0">
                           <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium w-fit ${getPoolStatusColor(video.poolStatus)}`}
+                            className={`px-2 py-1 rounded-full text-xs font-medium w-fit ${getPoolStatusColor(video.poolData.status)}`}
                           >
-                            Active Pool
+                            {getPoolStatusLabel(video.poolData.status)}
                           </span>
                           <span className="text-xs text-gray-600 break-words">
-                            ${video.poolData.totalStake.toLocaleString()} pool •{" "}
-                            {video.poolData.participants} predictions
+                            {video.poolData.status === "settled" ? (
+                              <>
+                                Target reached • +$
+                                {video.poolData.creatorEarnings || 0} earned
+                              </>
+                            ) : (
+                              <>
+                                ${video.poolData.totalStake.toLocaleString()}{" "}
+                                pool • {video.poolData.participants} predictions
+                                {video.poolData.timeRemaining && (
+                                  <>
+                                    {" "}
+                                    • {video.poolData.timeRemaining} remaining
+                                  </>
+                                )}
+                              </>
+                            )}
                           </span>
                         </div>
                       )}
-                      {video.poolStatus === "settled" && video.poolData && (
+                      {!video.hasPool && (
                         <div className="flex flex-col space-y-1 sm:flex-row sm:items-center sm:space-x-2 sm:space-y-0">
                           <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium w-fit ${getPoolStatusColor(video.poolStatus)}`}
-                          >
-                            Pool Settled
-                          </span>
-                          <span className="text-xs text-gray-600 break-words">
-                            Target reached • +$
-                            {video.poolData.creatorEarnings || 0} earned
-                          </span>
-                        </div>
-                      )}
-                      {video.poolStatus === "available" && (
-                        <div className="flex flex-col space-y-1 sm:flex-row sm:items-center sm:space-x-2 sm:space-y-0">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium w-fit ${getPoolStatusColor(video.poolStatus)}`}
+                            className={`px-2 py-1 rounded-full text-xs font-medium w-fit ${getPoolStatusColor("available")}`}
                           >
                             Available for Pool
                           </span>
@@ -386,25 +411,28 @@ export default function CreatorDashboard() {
 
                     {/* Action Button and Menu */}
                     <div className="flex items-center space-x-2 sm:ml-4 flex-shrink-0">
-                      {video.poolStatus === "active" && video.poolData && (
+                      {video.hasPool && video.poolData && (
                         <Link
-                          to={`/creator/pool/${video.poolData.id}?status=active`}
-                          className="px-3 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors whitespace-nowrap"
+                          to={`/creator/pool/${video.poolData.id}?status=${video.poolData.status}`}
+                          className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
+                            video.poolData.status === "settled"
+                              ? "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                              : "bg-purple-600 text-white hover:bg-purple-700"
+                          }`}
                         >
-                          <span className="hidden sm:inline">View Pool</span>
-                          <span className="sm:hidden">View</span>
+                          <span className="hidden sm:inline">
+                            {video.poolData.status === "settled"
+                              ? "View Results"
+                              : "View Pool"}
+                          </span>
+                          <span className="sm:hidden">
+                            {video.poolData.status === "settled"
+                              ? "Results"
+                              : "View"}
+                          </span>
                         </Link>
                       )}
-                      {video.poolStatus === "settled" && video.poolData && (
-                        <Link
-                          to={`/creator/pool/${video.poolData.id}?status=settled`}
-                          className="px-3 py-2 bg-white text-gray-700 border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap"
-                        >
-                          <span className="hidden sm:inline">View Results</span>
-                          <span className="sm:hidden">Results</span>
-                        </Link>
-                      )}
-                      {video.poolStatus === "available" && (
+                      {!video.hasPool && (
                         <button
                           onClick={() => handleEnablePoolClick(video)}
                           className="px-3 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-1 whitespace-nowrap"
@@ -429,34 +457,41 @@ export default function CreatorDashboard() {
                   </div>
 
                   {/* Progress Bar for Active Pools */}
-                  {video.poolStatus === "active" && video.poolData && (
-                    <div className="mt-2">
-                      <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-                        <span>
-                          Progress to{" "}
-                          {video.poolData.targetViews?.toLocaleString() ||
-                            "target"}{" "}
-                          views
-                        </span>
-                        <span>
-                          {Math.round(
-                            ((video.poolData.currentViews || 0) /
-                              (video.poolData.targetViews || 1)) *
-                              100
-                          )}
-                          %
-                        </span>
+                  {video.hasPool &&
+                    video.poolData &&
+                    [
+                      "open",
+                      "awaiting_release",
+                      "live_tracking",
+                      "closed",
+                    ].includes(video.poolData.status) && (
+                      <div className="mt-2">
+                        <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                          <span>
+                            Progress to{" "}
+                            {video.poolData.targetViews?.toLocaleString() ||
+                              "target"}{" "}
+                            views
+                          </span>
+                          <span>
+                            {Math.round(
+                              ((video.poolData.currentViews || 0) /
+                                (video.poolData.targetViews || 1)) *
+                                100
+                            )}
+                            %
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-purple-600 h-2 rounded-full"
+                            style={{
+                              width: `${Math.min(((video.poolData.currentViews || 0) / (video.poolData.targetViews || 1)) * 100, 100)}%`,
+                            }}
+                          ></div>
+                        </div>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-purple-600 h-2 rounded-full"
-                          style={{
-                            width: `${Math.min(((video.poolData.currentViews || 0) / (video.poolData.targetViews || 1)) * 100, 100)}%`,
-                          }}
-                        ></div>
-                      </div>
-                    </div>
-                  )}
+                    )}
                 </div>
               </div>
             </div>
