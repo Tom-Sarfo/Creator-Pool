@@ -225,36 +225,93 @@ export default function PoolsPage() {
 
                   {/* Odds */}
                   <div className="flex space-x-2 mb-4">
-                    <div className="flex-1 bg-green-50 border border-green-200 rounded-lg p-2 text-center">
-                      <div className="text-xs text-green-600 font-medium">
-                        YES
-                      </div>
-                      <div className="text-sm font-bold text-green-700">
-                        {pool.odds?.yes || 0}
-                      </div>
-                      <div className="text-xs text-green-600">
-                        {Math.round(pool.odds?.yes || 0 * 100)}% chance
-                      </div>
-                    </div>
-                    <div className="flex-1 bg-red-50 border border-red-200 rounded-lg p-2 text-center">
-                      <div className="text-xs text-red-600 font-medium">NO</div>
-                      <div className="text-sm font-bold text-red-700">
-                        {pool.odds?.no || 0}
-                      </div>
-                      <div className="text-xs text-red-600">
-                        {Math.round(pool.odds?.no || 0 * 100)}% chance
-                      </div>
-                    </div>
+                    {(() => {
+                      const isPoolOpen = pool.status === "open";
+                      return (
+                        <>
+                          <div
+                            className={`flex-1 rounded-lg p-2 text-center ${
+                              isPoolOpen
+                                ? "bg-green-50 border border-green-200"
+                                : "bg-gray-50 border border-gray-200 opacity-60"
+                            }`}
+                          >
+                            <div
+                              className={`text-xs font-medium ${
+                                isPoolOpen ? "text-green-600" : "text-gray-500"
+                              }`}
+                            >
+                              YES
+                            </div>
+                            <div
+                              className={`text-sm font-bold ${
+                                isPoolOpen ? "text-green-700" : "text-gray-600"
+                              }`}
+                            >
+                              {pool.odds?.yes || 0}
+                            </div>
+                            <div
+                              className={`text-xs ${
+                                isPoolOpen ? "text-green-600" : "text-gray-500"
+                              }`}
+                            >
+                              {Math.round(pool.odds?.yes || 0 * 100)}% chance
+                            </div>
+                          </div>
+                          <div
+                            className={`flex-1 rounded-lg p-2 text-center ${
+                              isPoolOpen
+                                ? "bg-red-50 border border-red-200"
+                                : "bg-gray-50 border border-gray-200 opacity-60"
+                            }`}
+                          >
+                            <div
+                              className={`text-xs font-medium ${
+                                isPoolOpen ? "text-red-600" : "text-gray-500"
+                              }`}
+                            >
+                              NO
+                            </div>
+                            <div
+                              className={`text-sm font-bold ${
+                                isPoolOpen ? "text-red-700" : "text-gray-600"
+                              }`}
+                            >
+                              {pool.odds?.no || 0}
+                            </div>
+                            <div
+                              className={`text-xs ${
+                                isPoolOpen ? "text-red-600" : "text-gray-500"
+                              }`}
+                            >
+                              {Math.round(pool.odds?.no || 0 * 100)}% chance
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
 
                   {/* Action Button */}
                   <SignedIn>
-                    <button
-                      onClick={() => navigate(`/predictor/pool/${pool.id}`)}
-                      className="w-full bg-purple-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
-                    >
-                      Predict Now
-                    </button>
+                    {(() => {
+                      const isPoolOpen = pool.status === "open";
+                      return (
+                        <button
+                          onClick={() =>
+                            isPoolOpen && navigate(`/predictor/pool/${pool.id}`)
+                          }
+                          disabled={!isPoolOpen}
+                          className={`w-full py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                            isPoolOpen
+                              ? "bg-purple-600 text-white hover:bg-purple-700 cursor-pointer"
+                              : "bg-gray-400 text-white cursor-not-allowed opacity-60"
+                          }`}
+                        >
+                          {isPoolOpen ? "Predict Now" : "Pool Closed"}
+                        </button>
+                      );
+                    })()}
                   </SignedIn>
                   <SignedOut>
                     <Link

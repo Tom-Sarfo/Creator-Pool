@@ -75,6 +75,11 @@ export default function CreatorDashboard() {
         return videosWithStatus.filter(
           (video) => video.poolStatus === "active"
         );
+      case "settled":
+        // Show videos with settled pools
+        return videosWithStatus.filter(
+          (video) => video.hasPool && video.poolData?.status === "settled"
+        );
       case "unlisted":
         // Show videos that are available for pool creation (unlisted without pools)
         return videosWithStatus.filter(
@@ -93,6 +98,9 @@ export default function CreatorDashboard() {
   ).length;
   const unlistedVideoCount = videosWithStatus.filter(
     (video) => video.poolStatus === "available"
+  ).length;
+  const settledVideoCount = videosWithStatus.filter(
+    (video) => video.hasPool && video.poolData?.status === "settled"
   ).length;
 
   const getPoolStatusColor = (poolStatus: string) => {
@@ -162,6 +170,11 @@ export default function CreatorDashboard() {
       id: "active",
       name: "Active Pool",
       count: activeVideoCount,
+    },
+    {
+      id: "settled",
+      name: "Settled",
+      count: settledVideoCount,
     },
     {
       id: "unlisted",

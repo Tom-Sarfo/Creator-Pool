@@ -128,7 +128,7 @@ export default function PredictorPools() {
             </button>
           </div>
 
-          {/* Search */}
+          {/* Search and Category Filter */}
           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
             <div className="relative">
               <input
@@ -143,24 +143,23 @@ export default function PredictorPools() {
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4"
               />
             </div>
+            <Select
+              value={selectedCategory}
+              onValueChange={setSelectedCategory}
+            >
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
-      </div>
-
-      {/* Category Filter */}
-      <div className="flex justify-center mb-6">
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Select category" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map((category) => (
-              <SelectItem key={category.id} value={category.id}>
-                {category.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
 
       {/* Pools Grid */}
@@ -255,27 +254,58 @@ export default function PredictorPools() {
                   const odds =
                     pool.odds ||
                     calculateDynamicOdds(pool.yesStake || 0, pool.noStake || 0);
+                  const isPoolOpen = pool.status === "open";
                   return (
                     <>
                       <button
-                        onClick={() => handlePredictClick(pool, "yes")}
-                        className="flex-1 rounded-lg p-2 text-center transition-all cursor-pointer bg-green-50 border border-green-200 hover:bg-green-100"
+                        onClick={() =>
+                          isPoolOpen && handlePredictClick(pool, "yes")
+                        }
+                        disabled={!isPoolOpen}
+                        className={`flex-1 rounded-lg p-2 text-center transition-all ${
+                          isPoolOpen
+                            ? "cursor-pointer bg-green-50 border border-green-200 hover:bg-green-100"
+                            : "cursor-not-allowed bg-gray-50 border border-gray-200 opacity-60"
+                        }`}
                       >
-                        <div className="text-xs text-green-600 font-medium">
+                        <div
+                          className={`text-xs font-medium ${
+                            isPoolOpen ? "text-green-600" : "text-gray-500"
+                          }`}
+                        >
                           YES
                         </div>
-                        <div className="text-sm font-bold text-green-700">
+                        <div
+                          className={`text-sm font-bold ${
+                            isPoolOpen ? "text-green-700" : "text-gray-600"
+                          }`}
+                        >
                           {odds.yes.toFixed(2)}x
                         </div>
                       </button>
                       <button
-                        onClick={() => handlePredictClick(pool, "no")}
-                        className="flex-1 rounded-lg p-2 text-center transition-all cursor-pointer bg-red-50 border border-red-200 hover:bg-red-100"
+                        onClick={() =>
+                          isPoolOpen && handlePredictClick(pool, "no")
+                        }
+                        disabled={!isPoolOpen}
+                        className={`flex-1 rounded-lg p-2 text-center transition-all ${
+                          isPoolOpen
+                            ? "cursor-pointer bg-red-50 border border-red-200 hover:bg-red-100"
+                            : "cursor-not-allowed bg-gray-50 border border-gray-200 opacity-60"
+                        }`}
                       >
-                        <div className="text-xs text-red-600 font-medium">
+                        <div
+                          className={`text-xs font-medium ${
+                            isPoolOpen ? "text-red-600" : "text-gray-500"
+                          }`}
+                        >
                           NO
                         </div>
-                        <div className="text-sm font-bold text-red-700">
+                        <div
+                          className={`text-sm font-bold ${
+                            isPoolOpen ? "text-red-700" : "text-gray-600"
+                          }`}
+                        >
                           {odds.no.toFixed(2)}x
                         </div>
                       </button>
