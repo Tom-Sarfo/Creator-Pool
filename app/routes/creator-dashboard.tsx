@@ -20,6 +20,7 @@ import EnablePoolModal from "../components/EnablePoolModal";
 import StatsCard from "../components/StatsCard";
 import { useAppContext } from "../contexts/AppContext";
 import type { Pool } from "../contexts/AppContext";
+import YouTubeConnectionButton from "../components/YouTubeConnectionButton";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -261,6 +262,28 @@ export default function CreatorDashboard() {
         <p className="text-gray-600">
           Manage your prediction pools and earnings
         </p>
+      </div>
+
+      {/* YouTube Connection Status - Temporarily disabled */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+          <div className="flex-1">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              YouTube Channel Connection
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Connect your YouTube channel to sync unlisted videos and create
+              prediction pools.
+            </p>
+            <div className="flex items-center space-x-2 text-sm text-gray-500">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span>Ready to connect</span>
+            </div>
+          </div>
+          <div className="flex-shrink-0">
+            <YouTubeConnectionButton />
+          </div>
+        </div>
       </div>
 
       {/* Stats Cards */}

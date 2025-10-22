@@ -10,6 +10,7 @@ export default [
   route("youtube-test", "routes/youtube-test.tsx"),
   route("api/youtube/auth", "routes/api/youtube/auth.ts"),
   route("api/youtube/callback", "routes/api/youtube/callback.ts"),
+  route("api/youtube/tokens", "routes/api/youtube/tokens.ts"),
   route("creator", "routes/creator-layout.tsx", [
     index("routes/creator-dashboard.tsx"),
     route("pools", "routes/creator-pools.tsx"),
@@ -17,6 +18,7 @@ export default [
     route("analytics", "routes/creator-analytics.tsx"),
     route("wallet", "routes/creator-wallet.tsx"),
     route("settings", "routes/creator-settings.tsx"),
+    route("youtube-settings", "routes/creator-youtube-settings.tsx"),
   ]),
   route("predictor", "routes/predictor-layout.tsx", [
     index("routes/predictor-dashboard.tsx"),

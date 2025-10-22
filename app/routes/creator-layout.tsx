@@ -16,6 +16,7 @@ import {
   faHome,
   faUsersRectangle,
 } from "@fortawesome/free-solid-svg-icons";
+import { faYoutube } from "@fortawesome/free-brands-svg-icons";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 
@@ -57,6 +58,7 @@ export default function CreatorLayout() {
     { name: "Dashboard", href: "/creator", icon: faHome },
     { name: "Pools", href: "/creator/pools", icon: faUsersRectangle },
     { name: "Analytics", href: "/creator/analytics", icon: faChartLine },
+    { name: "YouTube", href: "/creator/youtube-settings", icon: faYoutube },
     { name: "Wallet", href: "/creator/wallet", icon: faWallet },
     { name: "Settings", href: "/creator/settings", icon: faCog },
   ];

@@ -1,0 +1,226 @@
+// YouTube Video API service for fetching videos from connected channels
+
+export interface YouTubeVideo {
+  id: string;
+  title: string;
+  description: string;
+  thumbnail: string;
+  publishedAt: string;
+  status: "unlisted" | "private" | "public";
+  viewCount: number;
+  likeCount: number;
+  commentCount: number;
+  duration: string;
+  channelId: string;
+  channelTitle: string;
+}
+
+export interface YouTubeChannel {
+  id: string;
+  title: string;
+  description: string;
+  thumbnail: string;
+  subscriberCount: number;
+  videoCount: number;
+}
+
+export class YouTubeVideoAPI {
+  private accessToken: string;
+
+  constructor(accessToken: string) {
+    this.accessToken = accessToken;
+  }
+
+  // Get channel information
+  async getChannel(): Promise<YouTubeChannel> {
+    const response = await fetch(
+      `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true&access_token=${this.accessToken}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch channel: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const channel = data.items?.[0];
+
+    if (!channel) {
+      throw new Error("No channel found");
+    }
+
+    return {
+      id: channel.id,
+      title: channel.snippet.title,
+      description: channel.snippet.description,
+      thumbnail: channel.snippet.thumbnails.default.url,
+      subscriberCount: parseInt(channel.statistics.subscriberCount || "0"),
+      videoCount: parseInt(channel.statistics.videoCount || "0"),
+    };
+  }
+
+  // Get all videos from the channel
+  async getVideos(maxResults: number = 50): Promise<YouTubeVideo[]> {
+    const response = await fetch(
+      `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&forMine=true&maxResults=${maxResults}&access_token=${this.accessToken}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch videos: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const videos = data.items || [];
+
+    // Get detailed information for each video
+    const videoDetails = await Promise.all(
+      videos.map(async (video: any) => {
+        try {
+          const details = await this.getVideoDetails(video.id.videoId);
+          return {
+            id: video.id.videoId,
+            title: video.snippet.title,
+            description: video.snippet.description,
+            thumbnail:
+              video.snippet.thumbnails.medium?.url ||
+              video.snippet.thumbnails.default.url,
+            publishedAt: video.snippet.publishedAt,
+            status: details.status,
+            viewCount: details.viewCount,
+            likeCount: details.likeCount,
+            commentCount: details.commentCount,
+            duration: details.duration,
+            channelId: video.snippet.channelId,
+            channelTitle: video.snippet.channelTitle,
+          };
+        } catch (error) {
+          console.error(
+            `Failed to get details for video ${video.id.videoId}:`,
+            error
+          );
+          return null;
+        }
+      })
+    );
+
+    return videoDetails.filter(
+      (video): video is YouTubeVideo => video !== null
+    );
+  }
+
+  // Get detailed information for a specific video
+  async getVideoDetails(videoId: string): Promise<{
+    status: "unlisted" | "private" | "public";
+    viewCount: number;
+    likeCount: number;
+    commentCount: number;
+    duration: string;
+  }> {
+    const response = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?part=statistics,status,contentDetails&id=${videoId}&access_token=${this.accessToken}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch video details: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const video = data.items?.[0];
+
+    if (!video) {
+      throw new Error("Video not found");
+    }
+
+    return {
+      status: video.status.privacyStatus as "unlisted" | "private" | "public",
+      viewCount: parseInt(video.statistics.viewCount || "0"),
+      likeCount: parseInt(video.statistics.likeCount || "0"),
+      commentCount: parseInt(video.statistics.commentCount || "0"),
+      duration: this.parseDuration(video.contentDetails.duration),
+    };
+  }
+
+  // Get only unlisted videos
+  async getUnlistedVideos(): Promise<YouTubeVideo[]> {
+    const allVideos = await this.getVideos();
+    return allVideos.filter((video) => video.status === "unlisted");
+  }
+
+  // Parse YouTube duration format (PT4M13S) to readable format
+  private parseDuration(duration: string): string {
+    const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+    if (!match) return "0:00";
+
+    const hours = parseInt(match[1] || "0");
+    const minutes = parseInt(match[2] || "0");
+    const seconds = parseInt(match[3] || "0");
+
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+    } else {
+      return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+    }
+  }
+
+  // Convert YouTube video to app's video format
+  static convertToAppVideo(youtubeVideo: YouTubeVideo): any {
+    return {
+      id: youtubeVideo.id,
+      title: youtubeVideo.title,
+      thumbnail: youtubeVideo.thumbnail,
+      duration: youtubeVideo.duration,
+      views: youtubeVideo.viewCount,
+      likes: youtubeVideo.likeCount,
+      uploadDate: new Date(youtubeVideo.publishedAt).toLocaleDateString(),
+      status: youtubeVideo.status,
+      youtubeId: youtubeVideo.id,
+      youtubeChannelId: youtubeVideo.channelId,
+      lastSyncedAt: new Date().toISOString(),
+    };
+  }
+}
+
+// Utility function to get stored access token
+export async function getStoredAccessToken(): Promise<string | null> {
+  try {
+    const response = await fetch("/api/youtube/tokens");
+    if (response.ok) {
+      const data = await response.json();
+      return data.tokens?.accessToken || null;
+    }
+  } catch (error) {
+    console.error("Failed to get stored access token:", error);
+  }
+  return null;
+}
+
+// Utility function to sync videos
+export async function syncYouTubeVideos(): Promise<{
+  channel: YouTubeChannel;
+  videos: YouTubeVideo[];
+  unlistedVideos: YouTubeVideo[];
+}> {
+  const accessToken = await getStoredAccessToken();
+
+  if (!accessToken) {
+    throw new Error(
+      "No YouTube access token found. Please connect your channel first."
+    );
+  }
+
+  const api = new YouTubeVideoAPI(accessToken);
+
+  const [channel, allVideos] = await Promise.all([
+    api.getChannel(),
+    api.getVideos(),
+  ]);
+
+  const unlistedVideos = allVideos.filter(
+    (video) => video.status === "unlisted"
+  );
+
+  return {
+    channel,
+    videos: allVideos,
+    unlistedVideos,
+  };
+}
