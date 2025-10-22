@@ -7,6 +7,9 @@ export default [
   route("login", "routes/login.tsx"),
   route("pools", "routes/pools.tsx"),
   route("dashboard", "routes/dashboard.tsx"),
+  route("youtube-test", "routes/youtube-test.tsx"),
+  route("api/youtube/auth", "routes/api/youtube/auth.ts"),
+  route("api/youtube/callback", "routes/api/youtube/callback.ts"),
   route("creator", "routes/creator-layout.tsx", [
     index("routes/creator-dashboard.tsx"),
     route("pools", "routes/creator-pools.tsx"),

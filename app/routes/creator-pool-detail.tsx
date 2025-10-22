@@ -632,113 +632,41 @@ export default function CreatorPoolDetailPage({
 
             {/* Analytics Tab */}
             {activeTab === "analytics" && (
-              <>
-                {/* Performance Metrics */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="bg-white rounded-lg border border-gray-200 p-6">
-                    <div className="flex items-center">
-                      <div className="p-3 bg-blue-100 rounded-lg">
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex items-center justify-center min-h-[40vh]">
+                  <div className="text-center max-w-md mx-auto">
+                    <div className="mb-6">
+                      <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <FontAwesomeIcon
-                          icon={faUsers}
-                          className="w-6 h-6 text-blue-600"
+                          icon={faChartLine}
+                          className="w-10 h-10 text-purple-600"
                         />
                       </div>
-                      <div className="ml-4">
-                        <p className="text-sm text-gray-600">
-                          Total Participants
-                        </p>
-                        <p className="text-2xl font-bold text-gray-900">
-                          {pool.participants}
-                        </p>
-                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        Analytics Coming Soon
+                      </h3>
+                      <p className="text-gray-600 mb-4">
+                        Detailed analytics for this pool are being developed.
+                        You'll soon be able to track performance metrics,
+                        participant engagement, and revenue insights.
+                      </p>
                     </div>
-                  </div>
 
-                  <div className="bg-white rounded-lg border border-gray-200 p-6">
-                    <div className="flex items-center">
-                      <div className="p-3 bg-green-100 rounded-lg">
-                        <FontAwesomeIcon
-                          icon={faDollarSign}
-                          className="w-6 h-6 text-green-600"
-                        />
-                      </div>
-                      <div className="ml-4">
-                        <p className="text-sm text-gray-600">Total Pool Size</p>
-                        <p className="text-2xl font-bold text-gray-900">
-                          ${pool.totalStake.toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-lg border border-gray-200 p-6">
-                    <div className="flex items-center">
-                      <div className="p-3 bg-purple-100 rounded-lg">
-                        <FontAwesomeIcon
-                          icon={faTrophy}
-                          className="w-6 h-6 text-purple-600"
-                        />
-                      </div>
-                      <div className="ml-4">
-                        <p className="text-sm text-gray-600">Your Royalty</p>
-                        <p className="text-2xl font-bold text-gray-900">
-                          ${pool.creatorRoyalty}
-                        </p>
-                      </div>
+                    <div className="bg-purple-50 rounded-lg p-4 text-left">
+                      <h4 className="font-semibold text-purple-900 mb-2">
+                        <FontAwesomeIcon icon={faInfoCircle} className="mr-2" />
+                        What's Coming
+                      </h4>
+                      <ul className="space-y-1 text-sm text-purple-800">
+                        <li>• Real-time participation tracking</li>
+                        <li>• Revenue and earnings breakdown</li>
+                        <li>• Participant behavior insights</li>
+                        <li>• Performance comparison tools</li>
+                      </ul>
                     </div>
                   </div>
                 </div>
-
-                {/* Daily Stats Chart */}
-                <div className="bg-white rounded-lg border border-gray-200 p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">
-                    Daily Performance
-                  </h3>
-                  <div className="space-y-4">
-                    {pool.dailyStats.map((stat, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
-                      >
-                        <div>
-                          <p className="font-medium text-gray-900">
-                            {stat.date}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            {stat.predictions} new predictions
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg font-semibold text-gray-900">
-                            {stat.views.toLocaleString()} views
-                          </p>
-                          <div className="flex items-center space-x-2 text-sm text-green-600">
-                            <FontAwesomeIcon
-                              icon={faArrowUp}
-                              className="w-4 h-4"
-                            />
-                            <span>
-                              +
-                              {(
-                                ((stat.views -
-                                  (index > 0
-                                    ? pool.dailyStats[index - 1].views
-                                    : 0)) /
-                                  Math.max(
-                                    pool.dailyStats[index - 1]?.views || 1,
-                                    1
-                                  )) *
-                                100
-                              ).toFixed(1)}
-                              %
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
+              </div>
             )}
 
             {/* Settings Tab */}
