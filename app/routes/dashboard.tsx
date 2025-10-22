@@ -21,6 +21,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { DASHBOARD_NAVIGATION, CATEGORIES } from "../lib/constants";
 import { useAppContext } from "../contexts/AppContext";
+import PlayButtonOverlay from "../components/PlayButtonOverlay";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -176,14 +177,7 @@ export default function DashboardPage() {
                           alt={pool.title}
                           className="w-full h-48 object-cover"
                         />
-                        <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
-                          <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center">
-                            <FontAwesomeIcon
-                              icon="play"
-                              className="w-6 h-6 text-white ml-1"
-                            />
-                          </div>
-                        </div>
+                        <PlayButtonOverlay className="bg-black bg-opacity-20" />
                         <div className="absolute top-3 left-3">
                           <span
                             className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(pool.status)}`}

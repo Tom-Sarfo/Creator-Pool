@@ -11,6 +11,7 @@ import {
 import { useSearchParams } from "react-router";
 import { RECENT_PREDICTIONS, QUICK_STAKES } from "../lib/constants";
 import { useAppContext } from "../contexts/AppContext";
+import PlayButtonOverlay from "../components/PlayButtonOverlay";
 import { calculatePotentialPayout } from "../lib/utils";
 
 export function meta({ params }: Route.MetaArgs) {
@@ -50,8 +51,7 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
         totalStake: poolData.totalStake,
         participants: poolData.participants,
         odds: poolData.odds || { yes: 0.5, no: 0.5 },
-        status:
-          poolData.status === "LIVE" ? "Open for predictions" : poolData.status,
+        status: poolData.status,
         question: poolData.question,
         description: `Join this prediction pool for ${poolData.title}. ${poolData.question} Help determine the outcome and potentially earn rewards based on your prediction accuracy.`,
         releaseDate: "Dec 15, 2024",
@@ -126,14 +126,11 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
               alt={pool.title}
               className="w-full h-64 object-cover"
             />
-            <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
-              <div className="w-20 h-20 bg-red-600 rounded-full flex items-center justify-center">
-                <FontAwesomeIcon
-                  icon="play"
-                  className="w-8 h-8 text-white ml-1"
-                />
-              </div>
-            </div>
+            <PlayButtonOverlay
+              className="bg-black bg-opacity-20"
+              size="lg"
+              iconSize="lg"
+            />
             <div className="absolute top-4 left-4">
               <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
                 {pool.status}

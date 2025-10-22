@@ -1,3 +1,6 @@
+// Import types
+import type { Pool } from "../contexts/AppContext";
+
 // Prediction and odds calculation utilities
 export function calculateDynamicOdds(yesStake: number, noStake: number) {
   const totalStake = yesStake + noStake;
@@ -47,6 +50,49 @@ export function validateStake(
     };
   }
   return { valid: true };
+}
+
+// Calculate remaining time for open pools with precise formatting
+export function calculateRemainingTime(pool: Pool, currentTime: Date) {
+  if (pool.status !== "open" || !pool.createdAt) {
+    return pool.timeRemaining || "N/A";
+  }
+
+  const poolCreatedAt = new Date(pool.createdAt);
+  const predictionWindow = pool.predictionWindow || 10; // Default 10 minutes
+  const deadline = new Date(
+    poolCreatedAt.getTime() + predictionWindow * 60 * 1000
+  );
+  const remaining = deadline.getTime() - currentTime.getTime();
+
+  if (remaining <= 0) {
+    return "00:00";
+  }
+
+  const minutes = Math.floor(remaining / (1000 * 60));
+  const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+
+  // Format with leading zeros for better visual consistency
+  const formattedMinutes = minutes.toString().padStart(2, "0");
+  const formattedSeconds = seconds.toString().padStart(2, "0");
+
+  return `${formattedMinutes}:${formattedSeconds}`;
+}
+
+// Check if timer is in final 30 seconds (for visual urgency)
+export function isTimerUrgent(pool: Pool, currentTime: Date) {
+  if (pool.status !== "open" || !pool.createdAt) {
+    return false;
+  }
+
+  const poolCreatedAt = new Date(pool.createdAt);
+  const predictionWindow = pool.predictionWindow || 10;
+  const deadline = new Date(
+    poolCreatedAt.getTime() + predictionWindow * 60 * 1000
+  );
+  const remaining = deadline.getTime() - currentTime.getTime();
+
+  return remaining <= 30000 && remaining > 0; // Last 30 seconds
 }
 
 // Utility to extract duration from question text and calculate time remaining

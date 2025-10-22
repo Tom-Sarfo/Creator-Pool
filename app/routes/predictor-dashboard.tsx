@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useUser } from "@clerk/react-router";
+import React, { useState } from "react";
 import {
   faBullseye,
   faChartLine,
@@ -14,10 +15,54 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { PREDICTOR_QUICK_ACTIONS } from "../lib/constants";
 import { useAppContext } from "../contexts/AppContext";
+import { calculateRemainingTime, isTimerUrgent } from "../lib/utils";
 
 export default function PredictorDashboard() {
   const { pools, predictions, getPredictionsByPredictor } = useAppContext();
   const { user } = useUser();
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Update current time every second for real-time timers
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "open":
+        return "bg-green-100 text-green-800";
+      case "awaiting_release":
+        return "bg-yellow-100 text-yellow-800";
+      case "live_tracking":
+        return "bg-blue-100 text-blue-800";
+      case "closed":
+        return "bg-orange-100 text-orange-800";
+      case "settled":
+        return "bg-purple-100 text-purple-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "open":
+        return "Open";
+      case "awaiting_release":
+        return "Awaiting Release";
+      case "live_tracking":
+        return "Live Tracking";
+      case "closed":
+        return "Closed";
+      case "settled":
+        return "Settled";
+      default:
+        return status;
+    }
+  };
 
   // Calculate stats from actual prediction data
   const userPredictions = predictions.filter(
@@ -42,7 +87,7 @@ export default function PredictorDashboard() {
   };
 
   const recentPools = pools
-    .filter((p) => p.status === "active")
+    .filter((p) => p.status === "open")
     .sort(
       (a, b) =>
         new Date(b.createdAt || 0).getTime() -
@@ -215,15 +260,17 @@ export default function PredictorDashboard() {
                     <span className="text-sm font-medium text-gray-900">
                       {pool.creator}
                     </span>
-                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                      VERIFIED
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusColor(pool.status)}`}
+                    >
+                      {getStatusLabel(pool.status)}
                     </span>
                   </div>
                   <p className="text-sm text-gray-600 truncate">{pool.title}</p>
                   <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
                     <div className="flex items-center space-x-1">
                       <FontAwesomeIcon icon={faClock} className="w-3 h-3" />
-                      <span>{pool.timeRemaining}</span>
+                      <span>{calculateRemainingTime(pool, currentTime)}</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <FontAwesomeIcon icon={faUsers} className="w-3 h-3" />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Link } from "react-router";
 import { useUser } from "@clerk/react-router";
@@ -6,7 +6,12 @@ import { CATEGORIES } from "../lib/constants";
 import { useAppContext } from "../contexts/AppContext";
 import type { Pool } from "../contexts/AppContext";
 import PredictionModal from "../components/PredictionModal";
-import { calculateDynamicOdds } from "../lib/utils";
+import PlayButtonOverlay from "../components/PlayButtonOverlay";
+import {
+  calculateDynamicOdds,
+  calculateRemainingTime,
+  isTimerUrgent,
+} from "../lib/utils";
 import {
   Select,
   SelectContent,
@@ -28,19 +33,47 @@ export default function PredictorPools() {
   const { pools, addPrediction, addToast, calculatePoolOdds } = useAppContext();
   const { user } = useUser();
   const categories = CATEGORIES;
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Update current time every second for real-time timers
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "HOT":
-        return "bg-red-100 text-red-800";
-      case "TRENDING":
-        return "bg-blue-100 text-blue-800";
-      case "LIVE":
+      case "open":
         return "bg-green-100 text-green-800";
-      case "NEW":
+      case "awaiting_release":
+        return "bg-yellow-100 text-yellow-800";
+      case "live_tracking":
+        return "bg-blue-100 text-blue-800";
+      case "closed":
+        return "bg-orange-100 text-orange-800";
+      case "settled":
         return "bg-purple-100 text-purple-800";
       default:
         return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "open":
+        return "Open";
+      case "awaiting_release":
+        return "Awaiting Release";
+      case "live_tracking":
+        return "Live Tracking";
+      case "closed":
+        return "Closed";
+      case "settled":
+        return "Settled";
+      default:
+        return status;
     }
   };
 
@@ -182,25 +215,30 @@ export default function PredictorPools() {
                 }}
               />
               {/* Play button overlay - only visible on hover */}
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-lg">
-                  <FontAwesomeIcon
-                    icon="play"
-                    className="w-6 h-6 text-white ml-1"
-                  />
-                </div>
-              </div>
+              <PlayButtonOverlay />
               <div className="absolute top-3 left-3">
                 <span
                   className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(pool.status)}`}
                 >
-                  {pool.status}
+                  {getStatusLabel(pool.status)}
                 </span>
               </div>
               <div className="absolute top-3 right-3">
-                <span className="bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs flex items-center space-x-1">
+                <span
+                  className={`px-2 py-1 rounded text-xs flex items-center space-x-1 font-mono ${
+                    pool.status === "open" &&
+                    calculateRemainingTime(pool, currentTime) === "00:00"
+                      ? "bg-red-600 text-white animate-pulse"
+                      : pool.status === "open" &&
+                          isTimerUrgent(pool, currentTime)
+                        ? "bg-orange-500 text-white animate-pulse"
+                        : "bg-black bg-opacity-50 text-white"
+                  }`}
+                >
                   <FontAwesomeIcon icon="clock" className="w-3 h-3" />
-                  <span>{pool.timeRemaining}</span>
+                  <span className="font-bold">
+                    {calculateRemainingTime(pool, currentTime)}
+                  </span>
                 </span>
               </div>
             </div>
