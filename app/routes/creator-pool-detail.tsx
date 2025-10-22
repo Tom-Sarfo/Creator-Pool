@@ -30,19 +30,20 @@ import {
   faTrophy,
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
-import { STATUS_COLORS, STATUS_TIMELINE } from "../lib/constants";
+import {
+  STATUS_COLORS,
+  STATUS_TIMELINE,
+  STATUS_LABELS,
+  generateTimelineForStatus,
+  type PoolStatus,
+} from "../lib/constants";
 import { useAppContext } from "../contexts/AppContext";
+import Stepper, { type StepperStep } from "../components/Stepper";
 
-const getStatusColor = (status: string) =>
-  STATUS_COLORS[status?.toLowerCase() as keyof typeof STATUS_COLORS] ||
-  "bg-gray-100 text-gray-800";
+const getStatusColor = (status: PoolStatus) =>
+  STATUS_COLORS[status] || "bg-gray-100 text-gray-800";
 
-const getProgressIcon = (phase: any) => (
-  <FontAwesomeIcon
-    icon={phase.completed ? faCheckCircle : faClock}
-    className={`w-4 h-4 ${phase.completed ? "text-purple-600" : "text-gray-400"}`}
-  />
-);
+const getStatusLabel = (status: PoolStatus) => STATUS_LABELS[status] || status;
 
 const calculatePoolMetrics = (poolData: any, videoData: any) => {
   const currentViews =
@@ -125,8 +126,13 @@ export default function CreatorPoolDetailPage({
   const [showPledgeModal, setShowPledgeModal] = useState(false);
   const [predictionFilter, setPredictionFilter] = useState("all");
 
-  const { getPoolById, pools, getVideoById, getPredictionsByPoolId } =
-    useAppContext();
+  const {
+    getPoolById,
+    pools,
+    getVideoById,
+    getPredictionsByPoolId,
+    transitionPoolToNextStage,
+  } = useAppContext();
   const { user } = useUser();
   const statusParam = searchParams.get("status") || "active";
 
@@ -143,8 +149,8 @@ export default function CreatorPoolDetailPage({
 
   const videoData = poolData.videoId ? getVideoById(poolData.videoId) : null;
   const statusData =
-    STATUS_TIMELINE[statusParam as keyof typeof STATUS_TIMELINE] ||
-    STATUS_TIMELINE.active;
+    STATUS_TIMELINE[poolData.status as keyof typeof STATUS_TIMELINE] ||
+    STATUS_TIMELINE.open;
 
   const metrics = calculatePoolMetrics(poolData, videoData);
 
@@ -158,7 +164,7 @@ export default function CreatorPoolDetailPage({
     creatorSubs: poolData.creatorSubs || videoData?.creatorSubs || "0 subs",
     thumbnail: poolData.thumbnail || videoData?.thumbnail || "",
     category: poolData.category || videoData?.category || "general",
-    status: poolData.status || "unknown",
+    status: poolData.status || "open",
     timeRemaining: poolData.timeRemaining || statusData.timeRemaining,
     totalStake: metrics.totalPoolAmount || 0, // Use the calculated total pool amount
     participants: poolData.participants || 0,
@@ -192,7 +198,7 @@ export default function CreatorPoolDetailPage({
     likeRatio: videoData?.likes
       ? `${Math.round((videoData.likes / Math.max(videoData.views, 1)) * 100)}%`
       : "0%",
-    timeline: statusData.timeline,
+    timeline: generateTimelineForStatus(poolData.status || "open", poolData),
     dailyStats: [
       {
         date: "Dec 16",
@@ -273,16 +279,28 @@ export default function CreatorPoolDetailPage({
               <span
                 className={`px-3 py-1 rounded-full text-sm font-medium text-center sm:text-left ${getStatusColor(pool.status)}`}
               >
-                {pool.status}
+                {getStatusLabel(pool.status)}
               </span>
 
               {/* Action buttons - responsive sizing */}
               <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-                {pool.status?.toLowerCase() === "active" && (
+                {pool.status === "open" && (
                   <button className="px-3 sm:px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center justify-center space-x-2 text-sm">
                     <FontAwesomeIcon icon={faPause} className="w-4 h-4" />
                     <span className="hidden sm:inline">Pause Pool</span>
                     <span className="sm:hidden">Pause</span>
+                  </button>
+                )}
+
+                {/* Manual transition button for testing */}
+                {pool.status !== "settled" && (
+                  <button
+                    onClick={() => transitionPoolToNextStage(poolId)}
+                    className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 text-sm"
+                  >
+                    <FontAwesomeIcon icon={faArrowUp} className="w-4 h-4" />
+                    <span className="hidden sm:inline">Next Stage</span>
+                    <span className="sm:hidden">Next</span>
                   </button>
                 )}
                 {pool.pledgeStatus === "pending" && (
@@ -351,81 +369,53 @@ export default function CreatorPoolDetailPage({
               <>
                 {/* Pool Timeline */}
                 <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">
-                    Pool Timeline
-                  </h3>
-                  {/* Mobile: Vertical timeline, Desktop: Horizontal */}
-                  <div className="block sm:hidden space-y-4">
-                    {pool.timeline.map((phase, index) => (
-                      <div
-                        key={phase.phase}
-                        className="flex items-start space-x-4"
-                      >
-                        <div className="flex-shrink-0">
-                          <div
-                            className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                              phase.completed ? "bg-purple-100" : "bg-gray-100"
-                            }`}
-                          >
-                            {getProgressIcon(phase)}
-                          </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div
-                            className={`text-sm font-medium ${phase.completed ? "text-gray-900" : "text-gray-500"}`}
-                          >
-                            {phase.phase}
-                          </div>
-                          <div
-                            className={`text-xs ${phase.completed ? "text-gray-600" : "text-gray-400"}`}
-                          >
-                            {phase.date}
-                          </div>
-                          <div className="text-xs text-gray-500 mt-1">
-                            {phase.description}
-                          </div>
-                        </div>
-                        {index < pool.timeline.length - 1 && (
-                          <div className="absolute left-7 mt-8 w-0.5 h-6 bg-gray-200"></div>
-                        )}
-                      </div>
-                    ))}
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-lg font-medium text-gray-900">
+                      Pool Timeline
+                    </h3>
+                    <div className="flex items-center space-x-2 text-sm text-gray-500">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      <span>Progress</span>
+                    </div>
                   </div>
-                  {/* Desktop: Horizontal timeline */}
-                  <div className="hidden sm:flex items-center justify-between">
-                    {pool.timeline.map((phase, index) => (
-                      <div key={phase.phase} className="flex items-center">
-                        <div className="flex flex-col items-center">
-                          <div
-                            className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                              phase.completed ? "bg-purple-100" : "bg-gray-100"
-                            }`}
-                          >
-                            {getProgressIcon(phase)}
-                          </div>
-                          <span
-                            className={`text-xs mt-2 text-center ${phase.completed ? "text-gray-900" : "text-gray-500"}`}
-                          >
-                            {phase.phase}
-                          </span>
-                          <span
-                            className={`text-xs text-center ${phase.completed ? "text-gray-600" : "text-gray-400"}`}
-                          >
-                            {phase.date}
-                          </span>
-                        </div>
-                        {index < pool.timeline.length - 1 && (
-                          <div
-                            className={`w-12 h-0.5 mx-4 ${
-                              pool.timeline[index + 1].completed
-                                ? "bg-purple-200"
-                                : "bg-gray-200"
-                            }`}
-                          ></div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+
+                  {/* Convert timeline data to Stepper format */}
+                  <Stepper
+                    steps={pool.timeline.map((phase, index) => ({
+                      id: `step-${index}`,
+                      title: phase.phase,
+                      description: phase.description,
+                      date: phase.date,
+                      completed: phase.completed,
+                      icon:
+                        phase.icon === "check"
+                          ? "check"
+                          : phase.icon === "play"
+                            ? "play"
+                            : "clock",
+                    }))}
+                    orientation="horizontal"
+                    className="hidden sm:block"
+                  />
+
+                  {/* Mobile vertical stepper */}
+                  <Stepper
+                    steps={pool.timeline.map((phase, index) => ({
+                      id: `step-${index}`,
+                      title: phase.phase,
+                      description: phase.description,
+                      date: phase.date,
+                      completed: phase.completed,
+                      icon:
+                        phase.icon === "check"
+                          ? "check"
+                          : phase.icon === "play"
+                            ? "play"
+                            : "clock",
+                    }))}
+                    orientation="vertical"
+                    className="block sm:hidden"
+                  />
                 </div>
 
                 {/* Video Information */}

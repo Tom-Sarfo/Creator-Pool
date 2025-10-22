@@ -15,6 +15,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { useAppContext } from "../contexts/AppContext";
 import { POOL_QUESTIONS, PLEDGE_OPTIONS } from "../lib/constants";
+import { Label } from "@radix-ui/react-label";
 
 interface VideoData {
   id: string;
@@ -99,7 +100,7 @@ export default function EnablePoolModal({
 
     const poolData = {
       videoId: selectedVideoId ? parseInt(selectedVideoId) : displayVideo.id,
-      question: questions[selectedQuestion],
+      question: questions[selectedQuestion].text,
       pledgeType,
       pledgeAmount: pledgeType === "fixed" ? parseFloat(customAmount) : 0,
       pledgePercentage: pledgeType === "percentage" ? 15 : 0,
@@ -401,8 +402,11 @@ export default function EnablePoolModal({
                 checked={termsAccepted}
                 onChange={(e) => setTermsAccepted(e.target.checked)}
                 className="mt-0.5 w-4 h-4 bg-white border-2 border-gray-300 rounded focus:ring-0 focus:ring-offset-0 focus:border-purple-500 focus:outline-none checked:bg-purple-500 checked:border-purple-500 text-white transition-colors duration-200"
+                style={{
+                  accentColor: "#8B5CF6",
+                }}
               />
-              <label htmlFor="terms" className="text-sm text-gray-600">
+              <Label htmlFor="terms" className="text-sm text-gray-600">
                 I agree to Creator Pool's{" "}
                 <a
                   href="#"
@@ -412,7 +416,7 @@ export default function EnablePoolModal({
                 </a>{" "}
                 and understand that pools are subject to YouTube's performance
                 metrics and API data.
-              </label>
+              </Label>
             </div>
           </div>
 

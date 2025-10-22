@@ -44,7 +44,7 @@ export default function CreatorDashboard() {
     return videos.map((video) => {
       // Find if this video has an active pool
       const activePool = pools.find(
-        (pool) => pool.videoId === video.id && pool.status === "active"
+        (pool) => pool.videoId === video.id && pool.status === "open"
       );
 
       // Find if this video has any pool (active, settled, ready, etc.)
@@ -52,7 +52,7 @@ export default function CreatorDashboard() {
 
       const isEffectivelyActive =
         activePool ||
-        (video.status === "unlisted" && anyPool && anyPool.status === "active");
+        (video.status === "unlisted" && anyPool && anyPool.status === "open");
 
       // Use the actual pool status if there is one, otherwise videos without pools are available for pool creation
       const poolStatus = anyPool ? anyPool.status : "available";
@@ -195,12 +195,13 @@ export default function CreatorDashboard() {
       question: questionText,
       participants: 0,
       totalStake: poolData.pledgeAmount || 0,
-      timeRemaining: timeRemaining, // Use actual countdown for unlisted videos
-      status: "active", // Always active to allow predictions during unlisted stage
+      timeRemaining: "10m", // Will be updated automatically by context
+      status: "open", // Always open to allow predictions during unlisted stage
       createdAt: new Date().toISOString(),
       targetViews: targetViews,
       currentViews: 0,
       duration: totalDays,
+      predictionWindow: 10, // 10 minutes for prediction window
       // Add additional properties based on the selected video if available
       ...(selectedVideoData && {
         thumbnail: selectedVideoData.thumbnail,

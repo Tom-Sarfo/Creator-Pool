@@ -121,12 +121,13 @@ export default function CreatorPools() {
       totalStake: creatorPledgeAmount, // Initially just the creator pledge
       creatorPledge: creatorPledgeAmount, // Track creator pledge separately
       predictorStakes: 0, // No predictor stakes initially
-      timeRemaining: timeRemaining, // Use actual countdown for unlisted videos
-      status: "active", // Always active to allow predictions during unlisted stage
+      timeRemaining: "10m", // Will be updated automatically by context
+      status: "open", // Always open to allow predictions during unlisted stage
       createdAt: new Date().toISOString(),
       targetViews: targetViews,
       currentViews: 0,
       duration: totalDays,
+      predictionWindow: 10, // 10 minutes for prediction window
       // Add additional properties based on the selected video if available
       ...(selectedVideo && {
         thumbnail: selectedVideo.thumbnail,
@@ -169,7 +170,7 @@ export default function CreatorPools() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatsCard
           title="Active Pools"
-          value={pools.filter((p) => p.status === "active").length}
+          value={pools.filter((p) => p.status === "open").length}
           icon={faUsersRectangle}
           iconColor="text-green-600"
           iconBgColor="bg-green-100"
@@ -282,7 +283,7 @@ export default function CreatorPools() {
               <div className="mb-4 -mx-4 sm:mx-0 px-4 sm:px-0">
                 <div className="flex items-center justify-between text-xs sm:text-sm text-gray-500 mb-2">
                   <span className="truncate mr-2">
-                    {pool.status === "active"
+                    {pool.status === "open"
                       ? "Progress to target"
                       : pool.status === "settled"
                         ? "Final progress"
@@ -298,7 +299,7 @@ export default function CreatorPools() {
                 <div className="w-full bg-gray-200 rounded-full h-2 sm:h-3">
                   <div
                     className={`h-2 sm:h-3 rounded-full ${
-                      pool.status === "active"
+                      pool.status === "open"
                         ? "bg-purple-600"
                         : pool.status === "settled"
                           ? "bg-green-600"
@@ -334,7 +335,7 @@ export default function CreatorPools() {
                   <span className="hidden sm:inline">View Details</span>
                   <span className="sm:hidden">View</span>
                 </Link>
-                {pool.status === "active" && (
+                {pool.status === "open" && (
                   <Link
                     to={`/creator/pool/${pool.id}?status=active`}
                     className="bg-purple-600 text-white text-sm py-2 px-3 sm:px-4 rounded-md hover:bg-purple-700 transition-colors text-center w-full sm:w-auto"

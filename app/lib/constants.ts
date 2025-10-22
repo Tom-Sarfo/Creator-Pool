@@ -1110,19 +1110,116 @@ export const PLEDGE_OPTIONS = [
   },
 ];
 
+// Pool lifecycle stages
+export type PoolStatus =
+  | "open"
+  | "awaiting_release"
+  | "live_tracking"
+  | "closed"
+  | "settled";
+
 // Pool status constants
 export const STATUS_COLORS = {
-  active: "bg-green-100 text-green-800",
-  settling: "bg-blue-100 text-blue-800",
+  open: "bg-green-100 text-green-800",
+  awaiting_release: "bg-yellow-100 text-yellow-800",
+  live_tracking: "bg-blue-100 text-blue-800",
+  closed: "bg-orange-100 text-orange-800",
   settled: "bg-purple-100 text-purple-800",
   expired: "bg-gray-100 text-gray-800",
   paused: "bg-yellow-100 text-yellow-800",
 } as const;
 
+// Pool status labels
+export const STATUS_LABELS = {
+  open: "Open",
+  awaiting_release: "Awaiting Release",
+  live_tracking: "Live Tracking",
+  closed: "Closed",
+  settled: "Settled",
+  expired: "Expired",
+  paused: "Paused",
+} as const;
+
 export const STATUS_TIMELINE = {
-  active: {
-    status: "ACTIVE",
+  open: {
+    status: "OPEN",
     timeRemaining: "4 days 12h",
+    pledgeStatus: "pending",
+    pledgeDeposited: 0,
+    currentViews: 0,
+    progress: 0,
+    timeline: [
+      {
+        phase: "Pool Created",
+        date: "Dec 10, 2024",
+        completed: true,
+        icon: "check",
+        description: "Pool is open for predictions",
+      },
+      {
+        phase: "Predictions Close",
+        date: "Dec 16, 2024",
+        completed: false,
+        icon: "clock",
+        description: "Prediction period ends",
+      },
+      {
+        phase: "Video Published",
+        date: "TBD",
+        completed: false,
+        icon: "play",
+        description: "Creator publishes video",
+      },
+      {
+        phase: "Settlement",
+        date: "TBD",
+        completed: false,
+        icon: "clock",
+        description: "Results calculated and rewards distributed",
+      },
+    ],
+  },
+  awaiting_release: {
+    status: "AWAITING RELEASE",
+    timeRemaining: "Waiting for video",
+    pledgeStatus: "pending",
+    pledgeDeposited: 0,
+    currentViews: 0,
+    progress: 0,
+    timeline: [
+      {
+        phase: "Pool Created",
+        date: "Dec 10, 2024",
+        completed: true,
+        icon: "check",
+        description: "Pool configuration completed",
+      },
+      {
+        phase: "Predictions Close",
+        date: "Dec 16, 2024",
+        completed: true,
+        icon: "check",
+        description: "Prediction period ended",
+      },
+      {
+        phase: "Video Published",
+        date: "TBD",
+        completed: false,
+        icon: "play",
+        description: "Waiting for creator to publish video",
+      },
+      {
+        phase: "Settlement",
+        date: "TBD",
+        completed: false,
+        icon: "clock",
+        description: "Results calculated and rewards distributed",
+      },
+    ],
+  },
+  live_tracking: {
+    status: "LIVE TRACKING",
+    timeRemaining: "2h 30m",
     pledgeStatus: "pending",
     pledgeDeposited: 0,
     currentViews: 342000,
@@ -1136,6 +1233,13 @@ export const STATUS_TIMELINE = {
         description: "Pool configuration completed",
       },
       {
+        phase: "Predictions Close",
+        date: "Dec 16, 2024",
+        completed: true,
+        icon: "check",
+        description: "Prediction period ended",
+      },
+      {
         phase: "Video Published",
         date: "Dec 15, 2024",
         completed: true,
@@ -1143,19 +1247,49 @@ export const STATUS_TIMELINE = {
         description: "Video went live on YouTube",
       },
       {
+        phase: "Settlement",
+        date: "Dec 22, 2024",
+        completed: false,
+        icon: "clock",
+        description: "Tracking performance metrics",
+      },
+    ],
+  },
+  closed: {
+    status: "CLOSED",
+    timeRemaining: "Processing",
+    pledgeStatus: "pending",
+    pledgeDeposited: 0,
+    currentViews: 500000,
+    progress: 100,
+    timeline: [
+      {
+        phase: "Pool Created",
+        date: "Dec 10, 2024",
+        completed: true,
+        icon: "check",
+        description: "Pool configuration completed",
+      },
+      {
         phase: "Predictions Close",
         date: "Dec 16, 2024",
         completed: true,
-        icon: "clock",
+        icon: "check",
         description: "Prediction period ended",
+      },
+      {
+        phase: "Video Published",
+        date: "Dec 15, 2024",
+        completed: true,
+        icon: "play",
+        description: "Video went live on YouTube",
       },
       {
         phase: "Settlement",
         date: "Dec 22, 2024",
         completed: false,
         icon: "clock",
-        description:
-          "Platform automatically settles pool and disburses rewards",
+        description: "Processing final results",
       },
     ],
   },
@@ -1236,3 +1370,80 @@ export const STATUS_TIMELINE = {
     ],
   },
 } as const;
+
+// Helper function to generate timeline based on pool status
+export const generateTimelineForStatus = (
+  status: PoolStatus,
+  poolData: any
+) => {
+  const baseTimeline = [
+    {
+      phase: "Pool Created",
+      date: poolData.createdAt
+        ? new Date(poolData.createdAt).toLocaleDateString()
+        : "Today",
+      completed: true,
+      icon: "check" as const,
+      description: "Pool is open for predictions",
+    },
+    {
+      phase: "Predictions Close",
+      date: poolData.closesAt
+        ? new Date(poolData.closesAt).toLocaleDateString()
+        : poolData.createdAt
+          ? new Date(
+              new Date(poolData.createdAt).getTime() +
+                (poolData.predictionWindow || 10) * 60 * 1000
+            ).toLocaleString()
+          : "TBD",
+      completed: status !== "open",
+      icon: status !== "open" ? ("check" as const) : ("clock" as const),
+      description:
+        status !== "open"
+          ? "Prediction period ended"
+          : "Prediction period ends",
+    },
+    {
+      phase: "Video Published",
+      date: poolData.publishedAt
+        ? new Date(poolData.publishedAt).toLocaleDateString()
+        : "TBD",
+      completed:
+        status === "live_tracking" ||
+        status === "closed" ||
+        status === "settled",
+      icon:
+        status === "live_tracking" ||
+        status === "closed" ||
+        status === "settled"
+          ? ("check" as const)
+          : ("play" as const),
+      description:
+        status === "live_tracking" ||
+        status === "closed" ||
+        status === "settled"
+          ? "Video went live on YouTube"
+          : status === "awaiting_release"
+            ? "Waiting for creator to publish video"
+            : "Creator publishes video",
+    },
+    {
+      phase: "Settlement",
+      date: poolData.settledAt
+        ? new Date(poolData.settledAt).toLocaleDateString()
+        : "TBD",
+      completed: status === "settled",
+      icon: status === "settled" ? ("check" as const) : ("clock" as const),
+      description:
+        status === "settled"
+          ? "Results calculated and rewards distributed"
+          : status === "closed"
+            ? "Processing final results"
+            : status === "live_tracking"
+              ? "Tracking performance metrics"
+              : "Results calculated and rewards distributed",
+    },
+  ];
+
+  return baseTimeline;
+};
