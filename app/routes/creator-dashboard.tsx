@@ -38,6 +38,8 @@ export default function CreatorDashboard() {
   const [activeTab, setActiveTab] = useState("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<any>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const stats = CREATOR_STATS;
 
   const {
@@ -93,7 +95,11 @@ export default function CreatorDashboard() {
     }
   };
 
-  const filteredVideos = getFilteredVideos();
+  const allFilteredVideos = getFilteredVideos();
+  const totalPages = Math.ceil(allFilteredVideos.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const filteredVideos = allFilteredVideos.slice(startIndex, endIndex);
   const videosWithStatus = getVideosWithPoolStatus();
 
   const activeVideoCount = videosWithStatus.filter(
@@ -119,6 +125,11 @@ export default function CreatorDashboard() {
               ? unlistedVideoCount
               : 0,
   }));
+
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    setCurrentPage(1); // Reset to first page when changing tabs
+  };
 
   const handleEnablePoolClick = (video: any) => {
     setSelectedVideo(video);
@@ -284,7 +295,7 @@ export default function CreatorDashboard() {
           <Tabs
             tabs={videoTabs}
             activeTab={activeTab}
-            onTabChange={setActiveTab}
+            onTabChange={handleTabChange}
           />
         </div>
 
@@ -302,13 +313,15 @@ export default function CreatorDashboard() {
           ))}
         </div>
 
-        <Pagination
-          currentPage={1}
-          totalPages={Math.ceil(videos.length / 10)}
-          totalItems={videos.length}
-          itemsPerPage={10}
-          onPageChange={(page) => console.log("Page changed to:", page)}
-        />
+        {totalPages > 1 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={allFilteredVideos.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+          />
+        )}
       </div>
 
       <EnablePoolModal

@@ -21,10 +21,16 @@ export default function Pagination({
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   const getVisiblePages = () => {
+    // If only 1 page, just return [1]
+    if (totalPages <= 1) {
+      return [1];
+    }
+
     const delta = 2;
     const range = [];
     const rangeWithDots = [];
 
+    // Get the middle range of pages
     for (
       let i = Math.max(2, currentPage - delta);
       i <= Math.min(totalPages - 1, currentPage + delta);
@@ -33,17 +39,24 @@ export default function Pagination({
       range.push(i);
     }
 
+    // Add first page
     if (currentPage - delta > 2) {
       rangeWithDots.push(1, "...");
     } else {
       rangeWithDots.push(1);
     }
 
-    rangeWithDots.push(...range);
+    // Add middle range (avoid duplicates)
+    range.forEach((page) => {
+      if (page !== 1 && page !== totalPages) {
+        rangeWithDots.push(page);
+      }
+    });
 
+    // Add last page
     if (currentPage + delta < totalPages - 1) {
       rangeWithDots.push("...", totalPages);
-    } else {
+    } else if (totalPages > 1) {
       rangeWithDots.push(totalPages);
     }
 
