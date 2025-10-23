@@ -6,9 +6,17 @@ import {
   faUsersRectangle,
   faCoins,
   faSync,
+  faVideo,
+  faBullseye,
+  faEye,
+  faEyeSlash,
 } from "@fortawesome/free-solid-svg-icons";
 import { useState } from "react";
-import { CREATOR_STATS, CREATOR_VIDEO_TABS } from "../lib/constants";
+import {
+  CREATOR_STATS,
+  CREATOR_VIDEO_TABS,
+  CREATOR_DASHBOARD_EMPTY_STATE_MESSAGES,
+} from "../lib/constants";
 import {
   extractDurationAndTimeRemaining,
   getPoolStatusColor,
@@ -20,6 +28,7 @@ import EnablePoolModal from "../components/EnablePoolModal";
 import StatsCard from "../components/StatsCard";
 import VideoCard from "../components/VideoCard";
 import Pagination from "../components/Pagination";
+import EmptyState from "../components/EmptyState";
 import { useAppContext } from "../contexts/AppContext";
 import type { Pool } from "../contexts/AppContext";
 import YouTubeConnectionButton from "../components/YouTubeConnectionButton";
@@ -128,7 +137,24 @@ export default function CreatorDashboard() {
 
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
-    setCurrentPage(1); // Reset to first page when changing tabs
+    setCurrentPage(1);
+  };
+
+  const getEmptyStateConfig = (tabId: string) => {
+    const iconMap = {
+      all: faVideo,
+      active: faBullseye,
+      settled: faTrophy,
+      unlisted: faEyeSlash,
+    };
+
+    return {
+      icon: iconMap[tabId as keyof typeof iconMap] || faVideo,
+      message:
+        CREATOR_DASHBOARD_EMPTY_STATE_MESSAGES[
+          tabId as keyof typeof CREATOR_DASHBOARD_EMPTY_STATE_MESSAGES
+        ] || "No items found",
+    };
   };
 
   const handleEnablePoolClick = (video: any) => {
@@ -300,20 +326,30 @@ export default function CreatorDashboard() {
         </div>
 
         {/* Video List */}
-        <div className="divide-y divide-gray-200">
-          {filteredVideos.map((video) => (
-            <VideoCard
-              key={video.id}
-              video={video}
-              onEnablePoolClick={handleEnablePoolClick}
-              getPoolStatusColor={getPoolStatusColor}
-              getPoolStatusLabel={getPoolStatusLabel}
-              formatNumber={formatNumber}
-            />
-          ))}
-        </div>
+        {filteredVideos.length > 0 ? (
+          <div className="divide-y divide-gray-200">
+            {filteredVideos.map((video) => (
+              <VideoCard
+                key={video.id}
+                video={video}
+                onEnablePoolClick={handleEnablePoolClick}
+                getPoolStatusColor={getPoolStatusColor}
+                getPoolStatusLabel={getPoolStatusLabel}
+                formatNumber={formatNumber}
+              />
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            icon={getEmptyStateConfig(activeTab).icon}
+            title="No videos found"
+            message={getEmptyStateConfig(activeTab).message}
+            actionText={activeTab === "all" ? "Connect YouTube" : undefined}
+            onAction={activeTab === "all" ? undefined : undefined}
+          />
+        )}
 
-        {totalPages > 1 && (
+        {filteredVideos.length > 0 && totalPages > 1 && (
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}

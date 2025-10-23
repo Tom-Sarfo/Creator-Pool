@@ -166,6 +166,10 @@ export const POOL_STATUS_CONFIG = {
     color: "bg-gray-100 text-gray-800",
     label: "Available for Pool",
   },
+  unlisted: {
+    color: "bg-cyan-100 text-cyan-800",
+    label: "Unlisted",
+  },
 };
 
 export function getPoolStatusColor(poolStatus: string) {
@@ -182,11 +186,31 @@ export function getPoolStatusLabel(poolStatus: string) {
   );
 }
 
-export function formatNumber(num: number) {
+export function formatNumber(num: number | undefined | null) {
+  if (num === undefined || num === null || isNaN(num)) {
+    return "0";
+  }
   if (num >= 1000000) {
     return (num / 1000000).toFixed(1) + "M";
   } else if (num >= 1000) {
     return (num / 1000).toFixed(1) + "K";
   }
   return num.toString();
+}
+
+export function getStatusBadgeStyle(status: string) {
+  const styles = {
+    active: "bg-green-100 text-green-800",
+    settled: "bg-cyan-100 text-cyan-800",
+    expired: "bg-gray-100 text-gray-800",
+  };
+  return `px-2 py-1 rounded-full text-xs font-medium ${styles[status as keyof typeof styles]}`;
+}
+
+export function getResultBadgeStyle(result: string) {
+  const styles = {
+    won: "bg-green-100 text-green-800",
+    lost: "bg-red-100 text-red-800",
+  };
+  return `px-2 py-1 rounded-full text-xs font-medium ${styles[result as keyof typeof styles]}`;
 }

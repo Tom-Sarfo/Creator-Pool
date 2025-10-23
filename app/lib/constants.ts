@@ -476,6 +476,64 @@ export const CREATOR_VIDEO_TABS = [
   { id: "unlisted", name: "Unlisted", count: 0 },
 ];
 
+// Creator pools page constants
+export const CREATOR_POOLS_STATS = [
+  {
+    title: "Active Pools",
+    icon: "faUsersRectangle",
+    iconColor: "text-green-600",
+    iconBgColor: "bg-green-100",
+    size: "small" as const,
+  },
+  {
+    title: "Total Participants",
+    icon: "faUsers",
+    iconColor: "text-cyan-600",
+    iconBgColor: "bg-cyan-100",
+    size: "small" as const,
+  },
+  {
+    title: "Total Staked",
+    icon: "faDollarSign",
+    iconColor: "text-orange-600",
+    iconBgColor: "bg-orange-100",
+    size: "small" as const,
+  },
+  {
+    title: "Total Earned",
+    icon: "faDollarSign",
+    iconColor: "text-yellow-600",
+    iconBgColor: "bg-yellow-100",
+    size: "small" as const,
+  },
+];
+
+export const POOL_STATUS_BADGE_STYLES = {
+  active: "bg-green-100 text-green-800",
+  settled: "bg-cyan-100 text-cyan-800",
+  expired: "bg-gray-100 text-gray-800",
+} as const;
+
+export const POOL_RESULT_BADGE_STYLES = {
+  won: "bg-green-100 text-green-800",
+  lost: "bg-red-100 text-red-800",
+} as const;
+
+export const EMPTY_STATE_MESSAGES = {
+  active: "Create your first prediction pool to get started.",
+  settled: "No settled pools yet.",
+  expired: "No expired pools.",
+} as const;
+
+export const CREATOR_DASHBOARD_EMPTY_STATE_MESSAGES = {
+  all: "No videos found. Connect your YouTube channel to sync your videos.",
+  active:
+    "No videos with active pools. Create a prediction pool for your videos.",
+  settled: "No settled pools yet. Your completed pools will appear here.",
+  unlisted:
+    "No unlisted videos found. Connect your YouTube channel to sync unlisted videos.",
+} as const;
+
 // Prediction data constants
 export const ACTIVE_PREDICTIONS = [
   {
