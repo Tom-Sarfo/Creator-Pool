@@ -22,7 +22,7 @@ import Header from "../components/Header";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Creator Dashboard - Creator Pool" },
+    { title: "Creator Hub - Creator Pool" },
     {
       name: "description",
       content: "Manage your YouTube videos and prediction pools.",
@@ -39,6 +39,9 @@ export default function CreatorLayout() {
     if (location.pathname === "/creator") {
       return "Creator Hub";
     }
+    if (location.pathname.match(/^\/creator\/pools\/\d+$/)) {
+      return "Pool Details";
+    }
     if (location.pathname.startsWith("/creator/pools")) {
       return "Pools";
     }
@@ -51,7 +54,7 @@ export default function CreatorLayout() {
     if (location.pathname.startsWith("/creator/settings")) {
       return "Settings";
     }
-    return "Creator Dashboard";
+    return "Pool Details";
   };
 
   const navigation = [
@@ -133,7 +136,7 @@ export default function CreatorLayout() {
                 <UserButton afterSignOutUrl="/" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">
-                    Creator Dashboard
+                    Creator Hub
                   </p>
                   <p className="text-xs text-gray-500 truncate">
                     Manage your content

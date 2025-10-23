@@ -1545,3 +1545,56 @@ export const generateTimelineForStatus = (
 
   return baseTimeline;
 };
+
+export const CREATOR_POOL_DETAIL_TABS = [
+  { id: "overview", label: "Overview", count: null },
+  { id: "predictions", label: "Predictions", count: 0 },
+  { id: "analytics", label: "Analytics", count: null },
+  { id: "settings", label: "Pool Settings", count: null },
+];
+
+export const PREDICTION_FILTER_OPTIONS = [
+  { value: "all", label: "All Predictions" },
+  { value: "yes", label: "YES Only" },
+  { value: "no", label: "NO Only" },
+  { value: "high", label: "High Stakes ($100+)" },
+];
+
+export const ANALYTICS_COMING_SOON_FEATURES = [
+  "Real-time participation tracking",
+  "Revenue and earnings breakdown",
+  "Participant behavior insights",
+  "Performance comparison tools",
+];
+
+export const POOL_DETAIL_TABS = [
+  { id: "overview", label: "Overview", count: null },
+  { id: "stats", label: "Pool Stats", count: null },
+];
+
+export const PREDICTION_SORT_OPTIONS = [
+  { value: "recent", label: "Recent First" },
+  { value: "stake", label: "Stake Amount" },
+  { value: "chronological", label: "Chronological" },
+];
+
+export const HOW_IT_WORKS_STEPS = [
+  {
+    step: 1,
+    title: "Make Your Prediction",
+    description:
+      "Choose YES or NO and stake an amount. Higher stakes mean higher potential payouts.",
+  },
+  {
+    step: 2,
+    title: "Wait for Results",
+    description:
+      "The video will be tracked for the specified timeframe to determine the outcome.",
+  },
+  {
+    step: 3,
+    title: "Get Paid",
+    description:
+      "If you're correct, you'll receive your stake back plus a share of the losing side's stakes.",
+  },
+];

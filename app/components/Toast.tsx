@@ -73,27 +73,31 @@ export default function Toast({ toast, onClose }: ToastProps) {
 
   return (
     <div
-      className={`max-w-sm w-full ${getBgColor()} border rounded-lg shadow-lg p-4 transition-all duration-300 ease-in-out transform translate-x-0 opacity-100`}
+      className={`w-full ${getBgColor()} border rounded-lg shadow-lg p-3 sm:p-4 transition-all duration-300 ease-in-out transform translate-x-0 opacity-100`}
     >
       <div className="flex items-start">
         <div className="flex-shrink-0">
           <FontAwesomeIcon
             icon={getIcon()}
-            className={`w-5 h-5 ${getIconColor()}`}
+            className={`w-4 h-4 sm:w-5 sm:h-5 ${getIconColor()}`}
           />
         </div>
-        <div className="ml-3 flex-1">
-          <p className="text-sm font-medium text-gray-900">{toast.title}</p>
+        <div className="ml-2 sm:ml-3 flex-1 min-w-0">
+          <p className="text-xs sm:text-sm font-medium text-gray-900 break-words">
+            {toast.title}
+          </p>
           {toast.message && (
-            <p className="text-sm text-gray-600 mt-1">{toast.message}</p>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1 break-words">
+              {toast.message}
+            </p>
           )}
         </div>
-        <div className="ml-4 flex-shrink-0">
+        <div className="ml-2 sm:ml-4 flex-shrink-0">
           <button
             onClick={() => onClose(toast.id)}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-gray-600 transition-colors p-1"
           >
-            <FontAwesomeIcon icon={faTimes} className="w-4 h-4" />
+            <FontAwesomeIcon icon={faTimes} className="w-3 h-3 sm:w-4 sm:h-4" />
           </button>
         </div>
       </div>

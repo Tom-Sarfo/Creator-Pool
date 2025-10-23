@@ -157,76 +157,110 @@ export default function PredictorDashboard() {
                 return (
                   <div
                     key={pool.id}
-                    className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+                    className="border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                   >
-                    <Link to={`/predictor/pool/${pool.id}`}>
-                      <img
-                        src={pool.thumbnail}
-                        alt={pool.title}
-                        className="w-16 h-12 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
-                      />
-                    </Link>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <span className="text-sm font-medium text-gray-900">
-                          {pool.creator}
-                        </span>
-                        <span
-                          className={`text-xs px-2 py-1 rounded-full font-medium ${getPoolStatusColor(pool.status)}`}
+                    {/* Mobile-first responsive layout */}
+                    <div className="p-3 sm:p-4">
+                      {/* Top row: Thumbnail and basic info */}
+                      <div className="flex items-start space-x-3 mb-3">
+                        <Link
+                          to={`/predictor/pool/${pool.id}`}
+                          className="flex-shrink-0"
                         >
-                          {getPoolStatusLabel(pool.status)}
-                        </span>
+                          <img
+                            src={pool.thumbnail}
+                            alt={pool.title}
+                            className="w-16 h-12 sm:w-20 sm:h-14 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
+                          />
+                        </Link>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-1 sm:space-y-0">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center space-x-2 mb-1">
+                                <span className="text-xs sm:text-sm font-medium text-gray-900 truncate">
+                                  {pool.creator}
+                                </span>
+                                <span
+                                  className={`text-xs px-2 py-1 rounded-full font-medium flex-shrink-0 ${getPoolStatusColor(pool.status)}`}
+                                >
+                                  {getPoolStatusLabel(pool.status)}
+                                </span>
+                              </div>
+                              <Link to={`/predictor/pool/${pool.id}`}>
+                                <p className="text-sm sm:text-base font-medium text-gray-900 line-clamp-2 hover:text-orange-600 cursor-pointer transition-colors">
+                                  {pool.title}
+                                </p>
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <Link to={`/predictor/pool/${pool.id}`}>
-                        <p className="text-sm text-gray-600 truncate hover:text-orange-600 cursor-pointer transition-colors">
-                          {pool.title}
-                        </p>
-                      </Link>
-                      <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                        <div className="flex items-center space-x-1">
-                          <FontAwesomeIcon icon={faClock} className="w-3 h-3" />
-                          <span>
+
+                      {/* Stats row - responsive layout */}
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 mb-3">
+                        <div className="flex items-center space-x-1 text-xs sm:text-sm text-gray-500">
+                          <FontAwesomeIcon
+                            icon={faClock}
+                            className="w-3 h-3 flex-shrink-0"
+                          />
+                          <span className="truncate">
                             {calculateRemainingTime(pool, currentTime)}
                           </span>
                         </div>
-                        <div className="flex items-center space-x-1">
-                          <FontAwesomeIcon icon={faUsers} className="w-3 h-3" />
-                          <span>{pool.participants} predictors</span>
+                        <div className="flex items-center space-x-1 text-xs sm:text-sm text-gray-500">
+                          <FontAwesomeIcon
+                            icon={faUsers}
+                            className="w-3 h-3 flex-shrink-0"
+                          />
+                          <span className="truncate">
+                            {pool.participants} predictors
+                          </span>
                         </div>
-                        <div className="flex items-center space-x-1">
+                        <div className="flex items-center space-x-1 text-xs sm:text-sm text-gray-500 col-span-2 sm:col-span-1">
                           <FontAwesomeIcon
                             icon={faDollarSign}
-                            className="w-3 h-3"
+                            className="w-3 h-3 flex-shrink-0"
                           />
-                          <span>${pool.totalStake} total</span>
+                          <span className="truncate">
+                            ${pool.totalStake} total
+                          </span>
                         </div>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      {userPrediction ? (
-                        <div className="text-sm">
-                          <div className="font-medium text-gray-900">
-                            My Stake: ${userPrediction.stake}
+
+                      {/* Bottom row: Prediction info or odds */}
+                      <div className="border-t border-gray-100 pt-3">
+                        {userPrediction ? (
+                          <div className="flex items-center justify-between">
+                            <div className="text-sm">
+                              <span className="text-gray-600">
+                                My Prediction:
+                              </span>
+                              <span
+                                className={`ml-2 font-medium ${userPrediction.choice === "yes" ? "text-green-600" : "text-red-600"}`}
+                              >
+                                {userPrediction.choice.toUpperCase()}
+                              </span>
+                            </div>
+                            <div className="text-sm font-medium text-gray-900">
+                              ${userPrediction.stake} stake
+                            </div>
                           </div>
-                          <div
-                            className={`text-xs ${userPrediction.choice === "yes" ? "text-green-600" : "text-red-600"}`}
-                          >
-                            {userPrediction.choice.toUpperCase()}
+                        ) : (
+                          <div className="flex items-center justify-between">
+                            <div className="text-sm text-gray-600">
+                              Current Odds:
+                            </div>
+                            <div className="flex space-x-3">
+                              <span className="text-green-600 font-medium text-sm">
+                                YES {(pool.odds?.yes || 2.0).toFixed(1)}x
+                              </span>
+                              <span className="text-red-600 font-medium text-sm">
+                                NO {(pool.odds?.no || 2.0).toFixed(1)}x
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      ) : (
-                        <div className="text-sm">
-                          <div className="text-gray-500 mb-1">Odds</div>
-                          <div className="flex space-x-2">
-                            <span className="text-green-600 font-medium">
-                              YES {(pool.odds?.yes || 2.0).toFixed(1)}x
-                            </span>
-                            <span className="text-red-600 font-medium">
-                              NO {(pool.odds?.no || 2.0).toFixed(1)}x
-                            </span>
-                          </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
                 );

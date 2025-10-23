@@ -4,14 +4,8 @@ import { Link, useSearchParams } from "react-router";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useUser } from "@clerk/react-router";
 import {
-  faPlay,
-  faCalendar,
   faClock,
   faCheckCircle,
-  faEye,
-  faHeart,
-  faComment,
-  faThumbsUp,
   faQuestionCircle,
   faChartLine,
   faUsers,
@@ -25,9 +19,7 @@ import {
   faFlag,
   faBan,
   faCoins,
-  faBullseye,
   faExclamationTriangle,
-  faTrophy,
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import {
@@ -35,77 +27,22 @@ import {
   STATUS_TIMELINE,
   STATUS_LABELS,
   generateTimelineForStatus,
+  CREATOR_POOL_DETAIL_TABS,
+  PREDICTION_FILTER_OPTIONS,
+  ANALYTICS_COMING_SOON_FEATURES,
   type PoolStatus,
 } from "../lib/constants";
+import {
+  calculatePoolMetrics,
+  transformPredictionsToDisplay,
+} from "../lib/utils";
 import { useAppContext } from "../contexts/AppContext";
-import Stepper, { type StepperStep } from "../components/Stepper";
+import Stepper from "../components/Stepper";
 
 const getStatusColor = (status: PoolStatus) =>
   STATUS_COLORS[status] || "bg-gray-100 text-gray-800";
 
 const getStatusLabel = (status: PoolStatus) => STATUS_LABELS[status] || status;
-
-const calculatePoolMetrics = (poolData: any, videoData: any) => {
-  const currentViews =
-    poolData.currentViews !== undefined
-      ? poolData.currentViews
-      : videoData?.views || 0;
-  const targetViews = poolData.targetViews || 0;
-  const progress =
-    targetViews > 0 ? Math.min((currentViews / targetViews) * 100, 100) : 0;
-
-  // Separate creator pledge from total stake
-  const totalPoolAmount = poolData.totalStake || 0; // This includes both creator pledge and predictor stakes
-  const creatorPledge = poolData.creatorPledge || 0; // Creator's pledged amount (separate)
-
-  // Calculate YES/NO distribution from actual predictor stakes
-  const yesStake = poolData.yesStake || 0;
-  const noStake = poolData.noStake || 0;
-  const predictorStakes = yesStake + noStake;
-
-  const yesPercentage =
-    predictorStakes > 0 ? Math.round((yesStake / predictorStakes) * 100) : 0;
-  const noPercentage = 100 - yesPercentage;
-
-  const totalParticipants = poolData.participants || 0;
-  const yesStakers = poolData.yesCount || 0;
-  const noStakers = poolData.noCount || 0;
-
-  const viewGrowthRate = (() => {
-    if (targetViews === 0 || currentViews === 0) return "+0.0%";
-    const baseGrowth = 8.5;
-    const progressRatio = targetViews > 0 ? currentViews / targetViews : 0;
-    const growthFactor = progressRatio > 0.8 ? 1.5 : 1.0;
-    const randomVariation = 0.8 + Math.random() * 0.4;
-    return `+${(baseGrowth * growthFactor * randomVariation).toFixed(1)}%`;
-  })();
-
-  // Calculate fees and royalties based on total pool amount (including creator pledge)
-  const totalPoolForFees = totalPoolAmount;
-
-  return {
-    currentViews,
-    progress,
-    platformFee: totalPoolForFees
-      ? Math.round(totalPoolForFees * 0.05 * 100) / 100
-      : 0,
-    creatorRoyalty: totalPoolForFees
-      ? Math.round(totalPoolForFees * 0.01 * 100) / 100
-      : 0,
-    creatorPledge:
-      creatorPledge ||
-      (totalPoolForFees ? Math.round(totalPoolForFees * 0.15 * 100) / 100 : 0),
-    yesPool: yesStake,
-    noPool: noStake,
-    yesPercentage,
-    noPercentage,
-    yesStakers,
-    noStakers,
-    viewGrowthRate,
-    predictorStakes, // Total amount staked by predictors (excluding creator pledge)
-    totalPoolAmount, // Total pool amount (including creator pledge)
-  };
-};
 
 export function meta({ params }: Route.MetaArgs) {
   return [
@@ -223,32 +160,14 @@ export default function CreatorPoolDetailPage({
     ],
   };
 
-  // Get real predictions from the context
   const poolPredictions = getPredictionsByPoolId(poolId);
-
-  // Transform predictions to display format
-  const allPredictions = poolPredictions.map((prediction) => ({
-    id: prediction.id,
-    user: prediction.predictorName || "Anonymous User",
-    time: new Date(prediction.predictedAt).toLocaleString(),
-    prediction: prediction.choice.toUpperCase(),
-    amount: prediction.stake,
-    status: prediction.result || "active",
-    potentialPayout: prediction.potentialPayout,
-    actualPayout: prediction.actualPayout,
-  }));
-
-  // If no real predictions, show a message
+  const allPredictions = transformPredictionsToDisplay(poolPredictions);
   const hasPredictions = allPredictions.length > 0;
 
-  const tabs = [
-    { id: "overview", label: "Overview", count: null },
-    { id: "predictions", label: "Predictions", count: allPredictions.length },
-    { id: "analytics", label: "Analytics", count: null },
-    { id: "settings", label: "Pool Settings", count: null },
-  ];
-
-  console.log("pool.totalStake", pool.totalStake);
+  const tabs = CREATOR_POOL_DETAIL_TABS.map((tab) => ({
+    ...tab,
+    count: tab.id === "predictions" ? allPredictions.length : null,
+  }));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -274,7 +193,7 @@ export default function CreatorPoolDetailPage({
               </div>
             </div>
 
-            {/* Mobile: Stack actions vertically, Desktop: Horizontal */}
+            {/* Mobile: Stack actions horizontally, Desktop: Horizontal */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
               <span
                 className={`px-3 py-1 rounded-full text-sm font-medium text-center sm:text-left ${getStatusColor(pool.status)}`}
@@ -282,11 +201,14 @@ export default function CreatorPoolDetailPage({
                 {getStatusLabel(pool.status)}
               </span>
 
-              {/* Action buttons - responsive sizing */}
-              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+              {/* Action buttons - always horizontal layout */}
+              <div className="flex flex-row space-x-2 sm:space-x-3">
                 {pool.status === "open" && (
-                  <button className="px-3 sm:px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center justify-center space-x-2 text-sm">
-                    <FontAwesomeIcon icon={faPause} className="w-4 h-4" />
+                  <button className="px-2 sm:px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm flex-1 sm:flex-none">
+                    <FontAwesomeIcon
+                      icon={faPause}
+                      className="w-3 h-3 sm:w-4 sm:h-4"
+                    />
                     <span className="hidden sm:inline">Pause Pool</span>
                     <span className="sm:hidden">Pause</span>
                   </button>
@@ -296,9 +218,12 @@ export default function CreatorPoolDetailPage({
                 {pool.status !== "settled" && (
                   <button
                     onClick={() => transitionPoolToNextStage(poolId)}
-                    className="px-3 sm:px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors flex items-center justify-center space-x-2 text-sm"
+                    className="px-2 sm:px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm flex-1 sm:flex-none"
                   >
-                    <FontAwesomeIcon icon={faArrowUp} className="w-4 h-4" />
+                    <FontAwesomeIcon
+                      icon={faArrowUp}
+                      className="w-3 h-3 sm:w-4 sm:h-4"
+                    />
                     <span className="hidden sm:inline">Next Stage</span>
                     <span className="sm:hidden">Next</span>
                   </button>
@@ -306,16 +231,22 @@ export default function CreatorPoolDetailPage({
                 {pool.pledgeStatus === "pending" && (
                   <button
                     onClick={() => setShowPledgeModal(true)}
-                    className="px-3 sm:px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center space-x-2 text-sm"
+                    className="px-2 sm:px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm flex-1 sm:flex-none"
                   >
-                    <FontAwesomeIcon icon={faCoins} className="w-4 h-4" />
+                    <FontAwesomeIcon
+                      icon={faCoins}
+                      className="w-3 h-3 sm:w-4 sm:h-4"
+                    />
                     <span className="hidden sm:inline">Deposit Pledge</span>
                     <span className="sm:hidden">Deposit</span>
                   </button>
                 )}
                 {pool.pledgeStatus === "deposited" && (
-                  <div className="px-3 sm:px-4 py-2 bg-green-100 text-green-800 rounded-lg flex items-center justify-center space-x-2 text-sm">
-                    <FontAwesomeIcon icon={faCheckCircle} className="w-4 h-4" />
+                  <div className="px-2 sm:px-4 py-2 bg-green-100 text-green-800 rounded-lg flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm flex-1 sm:flex-none">
+                    <FontAwesomeIcon
+                      icon={faCheckCircle}
+                      className="w-3 h-3 sm:w-4 sm:h-4"
+                    />
                     <span className="hidden sm:inline">Pledge Deposited</span>
                     <span className="sm:hidden">Deposited</span>
                   </div>
@@ -362,8 +293,8 @@ export default function CreatorPoolDetailPage({
 
       <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-4 sm:space-y-6 order-2 lg:order-1">
+          {/* Main Content - Mobile: Show first, Desktop: Show second */}
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6 order-1 lg:order-1">
             {/* Tab Content */}
             {activeTab === "overview" && (
               <>
@@ -517,10 +448,11 @@ export default function CreatorPoolDetailPage({
                         onChange={(e) => setPredictionFilter(e.target.value)}
                         className="text-sm border border-gray-300 rounded-lg px-3 py-2"
                       >
-                        <option value="all">All Predictions</option>
-                        <option value="yes">YES Only</option>
-                        <option value="no">NO Only</option>
-                        <option value="high">High Stakes ($100+)</option>
+                        {PREDICTION_FILTER_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
                       </select>
                       <button className="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-800">
                         <FontAwesomeIcon
@@ -658,10 +590,11 @@ export default function CreatorPoolDetailPage({
                         What's Coming
                       </h4>
                       <ul className="space-y-1 text-sm text-orange-800">
-                        <li>• Real-time participation tracking</li>
-                        <li>• Revenue and earnings breakdown</li>
-                        <li>• Participant behavior insights</li>
-                        <li>• Performance comparison tools</li>
+                        {ANALYTICS_COMING_SOON_FEATURES.map(
+                          (feature, index) => (
+                            <li key={index}>• {feature}</li>
+                          )
+                        )}
                       </ul>
                     </div>
                   </div>
@@ -748,8 +681,8 @@ export default function CreatorPoolDetailPage({
               </>
             )}
           </div>
-          {/* Right Sidebar */}
-          <div className="space-y-4 sm:space-y-6 order-1 lg:order-2">
+          {/* Right Sidebar - Mobile: Show after main content, Desktop: Show on right */}
+          <div className="space-y-4 sm:space-y-6 order-2 lg:order-2">
             {/* Pool Summary */}
             <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">

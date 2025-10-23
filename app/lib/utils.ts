@@ -264,3 +264,109 @@ export function mapQuickActionsToIcons(actions: any[]) {
             : "faBullseye",
   }));
 }
+
+export function calculatePoolMetrics(poolData: any, videoData: any) {
+  const currentViews =
+    poolData.currentViews !== undefined
+      ? poolData.currentViews
+      : videoData?.views || 0;
+  const targetViews = poolData.targetViews || 0;
+  const progress =
+    targetViews > 0 ? Math.min((currentViews / targetViews) * 100, 100) : 0;
+
+  const totalPoolAmount = poolData.totalStake || 0;
+  const creatorPledge = poolData.creatorPledge || 0;
+
+  const yesStake = poolData.yesStake || 0;
+  const noStake = poolData.noStake || 0;
+  const predictorStakes = yesStake + noStake;
+
+  const yesPercentage =
+    predictorStakes > 0 ? Math.round((yesStake / predictorStakes) * 100) : 0;
+  const noPercentage = 100 - yesPercentage;
+
+  const totalParticipants = poolData.participants || 0;
+  const yesStakers = poolData.yesCount || 0;
+  const noStakers = poolData.noCount || 0;
+
+  const viewGrowthRate = (() => {
+    if (targetViews === 0 || currentViews === 0) return "+0.0%";
+    const baseGrowth = 8.5;
+    const progressRatio = targetViews > 0 ? currentViews / targetViews : 0;
+    const growthFactor = progressRatio > 0.8 ? 1.5 : 1.0;
+    const randomVariation = 0.8 + Math.random() * 0.4;
+    return `+${(baseGrowth * growthFactor * randomVariation).toFixed(1)}%`;
+  })();
+
+  const totalPoolForFees = totalPoolAmount;
+
+  return {
+    currentViews,
+    progress,
+    platformFee: totalPoolForFees
+      ? Math.round(totalPoolForFees * 0.05 * 100) / 100
+      : 0,
+    creatorRoyalty: totalPoolForFees
+      ? Math.round(totalPoolForFees * 0.01 * 100) / 100
+      : 0,
+    creatorPledge:
+      creatorPledge ||
+      (totalPoolForFees ? Math.round(totalPoolForFees * 0.15 * 100) / 100 : 0),
+    yesPool: yesStake,
+    noPool: noStake,
+    yesPercentage,
+    noPercentage,
+    yesStakers,
+    noStakers,
+    viewGrowthRate,
+    predictorStakes,
+    totalPoolAmount,
+  };
+}
+
+export function transformPredictionsToDisplay(predictions: any[]) {
+  return predictions.map((prediction) => ({
+    id: prediction.id,
+    user: prediction.predictorName || "Anonymous User",
+    time: new Date(prediction.predictedAt).toLocaleString(),
+    prediction: prediction.choice.toUpperCase(),
+    amount: prediction.stake,
+    status: prediction.result || "active",
+    potentialPayout: prediction.potentialPayout,
+    actualPayout: prediction.actualPayout,
+  }));
+}
+
+export function filterAndSortPredictions(
+  predictions: any[],
+  filter: string,
+  sort: string
+) {
+  const filtered = predictions.filter((prediction) => {
+    switch (filter) {
+      case "yes":
+        return prediction.choice === "yes";
+      case "no":
+        return prediction.choice === "no";
+      case "high":
+        return prediction.stake >= 100;
+      default:
+        return true;
+    }
+  });
+
+  return filtered.sort((a, b) => {
+    switch (sort) {
+      case "stake":
+        return b.stake - a.stake;
+      case "chronological":
+        return (
+          new Date(a.predictedAt).getTime() - new Date(b.predictedAt).getTime()
+        );
+      default:
+        return (
+          new Date(b.predictedAt).getTime() - new Date(a.predictedAt).getTime()
+        );
+    }
+  });
+}
