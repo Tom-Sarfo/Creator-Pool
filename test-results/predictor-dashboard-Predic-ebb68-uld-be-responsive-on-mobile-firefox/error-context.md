@@ -1,15 +1,57 @@
 # Page snapshot
 
 ```yaml
-- generic [ref=e2]:
+- generic [active] [ref=e1]:
   - generic [ref=e3]:
-    - heading "Unable to connect" [level=1] [ref=e5]
-    - paragraph [ref=e6]: Firefox can’t establish a connection to the server at localhost:5173.
-    - paragraph
-    - list [ref=e8]:
-      - listitem [ref=e9]: The site could be temporarily unavailable or too busy. Try again in a few moments.
-      - listitem [ref=e10]: If you are unable to load any pages, check your computer’s network connection.
-      - listitem [ref=e11]: If your computer or network is protected by a firewall or proxy, make sure that Nightly is permitted to access the web.
-      - listitem [ref=e12]: If you are trying to load a local network page, please check that Nightly has been granted Local Network permissions in the macOS Privacy & Security settings.
-  - button "Try Again" [active] [ref=e14]
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - generic [ref=e9]:
+          - heading "Sign in to Creator Pool" [level=1] [ref=e10]
+          - paragraph [ref=e11]: Welcome back! Please sign in to continue
+        - generic [ref=e12]:
+          - generic [ref=e14]:
+            - button "Sign in with Apple Apple" [ref=e15] [cursor=pointer]:
+              - generic [ref=e16]:
+                - img "Sign in with Apple" [ref=e18]
+                - generic [ref=e19]: Apple
+            - button "Sign in with Google Google" [ref=e20] [cursor=pointer]:
+              - generic [ref=e21]:
+                - img "Sign in with Google" [ref=e23]
+                - generic [ref=e24]: Google
+          - paragraph [ref=e27]: or
+          - generic [ref=e29]:
+            - generic [ref=e30]:
+              - generic [ref=e33]:
+                - generic [ref=e35]: Email address
+                - textbox "Email address" [ref=e36]:
+                  - /placeholder: Enter your email address
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic: Password
+                    - generic:
+                      - textbox "Password":
+                        - /placeholder: Enter your password
+                      - button "Show password":
+                        - img
+            - button "Continue" [ref=e38] [cursor=pointer]:
+              - generic [ref=e39]:
+                - text: Continue
+                - img [ref=e40]
+      - generic [ref=e42]:
+        - generic [ref=e43]:
+          - generic [ref=e44]: Don’t have an account?
+          - link "Sign up" [ref=e45] [cursor=pointer]:
+            - /url: https://adapting-polliwog-68.accounts.dev/sign-up#/?redirect_url=http%3A%2F%2Flocalhost%3A5180%2Fpredictor
+        - generic [ref=e47]:
+          - generic [ref=e49]:
+            - paragraph [ref=e50]: Secured by
+            - link "Clerk logo" [ref=e51] [cursor=pointer]:
+              - /url: https://go.clerk.com/components
+              - img [ref=e52]
+          - paragraph [ref=e57]: Development mode
+    - status "Development environment notification" [ref=e58]:
+      - generic [ref=e60]: This is a hosted version of Clerk's <SignIn /> component. Sign in and you'll be redirected back to http://localhost:5180
+  - alert [ref=e61]: My account | Creator Pool
 ```
