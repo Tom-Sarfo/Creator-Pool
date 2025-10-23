@@ -35,6 +35,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       hasClientSecret: !!clientSecret,
       redirectUri,
       code: code ? "present" : "missing",
+      fullUrl: request.url,
     });
 
     if (!clientId || !clientSecret) {
@@ -99,22 +100,37 @@ export async function loader({ request }: Route.LoaderArgs) {
     redirectUrl.searchParams.set("youtube_success", "true");
 
     // Create response with headers
+    const tokenData = {
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token,
+      expiresIn: tokens.expires_in,
+      tokenType: tokens.token_type,
+      channelId: channel.id,
+      channelTitle: channel.snippet.title,
+      channelThumbnail: channel.snippet.thumbnails.default.url,
+    };
+
+    // Properly encode the JSON for cookie storage
+    const encodedTokens = encodeURIComponent(JSON.stringify(tokenData));
+
+    console.log(
+      "Setting cookie with encoded tokens length:",
+      encodedTokens.length
+    );
+    console.log("Redirect URL:", redirectUrl.toString());
+
     const response = new Response(null, {
       status: 302,
       headers: {
         Location: redirectUrl.toString(),
-        "Set-Cookie": `youtube_tokens=${JSON.stringify({
-          accessToken: tokens.access_token,
-          refreshToken: tokens.refresh_token,
-          expiresIn: tokens.expires_in,
-          tokenType: tokens.token_type,
-          channelId: channel.id,
-          channelTitle: channel.snippet.title,
-          channelThumbnail: channel.snippet.thumbnails.default.url,
-        })}; Path=/; HttpOnly; SameSite=Lax`,
+        "Set-Cookie": `youtube_tokens=${encodedTokens}; Path=/; HttpOnly; SameSite=Lax`,
       },
     });
 
+    console.log(
+      "Response headers:",
+      Object.fromEntries(response.headers.entries())
+    );
     return response;
   } catch (error) {
     console.error("Error in OAuth callback:", error);

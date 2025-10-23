@@ -7,6 +7,7 @@ import React, {
 import { ALL_VIDEOS, type PoolStatus } from "../lib/constants";
 import { calculateDynamicOdds } from "../lib/utils";
 import type { ToastData } from "../components/Toast";
+import type { YouTubeVideo, YouTubeChannel } from "../lib/youtube-video-api";
 
 export interface UnifiedVideo {
   id: number;
@@ -23,6 +24,12 @@ export interface UnifiedVideo {
   creatorVerified: boolean;
   creatorSubs: string;
   category: string;
+
+  // YouTube integration
+  youtubeId?: string; // Actual YouTube video ID
+  youtubeChannelId?: string;
+  lastSyncedAt?: string;
+  isYouTubeVideo?: boolean; // Flag to distinguish from dummy data
 
   // Pool info - initially null/0 for unlisted videos
   poolId: number | null;
@@ -125,6 +132,13 @@ interface AppState {
   updateVideo: (id: number, updates: Partial<UnifiedVideo>) => void;
   getVideoById: (id: number) => UnifiedVideo | undefined;
 
+  // YouTube integration state
+  youtubeChannel: YouTubeChannel | null;
+  setYoutubeChannel: (channel: YouTubeChannel | null) => void;
+  syncYouTubeVideos: () => Promise<void>;
+  isYouTubeConnected: boolean;
+  lastYouTubeSync: string | null;
+
   // Pool state (derived from videos)
   pools: Pool[];
   addPool: (pool: Omit<Pool, "id">) => void;
@@ -162,6 +176,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [videos, setVideos] = useState<UnifiedVideo[]>(ALL_VIDEOS);
   const [toasts, setToasts] = useState<ToastData[]>([]);
   const [predictions, setPredictions] = useState<Prediction[]>([]);
+
+  // YouTube integration state
+  const [youtubeChannel, setYoutubeChannel] = useState<YouTubeChannel | null>(
+    null
+  );
+  const [lastYouTubeSync, setLastYouTubeSync] = useState<string | null>(null);
 
   // Derive pools from videos that have pool data
   const pools: Pool[] = videos
@@ -601,10 +621,157 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  // YouTube sync function
+  const syncYouTubeVideos = async () => {
+    console.log("AppContext: syncYouTubeVideos called");
+    console.log("AppContext: Current videos count before sync:", videos.length);
+    try {
+      const { syncYouTubeVideos } = await import("../lib/youtube-video-api");
+      const {
+        channel,
+        videos: youtubeVideos,
+        unlistedVideos,
+      } = await syncYouTubeVideos();
+
+      console.log("AppContext: Received from API:", {
+        channelTitle: channel.title,
+        totalVideos: youtubeVideos.length,
+        unlistedVideos: unlistedVideos.length,
+      });
+
+      // Convert YouTube videos to UnifiedVideo format
+      const nextVideoId = Math.max(...videos.map((v) => v.id), 0) + 1;
+      console.log(
+        "AppContext: Processing YouTube videos:",
+        youtubeVideos.map((v) => ({
+          id: v.id,
+          title: v.title,
+          status: v.status,
+        }))
+      );
+
+      const unifiedYouTubeVideos: UnifiedVideo[] = youtubeVideos.map(
+        (video, index) => ({
+          id: nextVideoId + index,
+          title: video.title,
+          thumbnail: video.thumbnail,
+          status: video.status,
+          views: video.viewCount,
+          likes: video.likeCount,
+          duration: video.duration,
+          uploadDate: new Date(video.publishedAt).toLocaleDateString(),
+          creator: channel.title,
+          creatorVerified: true,
+          creatorSubs: `${channel.subscriberCount.toLocaleString()} subs`,
+          category: "general",
+          youtubeId: video.id,
+          youtubeChannelId: video.channelId,
+          lastSyncedAt: new Date().toISOString(),
+          isYouTubeVideo: true,
+          // Pool fields - initially empty for new videos
+          poolId: null,
+          poolStatus: null,
+          poolQuestion: null,
+          poolParticipants: 0,
+          poolTotalStake: 0,
+          poolCreatorPledge: 0,
+          poolPredictorStakes: 0,
+          poolTimeRemaining: null,
+          poolTargetViews: null,
+          poolCurrentViews: 0,
+          poolCreatedAt: null,
+          poolClosesAt: null,
+          poolPublishedAt: null,
+          poolClosedAt: null,
+          poolSettledAt: null,
+          poolDuration: undefined,
+          poolPredictionWindow: undefined,
+          poolOdds: null,
+          poolYesStake: 0,
+          poolNoStake: 0,
+          poolYesCount: 0,
+          poolNoCount: 0,
+        })
+      );
+
+      // Merge with existing videos, replacing any existing YouTube videos
+      const existingNonYouTubeVideos = videos.filter((v) => !v.isYouTubeVideo);
+      const newVideos = [...existingNonYouTubeVideos, ...unifiedYouTubeVideos];
+
+      console.log(
+        `AppContext: Syncing ${unifiedYouTubeVideos.length} YouTube videos`
+      );
+      console.log(
+        "YouTube video statuses:",
+        unifiedYouTubeVideos.map((v) => ({ title: v.title, status: v.status }))
+      );
+      console.log(
+        "Unlisted videos:",
+        unifiedYouTubeVideos.filter((v) => v.status === "unlisted").length
+      );
+
+      console.log("AppContext: About to set videos:", {
+        currentVideosCount: videos.length,
+        newVideosCount: newVideos.length,
+        youtubeVideosCount: unifiedYouTubeVideos.length,
+      });
+
+      setVideos(newVideos);
+      setYoutubeChannel(channel);
+      setLastYouTubeSync(new Date().toISOString());
+
+      console.log("AppContext: State update called");
+      console.log("AppContext: New videos count after sync:", newVideos.length);
+      console.log(
+        "AppContext: YouTube videos in new state:",
+        newVideos.filter((v) => v.isYouTubeVideo).length
+      );
+
+      // Debug: Log the actual video data being set
+      console.log("AppContext: Setting videos with data:", {
+        totalVideos: newVideos.length,
+        youtubeVideos: newVideos.filter((v) => v.isYouTubeVideo).length,
+        sampleVideos: newVideos.slice(0, 3).map((v) => ({
+          id: v.id,
+          title: v.title,
+          isYouTube: v.isYouTubeVideo,
+          status: v.status,
+        })),
+      });
+
+      addToast({
+        type: "success",
+        title: "YouTube Videos Synced!",
+        message: `Successfully synced ${youtubeVideos.length} videos from your channel.`,
+        duration: 4000,
+      });
+    } catch (error) {
+      console.error("Failed to sync YouTube videos:", error);
+      addToast({
+        type: "error",
+        title: "Sync Failed",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to sync YouTube videos",
+        duration: 5000,
+      });
+    }
+  };
+
   // Set up automatic lifecycle checking (every 30 seconds for responsive 10-minute timer)
   React.useEffect(() => {
     const interval = setInterval(checkAndUpdatePoolLifecycle, 30 * 1000);
     return () => clearInterval(interval);
+  }, [videos]);
+
+  // Debug: Monitor videos state changes
+  React.useEffect(() => {
+    console.log("AppContext: Videos state changed:", {
+      totalVideos: videos.length,
+      youtubeVideos: videos.filter((v) => v.isYouTubeVideo).length,
+      unlistedVideos: videos.filter((v) => v.status === "unlisted").length,
+    });
   }, [videos]);
 
   return (
@@ -618,6 +785,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setVideos,
         updateVideo,
         getVideoById,
+        youtubeChannel,
+        setYoutubeChannel,
+        syncYouTubeVideos,
+        isYouTubeConnected: !!youtubeChannel,
+        lastYouTubeSync,
         pools,
         addPool,
         updatePool,

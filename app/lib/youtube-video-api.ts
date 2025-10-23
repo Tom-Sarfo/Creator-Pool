@@ -60,8 +60,27 @@ export class YouTubeVideoAPI {
 
   // Get all videos from the channel
   async getVideos(maxResults: number = 50): Promise<YouTubeVideo[]> {
+    // First get the channel details including uploads playlist
+    const channelResponse = await fetch(
+      `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&mine=true&access_token=${this.accessToken}`
+    );
+
+    if (!channelResponse.ok) {
+      throw new Error(`Failed to fetch channel: ${channelResponse.statusText}`);
+    }
+
+    const channelData = await channelResponse.json();
+    const channel = channelData.items?.[0];
+
+    if (!channel) {
+      throw new Error("No channel found");
+    }
+
+    const uploadsPlaylistId = channel.contentDetails.relatedPlaylists.uploads;
+
+    // Get videos from the uploads playlist (this includes unlisted videos)
     const response = await fetch(
-      `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&forMine=true&maxResults=${maxResults}&access_token=${this.accessToken}`
+      `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=${maxResults}&access_token=${this.accessToken}`
     );
 
     if (!response.ok) {
@@ -75,9 +94,10 @@ export class YouTubeVideoAPI {
     const videoDetails = await Promise.all(
       videos.map(async (video: any) => {
         try {
-          const details = await this.getVideoDetails(video.id.videoId);
+          const videoId = video.snippet.resourceId.videoId;
+          const details = await this.getVideoDetails(videoId);
           return {
-            id: video.id.videoId,
+            id: videoId,
             title: video.snippet.title,
             description: video.snippet.description,
             thumbnail:
@@ -94,7 +114,7 @@ export class YouTubeVideoAPI {
           };
         } catch (error) {
           console.error(
-            `Failed to get details for video ${video.id.videoId}:`,
+            `Failed to get details for video ${video.snippet.resourceId.videoId}:`,
             error
           );
           return null;
@@ -102,9 +122,19 @@ export class YouTubeVideoAPI {
       })
     );
 
-    return videoDetails.filter(
+    console.log("videos", videos)
+
+    const filteredVideos = videoDetails.filter(
       (video): video is YouTubeVideo => video !== null
     );
+
+    console.log(`YouTube API: Found ${filteredVideos.length} videos`);
+    console.log(
+      "Video statuses:",
+      filteredVideos.map((v) => ({ title: v.title, status: v.status }))
+    );
+
+    return filteredVideos;
   }
 
   // Get detailed information for a specific video
@@ -182,10 +212,26 @@ export class YouTubeVideoAPI {
 // Utility function to get stored access token
 export async function getStoredAccessToken(): Promise<string | null> {
   try {
-    const response = await fetch("/api/youtube/tokens");
+    // Use absolute URL to ensure correct port
+    const baseUrl = window.location.origin;
+    const response = await fetch(`${baseUrl}/api/youtube/tokens`);
+    console.log(
+      "getStoredAccessToken: Fetching from:",
+      `${baseUrl}/api/youtube/tokens`
+    );
+
     if (response.ok) {
       const data = await response.json();
+      console.log("getStoredAccessToken: Response data:", data);
       return data.tokens?.accessToken || null;
+    } else {
+      const errorText = await response.text();
+      console.error(
+        "getStoredAccessToken: Response not ok:",
+        response.status,
+        response.statusText
+      );
+      console.error("getStoredAccessToken: Error response body:", errorText);
     }
   } catch (error) {
     console.error("Failed to get stored access token:", error);

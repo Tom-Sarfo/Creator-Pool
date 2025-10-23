@@ -11,7 +11,9 @@ import {
   faPlus,
   faUsersRectangle,
   faCoins,
+  faSync,
 } from "@fortawesome/free-solid-svg-icons";
+import { faYoutube } from "@fortawesome/free-brands-svg-icons";
 import { useState } from "react";
 import { CREATOR_STATS } from "../lib/constants";
 import { extractDurationAndTimeRemaining } from "../lib/utils";
@@ -38,10 +40,63 @@ export default function CreatorDashboard() {
   const [selectedVideo, setSelectedVideo] = useState<any>(null);
   const stats = CREATOR_STATS;
 
-  const { addPool, pools, filteredPools, updatePool, videos } = useAppContext();
+  const {
+    addPool,
+    pools,
+    filteredPools,
+    updatePool,
+    videos,
+    syncYouTubeVideos,
+    isYouTubeConnected,
+    lastYouTubeSync,
+  } = useAppContext();
 
   // Get videos with their pool status based on actual pools data
   const getVideosWithPoolStatus = () => {
+    console.log("Dashboard: All videos in context:", videos.length);
+    console.log(
+      "Dashboard: YouTube videos in context:",
+      videos.filter((v) => v.isYouTubeVideo).length
+    );
+
+    // Debug: Log the actual video data the dashboard is receiving
+    console.log("Dashboard: Videos data:", {
+      totalVideos: videos.length,
+      youtubeVideos: videos.filter((v) => v.isYouTubeVideo).length,
+      sampleVideos: videos.slice(0, 3).map((v) => ({
+        id: v.id,
+        title: v.title,
+        isYouTube: v.isYouTubeVideo,
+        status: v.status,
+      })),
+    });
+    console.log(
+      "Dashboard: Video details:",
+      videos.map((v) => ({
+        id: v.id,
+        title: v.title,
+        status: v.status,
+        isYouTube: v.isYouTubeVideo,
+        youtubeId: v.youtubeId,
+      }))
+    );
+
+    // Debug: Check for YouTube videos specifically
+    const youtubeVideos = videos.filter((v) => v.isYouTubeVideo);
+    console.log("Dashboard: YouTube videos in context:", youtubeVideos.length);
+    if (youtubeVideos.length > 0) {
+      console.log(
+        "Dashboard: YouTube video details:",
+        youtubeVideos.map((v) => ({
+          id: v.id,
+          title: v.title,
+          status: v.status,
+          isYouTube: v.isYouTubeVideo,
+          youtubeId: v.youtubeId,
+        }))
+      );
+    }
+
     return videos.map((video) => {
       // Find if this video has any pool
       const anyPool = pools.find((pool) => pool.videoId === video.id);
@@ -63,6 +118,8 @@ export default function CreatorDashboard() {
         poolData: anyPool,
         // Override the original status for display purposes
         effectiveStatus: isActivePool ? "active" : video.status,
+        // Add YouTube video indicator
+        isYouTubeVideo: video.isYouTubeVideo || false,
       };
     });
   };
@@ -83,10 +140,54 @@ export default function CreatorDashboard() {
         );
       case "unlisted":
         // Show videos that are available for pool creation (unlisted without pools)
-        return videosWithStatus.filter(
-          (video) => video.poolStatus === "available"
+        const unlistedVideos = videosWithStatus.filter(
+          (video) => video.status === "unlisted" && !video.hasPool
         );
+        console.log("Dashboard: Filtering unlisted videos:", {
+          totalVideos: videosWithStatus.length,
+          unlistedVideos: unlistedVideos.length,
+          videos: unlistedVideos.map((v) => ({
+            title: v.title,
+            status: v.status,
+            hasPool: v.hasPool,
+            isYouTube: v.isYouTubeVideo,
+          })),
+        });
+
+        // Debug YouTube videos specifically
+        const youtubeVideos = videosWithStatus.filter((v) => v.isYouTubeVideo);
+        console.log("YouTube videos found:", youtubeVideos.length);
+        console.log(
+          "YouTube video details:",
+          youtubeVideos.map((v) => ({
+            title: v.title,
+            status: v.status,
+            hasPool: v.hasPool,
+            isYouTube: v.isYouTubeVideo,
+          }))
+        );
+
+        // Debug: Show all videos and their statuses
+        console.log(
+          "All videos with statuses:",
+          videosWithStatus.map((v) => ({
+            title: v.title,
+            status: v.status,
+            isYouTube: v.isYouTubeVideo,
+            hasPool: v.hasPool,
+          }))
+        );
+
+        return unlistedVideos;
       default:
+        console.log(
+          "All Videos tab - showing all videos:",
+          videosWithStatus.length
+        );
+        console.log(
+          "All Videos tab - YouTube videos:",
+          videosWithStatus.filter((v) => v.isYouTubeVideo).length
+        );
         return videosWithStatus;
     }
   };
@@ -98,7 +199,7 @@ export default function CreatorDashboard() {
     (video) => video.poolStatus === "active"
   ).length;
   const unlistedVideoCount = videosWithStatus.filter(
-    (video) => video.poolStatus === "available"
+    (video) => video.status === "unlisted" && !video.hasPool
   ).length;
   const settledVideoCount = videosWithStatus.filter(
     (video) => video.hasPool && video.poolData?.status === "settled"
@@ -232,16 +333,22 @@ export default function CreatorDashboard() {
       question: questionText,
       participants: 0,
       totalStake: poolData.pledgeAmount || 0,
+      creatorPledge: poolData.pledgeAmount || 0, // Track creator pledge separately
+      predictorStakes: 0, // No predictor stakes initially
       timeRemaining: "10m", // Will be updated automatically by context
       status: "open", // Always open to allow predictions during unlisted stage
       createdAt: new Date().toISOString(),
       targetViews: targetViews,
-      currentViews: 0,
+      currentViews: selectedVideoData?.views || 0, // Use actual view count if available
       duration: totalDays,
       predictionWindow: 10, // 10 minutes for prediction window
       // Add additional properties based on the selected video if available
       ...(selectedVideoData && {
         thumbnail: selectedVideoData.thumbnail,
+        creator: selectedVideoData.creator,
+        creatorVerified: selectedVideoData.creatorVerified,
+        creatorSubs: selectedVideoData.creatorSubs,
+        category: selectedVideoData.category,
       }),
     };
 
@@ -264,7 +371,7 @@ export default function CreatorDashboard() {
         </p>
       </div>
 
-      {/* YouTube Connection Status - Temporarily disabled */}
+      {/* YouTube Connection Status */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
           <div className="flex-1">
@@ -272,16 +379,36 @@ export default function CreatorDashboard() {
               YouTube Channel Connection
             </h3>
             <p className="text-sm text-gray-600 mb-4">
-              Connect your YouTube channel to sync unlisted videos and create
-              prediction pools.
+              {isYouTubeConnected
+                ? "Your YouTube channel is connected. Sync to get your latest videos."
+                : "Connect your YouTube channel to sync unlisted videos and create prediction pools."}
             </p>
             <div className="flex items-center space-x-2 text-sm text-gray-500">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span>Ready to connect</span>
+              <div
+                className={`w-2 h-2 rounded-full ${isYouTubeConnected ? "bg-green-500" : "bg-yellow-500"}`}
+              ></div>
+              <span>
+                {isYouTubeConnected
+                  ? `Connected${lastYouTubeSync ? ` • Last synced: ${new Date(lastYouTubeSync).toLocaleString()}` : ""}`
+                  : "Ready to connect"}
+              </span>
             </div>
           </div>
-          <div className="flex-shrink-0">
-            <YouTubeConnectionButton />
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+            {isYouTubeConnected ? (
+              <button
+                onClick={() => {
+                  console.log("Dashboard: Sync button clicked");
+                  syncYouTubeVideos();
+                }}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors inline-flex items-center space-x-2"
+              >
+                <FontAwesomeIcon icon={faSync} className="w-4 h-4" />
+                <span>Sync Videos</span>
+              </button>
+            ) : (
+              <YouTubeConnectionButton />
+            )}
           </div>
         </div>
       </div>
@@ -360,6 +487,13 @@ export default function CreatorDashboard() {
                     {video.status === "unlisted" && (
                       <div className="absolute top-0 left-0 bg-red-600 text-white text-xs px-1 rounded-br">
                         Unlisted
+                      </div>
+                    )}
+                    {/* YouTube video indicator */}
+                    {video.isYouTubeVideo && (
+                      <div className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1 rounded-bl flex items-center space-x-1">
+                        <FontAwesomeIcon icon={faYoutube} className="w-2 h-2" />
+                        <span>YouTube</span>
                       </div>
                     )}
                   </div>

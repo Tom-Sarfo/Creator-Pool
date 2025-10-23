@@ -22,6 +22,7 @@ import {
   type YouTubeVideo,
   type YouTubeChannel,
 } from "../lib/youtube-video-api";
+import { useAppContext } from "../contexts/AppContext";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -35,26 +36,21 @@ export function meta({}: Route.MetaArgs) {
 
 export default function CreatorYouTubeSettings() {
   const [searchParams] = useSearchParams();
-  const [connectionStatus, setConnectionStatus] = useState<
-    "disconnected" | "connected" | "syncing"
-  >("disconnected");
-  const [lastSync, setLastSync] = useState<string | null>(null);
-  const [channelInfo, setChannelInfo] = useState<any>(null);
-  const [syncStats, setSyncStats] = useState({
-    totalVideos: 0,
-    unlistedVideos: 0,
-    publicVideos: 0,
-    lastSyncTime: null,
-  });
   const [oauthMessage, setOauthMessage] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
-  const [syncedVideos, setSyncedVideos] = useState<YouTubeVideo[]>([]);
-  const [syncedChannel, setSyncedChannel] = useState<YouTubeChannel | null>(
-    null
-  );
   const [syncError, setSyncError] = useState<string | null>(null);
+
+  // Use AppContext instead of local state
+  const {
+    youtubeChannel,
+    setYoutubeChannel,
+    syncYouTubeVideos: contextSyncYouTubeVideos,
+    isYouTubeConnected,
+    lastYouTubeSync,
+    videos,
+  } = useAppContext();
 
   // Check for OAuth success/error parameters
   useEffect(() => {
@@ -66,21 +62,28 @@ export default function CreatorYouTubeSettings() {
         type: "success",
         message: "YouTube channel connected successfully!",
       });
-      setConnectionStatus("connected");
-      const syncTime = new Date().toLocaleString();
-      setLastSync(syncTime);
+      // Update AppContext with connection info
+      const channelInfo = {
+        id: "UCov_rKILCSYoqumH3FZCDsg", // From the terminal logs
+        title: "Your YouTube Channel",
+        thumbnail: "https://via.placeholder.com/150",
+        subscriberCount: 0,
+        description: "Your YouTube Channel",
+        videoCount: 0,
+      };
+      setYoutubeChannel(channelInfo);
 
       // Store connection data in localStorage
       // Note: The access token is stored in cookies by the callback route
       // We'll need to get it from there or store it separately
       const connectionData = {
         status: "connected",
-        lastSyncedAt: syncTime,
+        lastSyncedAt: new Date().toLocaleString(),
         channelInfo: {
           id: "UCov_rKILCSYoqumH3FZCDsg", // From the terminal logs
           title: "Your YouTube Channel",
           thumbnail: "https://via.placeholder.com/150",
-          subscriberCount: "0",
+          subscriberCount: 0,
         },
         connectedAt: new Date().toISOString(),
         // We'll need to get the access token from cookies or store it here
@@ -96,6 +99,8 @@ export default function CreatorYouTubeSettings() {
         type: "error",
         message: `Connection failed: ${youtubeError}`,
       });
+      // Clear any existing connection
+      setYoutubeChannel(null);
     }
 
     // Clear URL parameters after processing
@@ -114,23 +119,9 @@ export default function CreatorYouTubeSettings() {
     if (storedConnection) {
       try {
         const connection = JSON.parse(storedConnection);
-        setConnectionStatus("connected");
-        setLastSync(connection.lastSyncedAt || new Date().toLocaleString());
-        setChannelInfo(connection.channelInfo);
-
-        // Load synced videos if available
-        if (connection.syncedVideos) {
-          setSyncedVideos(connection.syncedVideos);
-          setSyncStats({
-            totalVideos: connection.syncedVideos.length,
-            unlistedVideos: connection.syncedVideos.filter(
-              (v: YouTubeVideo) => v.status === "unlisted"
-            ).length,
-            publicVideos: connection.syncedVideos.filter(
-              (v: YouTubeVideo) => v.status === "public"
-            ).length,
-            lastSyncTime: connection.lastSyncedAt,
-          });
+        // Update AppContext with stored connection
+        if (connection.channelInfo) {
+          setYoutubeChannel(connection.channelInfo);
         }
       } catch (error) {
         console.error("Failed to parse stored connection:", error);
@@ -140,51 +131,17 @@ export default function CreatorYouTubeSettings() {
   }, []);
 
   const handleSync = async () => {
-    setConnectionStatus("syncing");
     setSyncError(null);
 
     try {
-      // Sync videos from YouTube
-      const { channel, videos, unlistedVideos } = await syncYouTubeVideos();
-
-      const syncTime = new Date().toLocaleString();
-
-      // Update state with real data
-      setConnectionStatus("connected");
-      setLastSync(syncTime);
-      setSyncedChannel(channel);
-      setSyncedVideos(videos);
-      setSyncStats({
-        totalVideos: videos.length,
-        unlistedVideos: unlistedVideos.length,
-        publicVideos: videos.filter((v) => v.status === "public").length,
-        lastSyncTime: new Date().toISOString(),
-      });
-
-      // Update stored connection with new sync time and channel info
-      const storedConnection = localStorage.getItem("youtube_connection");
-      if (storedConnection) {
-        const connection = JSON.parse(storedConnection);
-        connection.lastSyncedAt = syncTime;
-        connection.channelInfo = {
-          id: channel.id,
-          title: channel.title,
-          thumbnail: channel.thumbnail,
-          subscriberCount: channel.subscriberCount.toString(),
-        };
-        connection.syncedVideos = videos;
-        localStorage.setItem("youtube_connection", JSON.stringify(connection));
-      }
-
-      console.log(
-        `Synced ${videos.length} videos (${unlistedVideos.length} unlisted)`
-      );
+      // Use the AppContext sync function
+      await contextSyncYouTubeVideos();
+      console.log("Sync completed successfully");
     } catch (error) {
       console.error("Sync failed:", error);
       setSyncError(
         error instanceof Error ? error.message : "Failed to sync videos"
       );
-      setConnectionStatus("connected"); // Still connected, just sync failed
     }
   };
 
@@ -192,16 +149,10 @@ export default function CreatorYouTubeSettings() {
     // Clear stored connection
     localStorage.removeItem("youtube_connection");
 
-    // Reset state
-    setConnectionStatus("disconnected");
-    setLastSync(null);
-    setChannelInfo(null);
-    setSyncStats({
-      totalVideos: 0,
-      unlistedVideos: 0,
-      publicVideos: 0,
-      lastSyncTime: null,
-    });
+    // Clear AppContext
+    setYoutubeChannel(null);
+    setSyncError(null);
+    setOauthMessage(null);
   };
 
   const getStatusColor = (status: string) => {
@@ -292,32 +243,26 @@ export default function CreatorYouTubeSettings() {
                 Channel Connection
               </h3>
               <p className="text-sm text-gray-600">
-                {connectionStatus === "connected"
+                {isYouTubeConnected
                   ? "Your YouTube channel is connected and synced"
-                  : connectionStatus === "syncing"
-                    ? "Syncing your channel data..."
-                    : "Connect your YouTube channel to get started"}
+                  : "Connect your YouTube channel to get started"}
               </p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
             <FontAwesomeIcon
-              icon={getStatusIcon(connectionStatus)}
-              className={`w-5 h-5 ${getStatusColor(connectionStatus)}`}
+              icon={isYouTubeConnected ? faCheckCircle : faExclamationTriangle}
+              className={`w-5 h-5 ${isYouTubeConnected ? "text-green-600" : "text-yellow-600"}`}
             />
             <span
-              className={`text-sm font-medium ${getStatusColor(connectionStatus)}`}
+              className={`text-sm font-medium ${isYouTubeConnected ? "text-green-600" : "text-yellow-600"}`}
             >
-              {connectionStatus === "connected"
-                ? "Connected"
-                : connectionStatus === "syncing"
-                  ? "Syncing..."
-                  : "Not Connected"}
+              {isYouTubeConnected ? "Connected" : "Not Connected"}
             </span>
           </div>
         </div>
 
-        {connectionStatus === "disconnected" && (
+        {!isYouTubeConnected && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
             <div className="flex items-start space-x-3">
               <FontAwesomeIcon
@@ -338,7 +283,7 @@ export default function CreatorYouTubeSettings() {
           </div>
         )}
 
-        {connectionStatus === "connected" && (
+        {isYouTubeConnected && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
             <div className="flex items-start space-x-3">
               <FontAwesomeIcon
@@ -351,7 +296,8 @@ export default function CreatorYouTubeSettings() {
                 </h4>
                 <p className="text-sm text-green-700">
                   Your YouTube channel is connected and ready for pool creation.
-                  {lastSync && ` Last synced: ${lastSync}`}
+                  {lastYouTubeSync &&
+                    ` Last synced: ${new Date(lastYouTubeSync).toLocaleString()}`}
                 </p>
               </div>
             </div>
@@ -360,24 +306,17 @@ export default function CreatorYouTubeSettings() {
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
           <div className="flex-1">
-            {connectionStatus === "disconnected" ? (
+            {!isYouTubeConnected ? (
               <YouTubeConnectionButton />
             ) : (
               <div className="flex items-center space-x-4">
                 <button
                   onClick={handleSync}
-                  disabled={connectionStatus === "syncing"}
+                  disabled={false}
                   className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                 >
-                  <FontAwesomeIcon
-                    icon={faSync}
-                    className={`w-4 h-4 ${connectionStatus === "syncing" ? "animate-spin" : ""}`}
-                  />
-                  <span>
-                    {connectionStatus === "syncing"
-                      ? "Syncing..."
-                      : "Sync Channel"}
-                  </span>
+                  <FontAwesomeIcon icon={faSync} className="w-4 h-4" />
+                  <span>Sync Channel</span>
                 </button>
                 <button
                   onClick={handleDisconnect}
@@ -408,7 +347,7 @@ export default function CreatorYouTubeSettings() {
       )}
 
       {/* Sync Statistics */}
-      {connectionStatus === "connected" && (
+      {isYouTubeConnected && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center space-x-3 mb-4">
@@ -421,7 +360,7 @@ export default function CreatorYouTubeSettings() {
               <div>
                 <h4 className="font-medium text-gray-900">Total Videos</h4>
                 <p className="text-2xl font-bold text-gray-900">
-                  {syncStats.totalVideos}
+                  {videos.filter((v) => v.isYouTubeVideo).length}
                 </p>
               </div>
             </div>
@@ -439,7 +378,11 @@ export default function CreatorYouTubeSettings() {
               <div>
                 <h4 className="font-medium text-gray-900">Unlisted Videos</h4>
                 <p className="text-2xl font-bold text-gray-900">
-                  {syncStats.unlistedVideos}
+                  {
+                    videos.filter(
+                      (v) => v.isYouTubeVideo && v.status === "unlisted"
+                    ).length
+                  }
                 </p>
               </div>
             </div>
@@ -457,7 +400,11 @@ export default function CreatorYouTubeSettings() {
               <div>
                 <h4 className="font-medium text-gray-900">Public Videos</h4>
                 <p className="text-2xl font-bold text-gray-900">
-                  {syncStats.publicVideos}
+                  {
+                    videos.filter(
+                      (v) => v.isYouTubeVideo && v.status === "public"
+                    ).length
+                  }
                 </p>
               </div>
             </div>
@@ -520,7 +467,9 @@ export default function CreatorYouTubeSettings() {
             <div>
               <h4 className="font-medium text-gray-900">Last Sync</h4>
               <p className="text-sm text-gray-600">
-                {lastSync ? lastSync : "Never synced"}
+                {lastYouTubeSync
+                  ? new Date(lastYouTubeSync).toLocaleString()
+                  : "Never synced"}
               </p>
             </div>
             <div className="flex items-center space-x-2 text-sm text-gray-500">
@@ -532,74 +481,79 @@ export default function CreatorYouTubeSettings() {
       </div>
 
       {/* Synced Videos */}
-      {connectionStatus === "connected" && syncedVideos.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-medium text-gray-900">
-              Your YouTube Videos
-            </h3>
-            <span className="text-sm text-gray-500">
-              {syncedVideos.length} videos synced
-            </span>
-          </div>
+      {isYouTubeConnected &&
+        videos.filter((v) => v.isYouTubeVideo).length > 0 && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-medium text-gray-900">
+                Your YouTube Videos
+              </h3>
+              <span className="text-sm text-gray-500">
+                {videos.filter((v) => v.isYouTubeVideo).length} videos synced
+              </span>
+            </div>
 
-          <div className="space-y-4">
-            {syncedVideos.slice(0, 10).map((video) => (
-              <div
-                key={video.id}
-                className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg"
-              >
-                <img
-                  src={video.thumbnail}
-                  alt={video.title}
-                  className="w-20 h-14 object-cover rounded"
-                />
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-medium text-gray-900 truncate">
-                    {video.title}
-                  </h4>
-                  <div className="flex items-center space-x-4 text-xs text-gray-500 mt-1">
-                    <span
-                      className={`px-2 py-1 rounded-full ${
-                        video.status === "unlisted"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : video.status === "public"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {video.status}
-                    </span>
-                    <span>{video.viewCount.toLocaleString()} views</span>
-                    <span>{video.likeCount.toLocaleString()} likes</span>
-                    <span>
-                      {new Date(video.publishedAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex-shrink-0">
-                  <a
-                    href={`https://www.youtube.com/watch?v=${video.id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800"
+            <div className="space-y-4">
+              {videos
+                .filter((v) => v.isYouTubeVideo)
+                .slice(0, 10)
+                .map((video) => (
+                  <div
+                    key={video.id}
+                    className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg"
                   >
-                    <FontAwesomeIcon icon={faVideo} className="w-4 h-4" />
-                  </a>
-                </div>
-              </div>
-            ))}
+                    <img
+                      src={video.thumbnail}
+                      alt={video.title}
+                      className="w-20 h-14 object-cover rounded"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-medium text-gray-900 truncate">
+                        {video.title}
+                      </h4>
+                      <div className="flex items-center space-x-4 text-xs text-gray-500 mt-1">
+                        <span
+                          className={`px-2 py-1 rounded-full ${
+                            video.status === "unlisted"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : video.status === "public"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {video.status}
+                        </span>
+                        <span>{video.views.toLocaleString()} views</span>
+                        <span>{video.likes.toLocaleString()} likes</span>
+                        <span>
+                          {new Date(video.uploadDate).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex-shrink-0">
+                      <a
+                        href={`https://www.youtube.com/watch?v=${video.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <FontAwesomeIcon icon={faVideo} className="w-4 h-4" />
+                      </a>
+                    </div>
+                  </div>
+                ))}
 
-            {syncedVideos.length > 10 && (
-              <div className="text-center py-4">
-                <p className="text-sm text-gray-500">
-                  Showing 10 of {syncedVideos.length} videos
-                </p>
-              </div>
-            )}
+              {videos.filter((v) => v.isYouTubeVideo).length > 10 && (
+                <div className="text-center py-4">
+                  <p className="text-sm text-gray-500">
+                    Showing 10 of{" "}
+                    {videos.filter((v) => v.isYouTubeVideo).length} videos
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* Privacy Notice */}
       <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">

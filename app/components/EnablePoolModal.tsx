@@ -13,6 +13,7 @@ import {
   faCircle,
   faChevronDown,
 } from "@fortawesome/free-solid-svg-icons";
+import { faYoutube } from "@fortawesome/free-brands-svg-icons";
 import { useAppContext } from "../contexts/AppContext";
 import { POOL_QUESTIONS, PLEDGE_OPTIONS } from "../lib/constants";
 import { Label } from "@radix-ui/react-label";
@@ -61,8 +62,15 @@ export default function EnablePoolModal({
 
   if (!isOpen) return null;
 
-  // Get unlisted videos for selection
-  const unlistedVideos = videos.filter((v) => v.status === "unlisted");
+  // Get unlisted videos for selection, prioritizing YouTube videos
+  const unlistedVideos = videos
+    .filter((v) => v.status === "unlisted")
+    .sort((a, b) => {
+      // YouTube videos first, then dummy videos
+      if (a.isYouTubeVideo && !b.isYouTubeVideo) return -1;
+      if (!a.isYouTubeVideo && b.isYouTubeVideo) return 1;
+      return 0;
+    });
 
   // Determine if we need to show video selector (when no specific video is passed)
   const needsVideoSelection = !video && unlistedVideos.length > 0;
@@ -230,18 +238,40 @@ export default function EnablePoolModal({
                           }`}
                         >
                           <div className="flex items-center space-x-3">
-                            <img
-                              src={unlistedVideo.thumbnail}
-                              alt={unlistedVideo.title}
-                              className="w-12 h-8 object-cover rounded"
-                            />
+                            <div className="relative">
+                              <img
+                                src={unlistedVideo.thumbnail}
+                                alt={unlistedVideo.title}
+                                className="w-12 h-8 object-cover rounded"
+                              />
+                              {unlistedVideo.isYouTubeVideo && (
+                                <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1 rounded flex items-center">
+                                  <FontAwesomeIcon
+                                    icon={faYoutube}
+                                    className="w-2 h-2"
+                                  />
+                                </div>
+                              )}
+                            </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 line-clamp-1">
-                                {unlistedVideo.title}
-                              </p>
+                              <div className="flex items-center space-x-2">
+                                <p className="text-sm font-medium text-gray-900 line-clamp-1">
+                                  {unlistedVideo.title}
+                                </p>
+                                {unlistedVideo.isYouTubeVideo && (
+                                  <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
+                                    YouTube
+                                  </span>
+                                )}
+                              </div>
                               <p className="text-xs text-gray-500">
                                 {unlistedVideo.duration} •{" "}
                                 {unlistedVideo.uploadDate}
+                                {unlistedVideo.isYouTubeVideo && (
+                                  <span className="ml-2 text-red-500">
+                                    • Real Video
+                                  </span>
+                                )}
                               </p>
                             </div>
                           </div>
