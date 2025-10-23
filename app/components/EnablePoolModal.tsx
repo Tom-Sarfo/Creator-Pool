@@ -10,13 +10,14 @@ import {
   faRocket,
   faLightbulb,
   faShieldAlt,
-  faCircle,
   faChevronDown,
+  faDollarSign,
 } from "@fortawesome/free-solid-svg-icons";
 import { faYoutube } from "@fortawesome/free-brands-svg-icons";
 import { useAppContext } from "../contexts/AppContext";
 import { POOL_QUESTIONS, PLEDGE_OPTIONS } from "../lib/constants";
 import { Label } from "@radix-ui/react-label";
+import TextInputField from "./TextInputField";
 
 interface VideoData {
   id: string;
@@ -51,10 +52,8 @@ export default function EnablePoolModal({
   );
   const [showVideoSelector, setShowVideoSelector] = useState(false);
 
-  // Use constants from the constants file
   const questions = POOL_QUESTIONS;
 
-  // Update the fixed amount option with the current customAmount value
   const pledgeOptions = PLEDGE_OPTIONS.map((option) => ({
     ...option,
     amount: option.type === "fixed" ? `$${customAmount}` : option.amount,
@@ -62,25 +61,20 @@ export default function EnablePoolModal({
 
   if (!isOpen) return null;
 
-  // Get unlisted videos for selection, prioritizing YouTube videos
   const unlistedVideos = videos
     .filter((v) => v.status === "unlisted")
     .sort((a, b) => {
-      // YouTube videos first, then dummy videos
       if (a.isYouTubeVideo && !b.isYouTubeVideo) return -1;
       if (!a.isYouTubeVideo && b.isYouTubeVideo) return 1;
       return 0;
     });
 
-  // Determine if we need to show video selector (when no specific video is passed)
   const needsVideoSelection = !video && unlistedVideos.length > 0;
 
-  // Get selected video data
   const selectedVideoData = selectedVideoId
     ? unlistedVideos.find((v) => v.id.toString() === selectedVideoId)
     : null;
 
-  // Default video data when creating a new pool (no specific video selected)
   const displayVideo = video ||
     selectedVideoData || {
       id: "new",
@@ -102,8 +96,6 @@ export default function EnablePoolModal({
 
   const handleEnablePool = () => {
     if (!termsAccepted) return;
-
-    // Don't allow creating pool without selecting a video when needed
     if (needsVideoSelection && !selectedVideoId) return;
 
     const poolData = {
@@ -121,21 +113,19 @@ export default function EnablePoolModal({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-screen items-center justify-center p-4">
-        {/* Backdrop */}
         <div
           className="fixed inset-0 transition-opacity"
           style={{ backgroundColor: "rgba(0, 0, 0, 0.7)" }}
           onClick={onClose}
         />
 
-        {/* Modal */}
-        <div className="relative bg-white rounded-md shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">
+        <div className="relative bg-white rounded-md shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col mx-2 sm:mx-0">
+          <div className="flex items-center justify-between p-3 sm:p-6 border-b border-gray-200 flex-shrink-0">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
                 Enable Prediction Pool
               </h2>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-xs sm:text-sm text-gray-600 mt-1">
                 Set up a prediction pool for your video to boost engagement
               </p>
             </div>
@@ -147,26 +137,23 @@ export default function EnablePoolModal({
             </button>
           </div>
 
-          <div className="p-6 space-y-6 overflow-y-auto flex-1">
-            {/* Video Preview */}
+          <div className="p-3 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-1">
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
+              <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">
                 Video Preview
               </h3>
-              <div className="flex items-start space-x-4">
-                <div className="relative">
+              <div className="flex flex-col sm:flex-row items-start space-y-3 sm:space-y-0 sm:space-x-4">
+                <div className="relative w-full sm:w-48">
                   <img
                     src={displayVideo.thumbnail}
                     alt={displayVideo.title}
-                    className="w-48 h-32 object-cover rounded-lg border border-gray-200"
+                    className="w-full h-32 sm:h-32 object-cover rounded-lg border border-gray-200"
                     onError={(e) => {
-                      // Fallback if image fails to load
                       e.currentTarget.src =
                         "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&h=225&fit=crop";
                     }}
                   />
 
-                  {/* Simple play button overlay - only on hover */}
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200">
                     <div className="w-12 h-12 bg-white bg-opacity-90 rounded-full flex items-center justify-center shadow-lg">
                       <FontAwesomeIcon
@@ -182,11 +169,11 @@ export default function EnablePoolModal({
                     </div>
                   )}
                 </div>
-                <div className="flex-1">
-                  <h4 className="font-medium text-gray-900 mb-2 line-clamp-2">
+                <div className="flex-1 w-full">
+                  <h4 className="font-medium text-gray-900 mb-2 text-sm sm:text-base break-words">
                     {displayVideo.title}
                   </h4>
-                  <div className="flex items-center space-x-4 text-sm text-gray-500">
+                  <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 text-xs sm:text-sm text-gray-500">
                     {(displayVideo.views || 0) > 0 && (
                       <div className="flex items-center space-x-1">
                         <FontAwesomeIcon icon={faEye} className="w-4 h-4" />
@@ -205,14 +192,13 @@ export default function EnablePoolModal({
                 </div>
               </div>
 
-              {/* Video Selector - Only show when creating a new pool */}
               {needsVideoSelection && (
-                <div className="mt-4">
+                <div className="mt-3 sm:mt-4">
                   <button
                     onClick={() => setShowVideoSelector(!showVideoSelector)}
-                    className="w-full p-3 border border-gray-300 rounded-lg hover:border-orange-500 transition-colors flex items-center justify-between"
+                    className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg hover:border-orange-500 transition-colors flex items-center justify-between"
                   >
-                    <span className="text-sm text-gray-700">
+                    <span className="text-xs sm:text-sm text-gray-700">
                       {selectedVideoData
                         ? "Change Video"
                         : "Select Unlisted Video"}
@@ -224,14 +210,14 @@ export default function EnablePoolModal({
                   </button>
 
                   {showVideoSelector && (
-                    <div className="mt-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
+                    <div className="mt-2 max-h-40 sm:max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
                       {unlistedVideos.map((unlistedVideo) => (
                         <button
                           key={unlistedVideo.id}
                           onClick={() =>
                             handleVideoSelect(unlistedVideo.id.toString())
                           }
-                          className={`w-full p-3 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 ${
+                          className={`w-full p-2 sm:p-3 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 ${
                             selectedVideoId === unlistedVideo.id.toString()
                               ? "bg-orange-50 border-orange-200"
                               : ""
@@ -255,7 +241,7 @@ export default function EnablePoolModal({
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center space-x-2">
-                                <p className="text-sm font-medium text-gray-900 line-clamp-1">
+                                <p className="text-xs sm:text-sm font-medium text-gray-900 break-words">
                                   {unlistedVideo.title}
                                 </p>
                                 {unlistedVideo.isYouTubeVideo && (
@@ -264,7 +250,7 @@ export default function EnablePoolModal({
                                   </span>
                                 )}
                               </div>
-                              <p className="text-xs text-gray-500">
+                              <p className="text-xs text-gray-500 break-words">
                                 {unlistedVideo.duration} •{" "}
                                 {unlistedVideo.uploadDate}
                                 {unlistedVideo.isYouTubeVideo && (
@@ -283,22 +269,21 @@ export default function EnablePoolModal({
               )}
             </div>
 
-            {/* Pledge Options */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
+              <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">
                 Pledge Options
               </h3>
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
                 Boost your pool size and attract buzz around your content by
                 pledging a portion of your AdSense revenue more engagement, more
                 participants, bigger rewards.
               </p>
 
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {pledgeOptions.map((option) => (
                   <label
                     key={option.type}
-                    className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${
+                    className={`flex items-center p-3 sm:p-4 border rounded-lg cursor-pointer transition-colors ${
                       pledgeType === option.type
                         ? "border-orange-500 bg-orange-50"
                         : "border-gray-200 hover:border-gray-300"
@@ -323,17 +308,17 @@ export default function EnablePoolModal({
                         <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
                       )}
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium text-gray-900">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900 text-sm sm:text-base">
                             {option.title}
                           </p>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-xs sm:text-sm text-gray-600">
                             {option.description}
                           </p>
                         </div>
-                        <span className="font-semibold text-gray-900">
+                        <span className="font-semibold text-gray-900 text-sm sm:text-base mt-1 sm:mt-0">
                           {option.amount}
                         </span>
                       </div>
@@ -342,33 +327,37 @@ export default function EnablePoolModal({
                 ))}
               </div>
 
-              {/* Custom Amount Input */}
               {pledgeType === "fixed" && (
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Enter Fixed Amount
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 font-medium z-10">
-                      $
-                    </span>
-                    <input
-                      type="number"
-                      value={customAmount}
-                      onChange={(e) => setCustomAmount(e.target.value)}
-                      className="w-full pl-8 pr-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-0 focus:border-orange-500 focus:outline-none transition-colors duration-200"
-                      placeholder="200"
-                      onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                    />
-                  </div>
+                <div className="mt-3 sm:mt-4">
+                  <TextInputField
+                    value={customAmount}
+                    onChange={setCustomAmount}
+                    type="number"
+                    label="Enter Fixed Amount"
+                    placeholder="200"
+                    leftIcon={faDollarSign}
+                    size="medium"
+                    fullWidth={true}
+                    min={0}
+                    step={0.01}
+                    onWheel={(e: React.WheelEvent<HTMLInputElement>) =>
+                      (e.target as HTMLInputElement).blur()
+                    }
+                    className="text-sm sm:text-base"
+                    iconColor="text-gray-600"
+                    borderColor="border-gray-300"
+                    focusBorderColor="focus:border-orange-500"
+                    backgroundColor="bg-white"
+                    textColor="text-gray-900"
+                    placeholderColor="placeholder-gray-500"
+                  />
                 </div>
               )}
             </div>
 
-            {/* Prediction Question */}
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <h3 className="text-base sm:text-lg font-medium text-gray-900">
                   Prediction Question
                 </h3>
                 <button className="flex items-center space-x-2 text-sm text-orange-600 hover:text-orange-700 transition-colors">
@@ -377,54 +366,54 @@ export default function EnablePoolModal({
                 </button>
               </div>
 
-              {/* Main Question */}
-              <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-4 mb-4">
+              <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
                 <div className="flex items-center space-x-2 mb-2">
                   <FontAwesomeIcon
                     icon={faQuestionCircle}
                     className="w-4 h-4 text-cyan-600"
                   />
-                  <span className="text-sm text-cyan-600">AI Generated</span>
+                  <span className="text-xs sm:text-sm text-cyan-600">
+                    AI Generated
+                  </span>
                 </div>
-                <p className="text-gray-900 font-medium mb-2">
+                <p className="text-gray-900 font-medium mb-2 text-sm sm:text-base break-words">
                   {questions[selectedQuestion].text}
                 </p>
-                <div className="flex items-center space-x-2 text-sm text-cyan-600">
+                <div className="flex items-center space-x-2 text-xs sm:text-sm text-cyan-600">
                   <FontAwesomeIcon icon={faLightbulb} className="w-4 h-4" />
                   <span>{questions[selectedQuestion].performance}</span>
                 </div>
               </div>
 
-              {/* Alternative Questions */}
               <div>
-                <p className="text-sm text-gray-600 mb-3">
+                <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3">
                   Or choose from these alternatives:
                 </p>
-                <div className="space-y-2">
+                <div className="space-y-1 sm:space-y-2">
                   {questions.slice(1).map((question, index) => (
                     <button
                       key={question.id}
                       onClick={() => setSelectedQuestion(question.id)}
-                      className={`w-full p-3 text-left border rounded-lg transition-colors ${
+                      className={`w-full p-2 sm:p-3 text-left border rounded-lg transition-colors ${
                         selectedQuestion === question.id
                           ? "border-orange-500 bg-orange-50"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                     >
-                      <p className="text-sm text-gray-900">{question.text}</p>
+                      <p className="text-xs sm:text-sm text-gray-900 break-words">
+                        {question.text}
+                      </p>
                     </button>
                   ))}
                 </div>
               </div>
             </div>
 
-            {/* Security Message */}
-            <div className="flex items-center space-x-2 text-sm text-green-600 bg-green-50 p-3 rounded-lg">
+            <div className="flex items-center space-x-2 text-xs sm:text-sm text-green-600 bg-green-50 p-2 sm:p-3 rounded-lg">
               <FontAwesomeIcon icon={faShieldAlt} className="w-4 h-4" />
               <span>Your pledge is held securely until pool settlement</span>
             </div>
 
-            {/* Terms and Conditions */}
             <div className="flex items-start space-x-3">
               <input
                 type="checkbox"
@@ -436,7 +425,10 @@ export default function EnablePoolModal({
                   accentColor: "#f94600",
                 }}
               />
-              <Label htmlFor="terms" className="text-sm text-gray-600">
+              <Label
+                htmlFor="terms"
+                className="text-xs sm:text-sm text-gray-600"
+              >
                 I agree to Creator Pool's{" "}
                 <a
                   href="#"
@@ -450,10 +442,10 @@ export default function EnablePoolModal({
             </div>
           </div>
 
-          <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row items-center justify-end space-y-2 sm:space-y-0 sm:space-x-3 p-3 sm:p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="w-full sm:w-auto px-4 py-2 text-sm sm:text-base text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
@@ -462,7 +454,7 @@ export default function EnablePoolModal({
               disabled={
                 !termsAccepted || (needsVideoSelection && !selectedVideoId)
               }
-              className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+              className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base"
             >
               <FontAwesomeIcon icon={faRocket} className="w-4 h-4" />
               <span>Enable Pool</span>
