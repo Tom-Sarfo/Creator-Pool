@@ -122,7 +122,7 @@ export class YouTubeVideoAPI {
       })
     );
 
-    console.log("videos", videos)
+    console.log("videos", videos);
 
     const filteredVideos = videoDetails.filter(
       (video): video is YouTubeVideo => video !== null
