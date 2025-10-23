@@ -94,7 +94,7 @@ export default function PredictorLayout() {
           <div className="lg:pl-64">
             {/* Top header */}
             <Header
-              title="Predictor Dashboard"
+              title="Dashboard"
               onMenuClick={() => setSidebarOpen(true)}
               showMenuButton={true}
               walletBalance={2450.0}

@@ -534,6 +534,39 @@ export const CREATOR_DASHBOARD_EMPTY_STATE_MESSAGES = {
     "No unlisted videos found. Connect your YouTube channel to sync unlisted videos.",
 } as const;
 
+export const PREDICTOR_DASHBOARD_STATS_CONFIG = [
+  {
+    title: "Total Predictions",
+    icon: "faChartBar",
+    iconColor: "text-cyan-600",
+    iconBgColor: "bg-cyan-100",
+  },
+  {
+    title: "Win Rate",
+    icon: "faBullseye",
+    iconColor: "text-green-600",
+    iconBgColor: "bg-green-100",
+  },
+  {
+    title: "Total Earnings",
+    icon: "faDollarSign",
+    iconColor: "text-yellow-600",
+    iconBgColor: "bg-yellow-100",
+  },
+  {
+    title: "Active Predictions",
+    icon: "faBrain",
+    iconColor: "text-orange-600",
+    iconBgColor: "bg-orange-100",
+  },
+];
+
+export const PREDICTOR_DASHBOARD_WELCOME_MESSAGE = {
+  title: "Welcome back, Predictor!",
+  description:
+    "Ready to make your next prediction? Discover active pools and test your intuition.",
+};
+
 // Prediction data constants
 export const ACTIVE_PREDICTIONS = [
   {

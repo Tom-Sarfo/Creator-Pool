@@ -214,3 +214,53 @@ export function getResultBadgeStyle(result: string) {
   };
   return `px-2 py-1 rounded-full text-xs font-medium ${styles[result as keyof typeof styles]}`;
 }
+
+export function calculatePredictorStats(predictions: any[], userId: string) {
+  const userPredictions = predictions.filter(
+    (p) => p.predictorId === (userId || "anonymous")
+  );
+
+  return {
+    totalPredictions: userPredictions.length,
+    activePredictions: userPredictions.filter((p) => p.result === "pending")
+      .length,
+    winRate:
+      userPredictions.length > 0
+        ? Math.round(
+            (userPredictions.filter((p) => p.result === "won").length /
+              userPredictions.filter((p) => p.result !== "pending").length) *
+              100
+          ) || 0
+        : 0,
+    totalEarnings: userPredictions
+      .filter((p) => p.result === "won")
+      .reduce((sum, p) => sum + (p.actualPayout || 0), 0),
+  };
+}
+
+export function getRecentPools(pools: any[], limit: number = 3) {
+  return pools
+    .filter((p) => p.status === "open")
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt || 0).getTime() -
+        new Date(a.createdAt || 0).getTime()
+    )
+    .slice(0, limit);
+}
+
+export function mapQuickActionsToIcons(actions: any[]) {
+  return actions.map((action) => ({
+    ...action,
+    icon:
+      action.icon === "bullseye"
+        ? "faBullseye"
+        : action.icon === "chart-line"
+          ? action.href === "/predictor/predictions"
+            ? "faBrain"
+            : "faChartLine"
+          : action.icon === "wallet"
+            ? "faWallet"
+            : "faBullseye",
+  }));
+}
