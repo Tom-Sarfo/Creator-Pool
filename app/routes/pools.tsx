@@ -10,8 +10,14 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useState, useEffect } from "react";
 import { CATEGORIES } from "../lib/constants";
 import { useAppContext } from "../contexts/AppContext";
-import { calculateRemainingTime, isTimerUrgent } from "../lib/utils";
+import {
+  calculateRemainingTime,
+  isTimerUrgent,
+  getPoolStatusColor,
+  getPoolStatusLabel,
+} from "../lib/utils";
 import PlayButtonOverlay from "../components/PlayButtonOverlay";
+import Pagination from "../components/Pagination";
 import {
   Select,
   SelectContent,
@@ -34,12 +40,12 @@ export default function PoolsPage() {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
 
   const { pools: allPools } = useAppContext();
   const categories = CATEGORIES;
   const [currentTime, setCurrentTime] = useState(new Date());
-
-  const pools = allPools.slice(0, 3); // Use first 3 pools for this page
 
   // Update current time every second for real-time timers
   useEffect(() => {
@@ -83,7 +89,7 @@ export default function PoolsPage() {
     }
   };
 
-  const filteredPools = pools.filter((pool) => {
+  const allFilteredPools = allPools.filter((pool) => {
     const matchesCategory =
       selectedCategory === "all" || pool.category === selectedCategory;
     const matchesSearch =
@@ -93,6 +99,11 @@ export default function PoolsPage() {
       pool.question?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
+
+  const totalPages = Math.ceil(allFilteredPools.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const filteredPools = allFilteredPools.slice(startIndex, endIndex);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -365,12 +376,16 @@ export default function PoolsPage() {
             ))}
           </div>
 
-          {/* Load More */}
-          <div className="text-center mt-8">
-            <button className="bg-white border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50 transition-colors">
-              Load More Pools
-            </button>
-          </div>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={allFilteredPools.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
+          )}
         </div>
       </main>
     </div>

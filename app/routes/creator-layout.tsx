@@ -73,7 +73,6 @@ export default function CreatorLayout() {
   return (
     <SignedIn>
       <div className="min-h-screen bg-gray-50">
-        {/* Mobile sidebar overlay */}
         {sidebarOpen && (
           <div
             className="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 lg:hidden"
@@ -81,19 +80,16 @@ export default function CreatorLayout() {
           />
         )}
 
-        {/* Desktop sidebar */}
         <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
           <Sidebar navigation={navigation} showSettings={false} />
         </div>
 
-        {/* Mobile sidebar */}
         <div
           className={`fixed inset-y-0 left-0 z-50 w-64 bg-white transform transition-transform duration-300 ease-in-out lg:hidden ${
             sidebarOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
           <div className="flex h-full flex-col">
-            {/* Mobile header */}
             <div className="flex h-16 items-center justify-between px-6 border-b border-gray-200">
               <Link to="/" className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-orange-600 rounded flex items-center justify-center">
@@ -114,7 +110,6 @@ export default function CreatorLayout() {
               </button>
             </div>
 
-            {/* Mobile navigation */}
             <nav className="flex-1 space-y-1 px-3 py-4">
               {navigation.map((item) => (
                 <Link
@@ -133,7 +128,6 @@ export default function CreatorLayout() {
               ))}
             </nav>
 
-            {/* Mobile user section */}
             <div className="flex-shrink-0 border-t border-gray-200 p-4">
               <div className="flex items-center space-x-3">
                 <UserButton afterSignOutUrl="/" />
@@ -150,19 +144,16 @@ export default function CreatorLayout() {
           </div>
         </div>
 
-        {/* Main content */}
         <div className="lg:pl-64 w-full overflow-hidden">
-          {/* Top header */}
           <Header
             title={getPageTitle()}
             onMenuClick={() => setSidebarOpen(true)}
             showMenuButton={true}
             walletBalance={0}
-            showSyncButton={location.pathname === "/creator"}
+            showSyncButton={false}
             showSearchBar={location.pathname === "/creator"}
           />
 
-          {/* Page content */}
           <main className="flex-1 w-full">
             <Outlet />
           </main>

@@ -9,6 +9,7 @@ interface StatsCardProps {
   iconBgColor: string;
   size?: "small" | "large" | "medium";
   variant?: "default" | "rounded-xl";
+  square?: boolean;
 }
 
 export default function StatsCard({
@@ -19,30 +20,48 @@ export default function StatsCard({
   iconBgColor,
   size = "large",
   variant = "default",
+  square = false,
 }: StatsCardProps) {
-  // Container classes based on size
-  const containerClasses =
-    size === "large" ? "p-4 sm:p-6" : size === "medium" ? "p-6" : "p-4";
+  // Container classes based on size and square format
+  const containerClasses = square
+    ? "p-3 sm:p-4"
+    : size === "large"
+      ? "p-4 sm:p-6"
+      : size === "medium"
+        ? "p-6"
+        : "p-4";
 
   // Icon container size
-  const iconSize =
-    size === "large"
+  const iconSize = square
+    ? "w-8 h-8"
+    : size === "large"
       ? "w-12 h-12"
       : size === "medium"
         ? "p-3" // Special handling for medium
         : "w-8 h-8";
 
   // Icon size
-  const iconInnerSize =
-    size === "large" ? "w-6 h-6" : size === "medium" ? "w-6 h-6" : "w-5 h-5";
+  const iconInnerSize = square
+    ? "w-4 h-4"
+    : size === "large"
+      ? "w-6 h-6"
+      : size === "medium"
+        ? "w-6 h-6"
+        : "w-5 h-5";
 
   // Text margin
-  const textMargin =
-    size === "large" ? "ml-4" : size === "medium" ? "ml-4" : "ml-3";
+  const textMargin = square
+    ? "ml-3"
+    : size === "large"
+      ? "ml-4"
+      : size === "medium"
+        ? "ml-4"
+        : "ml-3";
 
   // Value text size
-  const valueSize =
-    size === "large"
+  const valueSize = square
+    ? "text-xl font-bold"
+    : size === "large"
       ? "text-3xl font-bold"
       : size === "medium"
         ? "text-2xl font-bold"
@@ -61,8 +80,9 @@ export default function StatsCard({
       : `${iconSize} ${iconBgColor} rounded-lg flex items-center justify-center`;
 
   // Title text color for different variants
-  const titleColor =
-    variant === "rounded-xl"
+  const titleColor = square
+    ? "text-xs font-medium text-gray-500"
+    : variant === "rounded-xl"
       ? "text-sm font-medium text-gray-600"
       : "text-sm font-medium text-gray-500";
 

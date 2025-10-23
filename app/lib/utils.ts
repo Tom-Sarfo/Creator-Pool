@@ -148,3 +148,45 @@ import { twMerge } from "tailwind-merge";
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+// Pool status configuration and utilities
+export const POOL_STATUS_CONFIG = {
+  open: { color: "bg-green-100 text-green-800", label: "Open" },
+  awaiting_release: {
+    color: "bg-yellow-100 text-yellow-800",
+    label: "Awaiting Release",
+  },
+  live_tracking: {
+    color: "bg-cyan-100 text-cyan-800",
+    label: "Live Tracking",
+  },
+  closed: { color: "bg-orange-100 text-orange-800", label: "Closed" },
+  settled: { color: "bg-orange-100 text-orange-800", label: "Settled" },
+  available: {
+    color: "bg-gray-100 text-gray-800",
+    label: "Available for Pool",
+  },
+};
+
+export function getPoolStatusColor(poolStatus: string) {
+  return (
+    POOL_STATUS_CONFIG[poolStatus as keyof typeof POOL_STATUS_CONFIG]?.color ||
+    "bg-gray-100 text-gray-800"
+  );
+}
+
+export function getPoolStatusLabel(poolStatus: string) {
+  return (
+    POOL_STATUS_CONFIG[poolStatus as keyof typeof POOL_STATUS_CONFIG]?.label ||
+    poolStatus
+  );
+}
+
+export function formatNumber(num: number) {
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + "M";
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(1) + "K";
+  }
+  return num.toString();
+}

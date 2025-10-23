@@ -469,6 +469,13 @@ export const CREATOR_POOL_TABS = [
   { id: "expired", name: "Expired", count: 2 },
 ];
 
+export const CREATOR_VIDEO_TABS = [
+  { id: "all", name: "All Videos", count: 0 },
+  { id: "active", name: "Active Pool", count: 0 },
+  { id: "settled", name: "Settled", count: 0 },
+  { id: "unlisted", name: "Unlisted", count: 0 },
+];
+
 // Prediction data constants
 export const ACTIVE_PREDICTIONS = [
   {

@@ -11,7 +11,10 @@ import {
   calculateDynamicOdds,
   calculateRemainingTime,
   isTimerUrgent,
+  getPoolStatusColor,
+  getPoolStatusLabel,
 } from "../lib/utils";
+import Pagination from "../components/Pagination";
 import {
   Select,
   SelectContent,
@@ -29,6 +32,8 @@ export default function PredictorPools() {
   const [preselectedChoice, setPreselectedChoice] = useState<
     "yes" | "no" | undefined
   >();
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
 
   const { pools, addPrediction, addToast, calculatePoolOdds } = useAppContext();
   const { user } = useUser();
@@ -77,7 +82,7 @@ export default function PredictorPools() {
     }
   };
 
-  const filteredPools = pools.filter((pool) => {
+  const allFilteredPools = pools.filter((pool) => {
     const matchesCategory =
       selectedCategory === "all" || pool.category === selectedCategory;
     const matchesSearch =
@@ -87,6 +92,11 @@ export default function PredictorPools() {
       pool.question?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
+
+  const totalPages = Math.ceil(allFilteredPools.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const filteredPools = allFilteredPools.slice(startIndex, endIndex);
 
   const handlePredictClick = (pool: Pool, choice: "yes" | "no") => {
     setSelectedPool(pool);
@@ -360,12 +370,16 @@ export default function PredictorPools() {
         ))}
       </div>
 
-      {/* Load More */}
-      <div className="text-center">
-        <button className="bg-white border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50 transition-colors">
-          Load More Pools
-        </button>
-      </div>
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={allFilteredPools.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+        />
+      )}
 
       {/* Prediction Modal */}
       {selectedPool && (

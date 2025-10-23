@@ -42,14 +42,6 @@ export default function Header({
       </div>
 
       <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
-        {/* Sync Button */}
-        {showSyncButton && (
-          <button className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-            <FontAwesomeIcon icon={faSync} className="h-4 w-4" />
-            <span className="hidden sm:inline">Sync Channel</span>
-          </button>
-        )}
-
         {/* Search Bar */}
         {showSearchBar && (
           <div className="relative hidden sm:block">
