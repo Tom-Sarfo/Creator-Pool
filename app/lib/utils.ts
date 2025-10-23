@@ -6,7 +6,7 @@ export function calculateDynamicOdds(yesStake: number, noStake: number) {
   const totalStake = yesStake + noStake;
 
   if (totalStake === 0) {
-    return { yes: 0.5, no: 0.5 }; // Even odds when no stakes - using 0.5 as requested
+    return { yes: 2.0, no: 2.0 }; // Even odds when no stakes - using 2.0 as even odds
   }
 
   // Calculate odds based on stake ratio
@@ -18,14 +18,14 @@ export function calculateDynamicOdds(yesStake: number, noStake: number) {
   const houseEdge = 0.94;
 
   return {
-    yes: Math.max(0.5, Number((yesOdds * houseEdge).toFixed(2))),
-    no: Math.max(0.5, Number((noOdds * houseEdge).toFixed(2))),
+    yes: Math.max(2.0, Number((yesOdds * houseEdge).toFixed(2))),
+    no: Math.max(2.0, Number((noOdds * houseEdge).toFixed(2))),
   };
 }
 
 export function calculatePotentialPayout(stake: number, odds: number): number {
   // In parimutuel system, odds represent net return ratio
-  // 0.5 odds means you get back stake + (stake * 0.5) = stake * 1.5
+  // 2.0 odds means you get back stake + (stake * 2.0) = stake * 3.0
   return Number((stake * (1 + odds)).toFixed(2));
 }
 
