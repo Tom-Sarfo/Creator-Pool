@@ -74,6 +74,7 @@ export default function CreatorDashboard() {
 
       return {
         ...video,
+        status: anyPool ? anyPool.status : video.status, // Use pool status if pool exists
         poolStatus: isActivePool ? "active" : poolStatus,
         hasPool: !!anyPool,
         poolData: anyPool,
