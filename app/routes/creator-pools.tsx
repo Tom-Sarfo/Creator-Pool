@@ -61,7 +61,7 @@ export default function CreatorPools() {
   const getStatusBadge = (status: string) => {
     const styles = {
       active: "bg-green-100 text-green-800",
-      settled: "bg-blue-100 text-blue-800",
+      settled: "bg-cyan-100 text-cyan-800",
       expired: "bg-gray-100 text-gray-800",
     };
     return `px-2 py-1 rounded-full text-xs font-medium ${styles[status as keyof typeof styles]}`;
@@ -157,7 +157,7 @@ export default function CreatorPools() {
           <div className="mt-4 sm:mt-0">
             <button
               onClick={handleCreatePoolClick}
-              className="bg-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-700 transition-colors inline-flex items-center"
+              className="bg-orange-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-orange-700 transition-colors inline-flex items-center"
             >
               <FontAwesomeIcon icon={faPlus} className="w-5 h-5 mr-2" />
               Create New Pool
@@ -181,8 +181,8 @@ export default function CreatorPools() {
           title="Total Participants"
           value={pools.reduce((sum, pool) => sum + pool.participants, 0)}
           icon={faUsers}
-          iconColor="text-blue-600"
-          iconBgColor="bg-blue-100"
+          iconColor="text-cyan-600"
+          iconBgColor="bg-cyan-100"
           size="small"
         />
 
@@ -190,8 +190,8 @@ export default function CreatorPools() {
           title="Total Staked"
           value={`$${pools.reduce((sum, pool) => sum + pool.totalStake, 0).toLocaleString()}`}
           icon={faDollarSign}
-          iconColor="text-purple-600"
-          iconBgColor="bg-purple-100"
+          iconColor="text-orange-600"
+          iconBgColor="bg-orange-100"
           size="small"
         />
 
@@ -300,7 +300,7 @@ export default function CreatorPools() {
                   <div
                     className={`h-2 sm:h-3 rounded-full ${
                       pool.status === "open"
-                        ? "bg-purple-600"
+                        ? "bg-orange-600"
                         : pool.status === "settled"
                           ? "bg-green-600"
                           : "bg-gray-500"
@@ -338,7 +338,7 @@ export default function CreatorPools() {
                 {pool.status === "open" && (
                   <Link
                     to={`/creator/pool/${pool.id}?status=active`}
-                    className="bg-purple-600 text-white text-sm py-2 px-3 sm:px-4 rounded-md hover:bg-purple-700 transition-colors text-center w-full sm:w-auto"
+                    className="bg-orange-600 text-white text-sm py-2 px-3 sm:px-4 rounded-md hover:bg-orange-700 transition-colors text-center w-full sm:w-auto"
                   >
                     <span className="hidden sm:inline">Manage Pool</span>
                     <span className="sm:hidden">Manage</span>
@@ -370,7 +370,7 @@ export default function CreatorPools() {
           <div className="mt-6">
             <button
               onClick={handleCreatePoolClick}
-              className="bg-purple-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-purple-700 transition-colors"
+              className="bg-orange-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-orange-700 transition-colors"
             >
               Create New Pool
             </button>
@@ -379,8 +379,8 @@ export default function CreatorPools() {
       )}
 
       {/* Mobile bottom navigation hint */}
-      <div className="lg:hidden mt-8 p-4 bg-purple-50 rounded-lg">
-        <p className="text-sm text-purple-700 text-center">
+      <div className="lg:hidden mt-8 p-4 bg-orange-50 rounded-lg">
+        <p className="text-sm text-orange-700 text-center">
           <FontAwesomeIcon icon={faLightbulb} className="mr-1" />
           Tap on pool cards to view detailed information and manage settings
         </p>

@@ -210,7 +210,7 @@ export default function EnablePoolModal({
                 <div className="mt-4">
                   <button
                     onClick={() => setShowVideoSelector(!showVideoSelector)}
-                    className="w-full p-3 border border-gray-300 rounded-lg hover:border-purple-500 transition-colors flex items-center justify-between"
+                    className="w-full p-3 border border-gray-300 rounded-lg hover:border-orange-500 transition-colors flex items-center justify-between"
                   >
                     <span className="text-sm text-gray-700">
                       {selectedVideoData
@@ -233,7 +233,7 @@ export default function EnablePoolModal({
                           }
                           className={`w-full p-3 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 ${
                             selectedVideoId === unlistedVideo.id.toString()
-                              ? "bg-purple-50 border-purple-200"
+                              ? "bg-orange-50 border-orange-200"
                               : ""
                           }`}
                         >
@@ -300,7 +300,7 @@ export default function EnablePoolModal({
                     key={option.type}
                     className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${
                       pledgeType === option.type
-                        ? "border-purple-500 bg-purple-50"
+                        ? "border-orange-500 bg-orange-50"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
@@ -315,12 +315,12 @@ export default function EnablePoolModal({
                     <div
                       className={`w-5 h-5 rounded-full border-2 mr-4 flex items-center justify-center ${
                         pledgeType === option.type
-                          ? "border-purple-500"
+                          ? "border-orange-500"
                           : "border-gray-300"
                       }`}
                     >
                       {pledgeType === option.type && (
-                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                        <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
                       )}
                     </div>
                     <div className="flex-1">
@@ -356,7 +356,7 @@ export default function EnablePoolModal({
                       type="number"
                       value={customAmount}
                       onChange={(e) => setCustomAmount(e.target.value)}
-                      className="w-full pl-8 pr-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-0 focus:border-purple-500 focus:outline-none transition-colors duration-200"
+                      className="w-full pl-8 pr-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-0 focus:border-orange-500 focus:outline-none transition-colors duration-200"
                       placeholder="200"
                       onWheel={(e) => (e.target as HTMLInputElement).blur()}
                     />
@@ -371,25 +371,25 @@ export default function EnablePoolModal({
                 <h3 className="text-lg font-medium text-gray-900">
                   Prediction Question
                 </h3>
-                <button className="flex items-center space-x-2 text-sm text-purple-600 hover:text-purple-700 transition-colors">
+                <button className="flex items-center space-x-2 text-sm text-orange-600 hover:text-orange-700 transition-colors">
                   <FontAwesomeIcon icon={faRefresh} className="w-4 h-4" />
                   <span>Regenerate</span>
                 </button>
               </div>
 
               {/* Main Question */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-4 mb-4">
                 <div className="flex items-center space-x-2 mb-2">
                   <FontAwesomeIcon
                     icon={faQuestionCircle}
-                    className="w-4 h-4 text-blue-600"
+                    className="w-4 h-4 text-cyan-600"
                   />
-                  <span className="text-sm text-blue-600">AI Generated</span>
+                  <span className="text-sm text-cyan-600">AI Generated</span>
                 </div>
                 <p className="text-gray-900 font-medium mb-2">
                   {questions[selectedQuestion].text}
                 </p>
-                <div className="flex items-center space-x-2 text-sm text-blue-600">
+                <div className="flex items-center space-x-2 text-sm text-cyan-600">
                   <FontAwesomeIcon icon={faLightbulb} className="w-4 h-4" />
                   <span>{questions[selectedQuestion].performance}</span>
                 </div>
@@ -407,7 +407,7 @@ export default function EnablePoolModal({
                       onClick={() => setSelectedQuestion(question.id)}
                       className={`w-full p-3 text-left border rounded-lg transition-colors ${
                         selectedQuestion === question.id
-                          ? "border-purple-500 bg-purple-50"
+                          ? "border-orange-500 bg-orange-50"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                     >
@@ -431,16 +431,16 @@ export default function EnablePoolModal({
                 id="terms"
                 checked={termsAccepted}
                 onChange={(e) => setTermsAccepted(e.target.checked)}
-                className="mt-0.5 w-4 h-4 bg-white border-2 border-gray-300 rounded focus:ring-0 focus:ring-offset-0 focus:border-purple-500 focus:outline-none checked:bg-purple-500 checked:border-purple-500 text-white transition-colors duration-200"
+                className="mt-0.5 w-4 h-4 bg-white border-2 border-gray-300 rounded focus:ring-0 focus:ring-offset-0 focus:border-orange-500 focus:outline-none checked:bg-orange-500 checked:border-orange-500 text-white transition-colors duration-200"
                 style={{
-                  accentColor: "#8B5CF6",
+                  accentColor: "#f94600",
                 }}
               />
               <Label htmlFor="terms" className="text-sm text-gray-600">
                 I agree to Creator Pool's{" "}
                 <a
                   href="#"
-                  className="text-purple-600 hover:text-purple-700 underline"
+                  className="text-orange-600 hover:text-orange-700 underline"
                 >
                   Terms of Service
                 </a>{" "}
@@ -462,7 +462,7 @@ export default function EnablePoolModal({
               disabled={
                 !termsAccepted || (needsVideoSelection && !selectedVideoId)
               }
-              className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+              className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
             >
               <FontAwesomeIcon icon={faRocket} className="w-4 h-4" />
               <span>Enable Pool</span>

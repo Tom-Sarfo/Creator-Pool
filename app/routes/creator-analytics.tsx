@@ -46,10 +46,10 @@ export default function CreatorAnalytics() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center max-w-md mx-auto">
           <div className="mb-6">
-            <div className="w-24 h-24 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-24 h-24 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <FontAwesomeIcon
                 icon={faChartBar}
-                className="w-12 h-12 text-purple-600"
+                className="w-12 h-12 text-orange-600"
               />
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
@@ -62,12 +62,12 @@ export default function CreatorAnalytics() {
             </p>
           </div>
 
-          <div className="bg-purple-50 rounded-lg p-6 text-left">
-            <h3 className="font-semibold text-purple-900 mb-3">
+          <div className="bg-orange-50 rounded-lg p-6 text-left">
+            <h3 className="font-semibold text-orange-900 mb-3">
               <FontAwesomeIcon icon={faLightbulb} className="mr-2" />
               What to Expect
             </h3>
-            <ul className="space-y-2 text-sm text-purple-800">
+            <ul className="space-y-2 text-sm text-orange-800">
               <li>• Pool performance metrics and trends</li>
               <li>• Participant engagement analytics</li>
               <li>• Revenue and earnings tracking</li>

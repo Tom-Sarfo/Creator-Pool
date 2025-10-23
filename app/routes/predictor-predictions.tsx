@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useUser } from "@clerk/react-router";
 import {
@@ -23,11 +23,35 @@ import { useAppContext } from "../contexts/AppContext";
 
 export default function PredictorPredictions() {
   const [activeTab, setActiveTab] = useState("active");
+  const [isContextReady, setIsContextReady] = useState(false);
+
+  // Add a safety check for AppContext
+  let context;
+  try {
+    context = useAppContext();
+    if (!isContextReady) {
+      setIsContextReady(true);
+    }
+  } catch (error) {
+    console.error("AppContext not available:", error);
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading...</h2>
+          <p className="text-gray-600">
+            Please wait while the application loads.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const {
     predictions: allPredictions,
     pools,
     getPredictionsByPredictor,
-  } = useAppContext();
+  } = context;
+
   const { user } = useUser();
 
   const userPredictions = getPredictionsByPredictor(user?.id || "anonymous");
@@ -126,8 +150,8 @@ export default function PredictorPredictions() {
           title="Total Predictions"
           value={totalPredictions.toString()}
           icon={faBrain}
-          iconColor="text-blue-600"
-          iconBgColor="bg-blue-50"
+          iconColor="text-cyan-600"
+          iconBgColor="bg-cyan-50"
           size="medium"
           variant="rounded-xl"
         />
@@ -156,8 +180,8 @@ export default function PredictorPredictions() {
           title="Active Now"
           value={activePredictionsCount.toString()}
           icon={faClock}
-          iconColor="text-purple-600"
-          iconBgColor="bg-purple-50"
+          iconColor="text-orange-600"
+          iconBgColor="bg-orange-50"
           size="medium"
           variant="rounded-xl"
         />
@@ -223,7 +247,7 @@ export default function PredictorPredictions() {
                                 {pool.creator}
                               </span>
                               {pool.creatorVerified && (
-                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-cyan-100 text-cyan-800">
                                   VERIFIED
                                 </span>
                               )}
@@ -288,7 +312,7 @@ export default function PredictorPredictions() {
                                   </div>
                                   <div className="w-full bg-gray-200 rounded-full h-2">
                                     <div
-                                      className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                                      className="bg-orange-600 h-2 rounded-full transition-all duration-300"
                                       style={{
                                         width: `${Math.min((pool.currentViews / pool.targetViews) * 100, 100)}%`,
                                       }}

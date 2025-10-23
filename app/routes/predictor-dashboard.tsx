@@ -37,11 +37,11 @@ export default function PredictorDashboard() {
       case "awaiting_release":
         return "bg-yellow-100 text-yellow-800";
       case "live_tracking":
-        return "bg-blue-100 text-blue-800";
+        return "bg-cyan-100 text-cyan-800";
       case "closed":
         return "bg-orange-100 text-orange-800";
       case "settled":
-        return "bg-purple-100 text-purple-800";
+        return "bg-orange-100 text-orange-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -112,12 +112,12 @@ export default function PredictorDashboard() {
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl p-6 text-white">
+      <div className="bg-gradient-to-r from-orange-600 to-cyan-600 rounded-xl p-6 text-white">
         <div className="flex items-center mb-2">
           <FontAwesomeIcon icon={faBrain} className="text-2xl mr-3" />
           <h1 className="text-2xl font-bold">Welcome back, Predictor!</h1>
         </div>
-        <p className="text-purple-100">
+        <p className="text-orange-100">
           Ready to make your next prediction? Discover active pools and test
           your intuition.
         </p>
@@ -127,10 +127,10 @@ export default function PredictorDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
+            <div className="p-2 bg-cyan-100 rounded-lg">
               <FontAwesomeIcon
                 icon={faChartBar}
-                className="w-6 h-6 text-blue-600"
+                className="w-6 h-6 text-cyan-600"
               />
             </div>
             <div className="ml-4">
@@ -182,10 +182,10 @@ export default function PredictorDashboard() {
 
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
-            <div className="p-2 bg-purple-100 rounded-lg">
+            <div className="p-2 bg-orange-100 rounded-lg">
               <FontAwesomeIcon
                 icon={faBrain}
-                className="w-6 h-6 text-purple-600"
+                className="w-6 h-6 text-orange-600"
               />
             </div>
             <div className="ml-4">
@@ -236,7 +236,7 @@ export default function PredictorDashboard() {
             </h2>
             <Link
               to="/predictor/pools"
-              className="text-purple-600 hover:text-purple-700 font-medium flex items-center"
+              className="text-orange-600 hover:text-orange-700 font-medium flex items-center"
             >
               View All{" "}
               <FontAwesomeIcon icon={faChevronRight} className="ml-1" />
@@ -269,7 +269,7 @@ export default function PredictorDashboard() {
                     </span>
                   </div>
                   <Link to={`/predictor/pool/${pool.id}`}>
-                    <p className="text-sm text-gray-600 truncate hover:text-purple-600 cursor-pointer transition-colors">
+                    <p className="text-sm text-gray-600 truncate hover:text-orange-600 cursor-pointer transition-colors">
                       {pool.title}
                     </p>
                   </Link>
@@ -351,7 +351,7 @@ export default function PredictorDashboard() {
                   <div className="flex items-center space-x-2">
                     <div className="w-20 bg-gray-200 rounded-full h-2">
                       <div
-                        className="bg-blue-500 h-2 rounded-full"
+                        className="bg-cyan-500 h-2 rounded-full"
                         style={{ width: "85%" }}
                       ></div>
                     </div>
@@ -401,7 +401,7 @@ export default function PredictorDashboard() {
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
                   <div className="flex-1">
                     <p className="text-sm text-gray-900">
                       Made prediction on "Game Trailer"

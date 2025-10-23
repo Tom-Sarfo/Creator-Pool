@@ -118,7 +118,7 @@ export default function YouTubeConnectionButton({
       case "connected":
         return "text-green-600";
       case "syncing":
-        return "text-blue-600";
+        return "text-cyan-600";
       case "disconnected":
         return "text-gray-600";
       default:
@@ -173,7 +173,7 @@ export default function YouTubeConnectionButton({
             <button
               onClick={handleSync}
               disabled={isLoading}
-              className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+              className="flex-1 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
             >
               {isLoading ? (
                 <FontAwesomeIcon
@@ -196,7 +196,7 @@ export default function YouTubeConnectionButton({
       )}
 
       {connectionStatus === "syncing" && (
-        <div className="flex items-center space-x-2 text-blue-600">
+        <div className="flex items-center space-x-2 text-cyan-600">
           <FontAwesomeIcon icon={faSpinner} className="w-5 h-5 animate-spin" />
           <span className="font-medium">Syncing YouTube Channel...</span>
         </div>

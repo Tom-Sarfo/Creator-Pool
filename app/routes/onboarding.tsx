@@ -20,7 +20,7 @@ export default function Onboarding() {
         {/* Header */}
         <div className="text-center mb-12">
           <Link to="/" className="inline-flex items-center mb-8">
-            <div className="w-8 h-8 bg-purple-600 rounded flex items-center justify-center">
+            <div className="w-8 h-8 bg-orange-600 rounded flex items-center justify-center">
               <FontAwesomeIcon icon="play" className="w-5 h-5 text-white" />
             </div>
             <span className="ml-2 text-xl font-bold text-gray-900">
@@ -41,13 +41,13 @@ export default function Onboarding() {
           {/* Creator Card */}
           <Link
             to="/creator"
-            className="group relative bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-purple-200 p-8"
+            className="group relative bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-orange-200 p-8"
           >
             <div className="text-center">
-              <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-purple-200 transition-colors">
+              <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-orange-200 transition-colors">
                 <FontAwesomeIcon
                   icon="video"
-                  className="w-10 h-10 text-purple-600"
+                  className="w-10 h-10 text-orange-600"
                 />
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Creator</h2>
@@ -89,8 +89,8 @@ export default function Onboarding() {
                 </div>
               </div>
 
-              <div className="bg-purple-50 rounded-lg p-4">
-                <p className="text-sm text-purple-700 font-medium">
+              <div className="bg-orange-50 rounded-lg p-4">
+                <p className="text-sm text-orange-700 font-medium">
                   Perfect for YouTube creators with 1K+ subscribers
                 </p>
               </div>
@@ -100,13 +100,13 @@ export default function Onboarding() {
           {/* Predictor Card */}
           <Link
             to="/predictor"
-            className="group relative bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-blue-200 p-8"
+            className="group relative bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-cyan-200 p-8"
           >
             <div className="text-center">
-              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-blue-200 transition-colors">
+              <div className="w-20 h-20 bg-cyan-100 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-cyan-200 transition-colors">
                 <FontAwesomeIcon
                   icon="chart-line"
-                  className="w-10 h-10 text-blue-600"
+                  className="w-10 h-10 text-cyan-600"
                 />
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
@@ -150,8 +150,8 @@ export default function Onboarding() {
                 </div>
               </div>
 
-              <div className="bg-blue-50 rounded-lg p-4">
-                <p className="text-sm text-blue-700 font-medium">
+              <div className="bg-cyan-50 rounded-lg p-4">
+                <p className="text-sm text-cyan-700 font-medium">
                   Great for fans who love predicting content performance
                 </p>
               </div>

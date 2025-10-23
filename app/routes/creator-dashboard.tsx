@@ -212,11 +212,11 @@ export default function CreatorDashboard() {
       case "awaiting_release":
         return "bg-yellow-100 text-yellow-800";
       case "live_tracking":
-        return "bg-blue-100 text-blue-800";
+        return "bg-cyan-100 text-cyan-800";
       case "closed":
         return "bg-orange-100 text-orange-800";
       case "settled":
-        return "bg-purple-100 text-purple-800";
+        return "bg-orange-100 text-orange-800";
       case "available":
         return "bg-gray-100 text-gray-800";
       default:
@@ -401,7 +401,7 @@ export default function CreatorDashboard() {
                   console.log("Dashboard: Sync button clicked");
                   syncYouTubeVideos();
                 }}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors inline-flex items-center space-x-2"
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors inline-flex items-center space-x-2"
               >
                 <FontAwesomeIcon icon={faSync} className="w-4 h-4" />
                 <span>Sync Videos</span>
@@ -419,8 +419,8 @@ export default function CreatorDashboard() {
           title="Total Videos"
           value={videos.length}
           icon={faPlay}
-          iconColor="text-blue-600"
-          iconBgColor="bg-blue-100"
+          iconColor="text-cyan-600"
+          iconBgColor="bg-cyan-100"
           size="large"
         />
 
@@ -437,8 +437,8 @@ export default function CreatorDashboard() {
           title="Total Pledged Amount"
           value={`$${pools.reduce((sum, pool) => sum + pool.totalStake, 0).toLocaleString()}`}
           icon={faCoins}
-          iconColor="text-purple-600"
-          iconBgColor="bg-purple-100"
+          iconColor="text-orange-600"
+          iconBgColor="bg-orange-100"
           size="large"
         />
 
@@ -587,7 +587,7 @@ export default function CreatorDashboard() {
                           className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
                             video.poolData.status === "settled"
                               ? "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-                              : "bg-purple-600 text-white hover:bg-purple-700"
+                              : "bg-orange-600 text-white hover:bg-orange-700"
                           }`}
                         >
                           <span className="hidden sm:inline">
@@ -605,7 +605,7 @@ export default function CreatorDashboard() {
                       {!video.hasPool && (
                         <button
                           onClick={() => handleEnablePoolClick(video)}
-                          className="px-3 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-1 whitespace-nowrap"
+                          className="px-3 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 transition-colors flex items-center space-x-1 whitespace-nowrap"
                         >
                           <FontAwesomeIcon
                             icon={faPlus}
@@ -654,7 +654,7 @@ export default function CreatorDashboard() {
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
                           <div
-                            className="bg-purple-600 h-2 rounded-full"
+                            className="bg-orange-600 h-2 rounded-full"
                             style={{
                               width: `${Math.min(((video.poolData.currentViews || 0) / (video.poolData.targetViews || 1)) * 100, 100)}%`,
                             }}
@@ -678,7 +678,7 @@ export default function CreatorDashboard() {
               <button className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50">
                 Previous
               </button>
-              <button className="px-3 py-1 text-sm bg-purple-600 text-white rounded">
+              <button className="px-3 py-1 text-sm bg-orange-600 text-white rounded">
                 1
               </button>
               <button className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900">

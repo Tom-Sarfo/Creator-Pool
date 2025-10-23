@@ -56,11 +56,11 @@ export default function PoolsPage() {
       case "awaiting_release":
         return "bg-yellow-100 text-yellow-800";
       case "live_tracking":
-        return "bg-blue-100 text-blue-800";
+        return "bg-cyan-100 text-cyan-800";
       case "closed":
         return "bg-orange-100 text-orange-800";
       case "settled":
-        return "bg-purple-100 text-purple-800";
+        return "bg-orange-100 text-orange-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -101,7 +101,7 @@ export default function PoolsPage() {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-purple-600 rounded flex items-center justify-center">
+              <div className="w-8 h-8 bg-orange-600 rounded flex items-center justify-center">
                 <FontAwesomeIcon icon="play" className="w-5 h-5 text-white" />
               </div>
               <span className="text-xl font-bold text-gray-800">
@@ -110,7 +110,7 @@ export default function PoolsPage() {
             </Link>
             <div className="flex items-center space-x-4">
               <SignedIn>
-                <div className="flex items-center space-x-2 text-purple-600">
+                <div className="flex items-center space-x-2 text-orange-600">
                   <FontAwesomeIcon icon="wallet" className="w-5 h-5" />
                   <span className="font-semibold">$2,450.00</span>
                 </div>
@@ -125,7 +125,7 @@ export default function PoolsPage() {
                 </Link>
                 <Link
                   to="/onboarding"
-                  className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                  className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
                 >
                   Get Started
                 </Link>
@@ -156,7 +156,7 @@ export default function PoolsPage() {
                 placeholder="Search pools..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full sm:w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:outline-none transition-colors"
+                className="w-full sm:w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none transition-colors"
               />
               <FontAwesomeIcon
                 icon="search"
@@ -241,14 +241,14 @@ export default function PoolsPage() {
                     {pool.creatorVerified && (
                       <FontAwesomeIcon
                         icon="check-circle"
-                        className="w-4 h-4 text-blue-500"
+                        className="w-4 h-4 text-cyan-500"
                       />
                     )}
                   </div>
 
                   {/* Video Title */}
                   <Link to={`/predictor/pool/${pool.id}`}>
-                    <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2 hover:text-purple-600 cursor-pointer transition-colors">
+                    <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2 hover:text-orange-600 cursor-pointer transition-colors">
                       {pool.title}
                     </h3>
                   </Link>
@@ -343,7 +343,7 @@ export default function PoolsPage() {
                           disabled={!isPoolOpen}
                           className={`w-full py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
                             isPoolOpen
-                              ? "bg-purple-600 text-white hover:bg-purple-700 cursor-pointer"
+                              ? "bg-orange-600 text-white hover:bg-orange-700 cursor-pointer"
                               : "bg-gray-400 text-white cursor-not-allowed opacity-60"
                           }`}
                         >
@@ -355,7 +355,7 @@ export default function PoolsPage() {
                   <SignedOut>
                     <Link
                       to="/onboarding"
-                      className="w-full bg-purple-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors flex items-center justify-center"
+                      className="w-full bg-orange-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors flex items-center justify-center"
                     >
                       Sign In to Predict
                     </Link>

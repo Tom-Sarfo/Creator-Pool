@@ -179,7 +179,7 @@ export default function PredictionModal({
                     onClick={() => handleQuickStake(amount)}
                     className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
                       stake === amount.toString()
-                        ? "border-purple-500 bg-purple-50 text-purple-700"
+                        ? "border-orange-500 bg-orange-50 text-orange-700"
                         : "border-gray-300 text-gray-700 bg-white hover:border-gray-400 hover:bg-gray-50"
                     }`}
                   >
@@ -203,7 +203,7 @@ export default function PredictionModal({
                   placeholder="Enter amount"
                   min="1"
                   max="500"
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:outline-none transition-colors"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none transition-colors"
                 />
               </div>
 
@@ -218,16 +218,16 @@ export default function PredictionModal({
 
             {/* Potential Payout */}
             {stake && !error && (
-              <div className="bg-purple-50 rounded-lg p-4">
+              <div className="bg-orange-50 rounded-lg p-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-purple-700">
+                  <span className="text-sm font-medium text-orange-700">
                     Potential Payout:
                   </span>
-                  <span className="text-lg font-bold text-purple-900">
+                  <span className="text-lg font-bold text-orange-900">
                     ${potentialPayout.toFixed(2)}
                   </span>
                 </div>
-                <div className="text-xs text-purple-600 mt-1">
+                <div className="text-xs text-orange-600 mt-1">
                   Based on current odds of {currentOdds.toFixed(2)}x
                 </div>
               </div>
@@ -273,7 +273,7 @@ export default function PredictionModal({
             <button
               onClick={handleSubmit}
               disabled={!stake || !!error}
-              className="px-6 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              className="px-6 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
             >
               Place Prediction
             </button>

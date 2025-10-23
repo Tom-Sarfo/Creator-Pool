@@ -27,7 +27,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
-              <div className="w-8 h-8 bg-purple-600 rounded flex items-center justify-center">
+              <div className="w-8 h-8 bg-orange-600 rounded flex items-center justify-center">
                 <FontAwesomeIcon icon="play" className="w-5 h-5 text-white" />
               </div>
               <span className="ml-2 text-xl font-bold text-gray-900">
@@ -53,7 +53,7 @@ export default function Home() {
                 </Link>
                 <Link
                   to="/onboarding"
-                  className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                  className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
                 >
                   Get Started
                 </Link>
@@ -64,11 +64,11 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-purple-50 to-blue-50 py-20">
+      <section className="bg-gradient-to-br from-orange-50 to-cyan-50 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
             Predict YouTube Video Performance
-            <span className="text-purple-600">
+            <span className="text-orange-600">
               {" "}
               With Your Favorite Creators
             </span>
@@ -81,13 +81,13 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/onboarding"
-              className="bg-purple-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-purple-700 transition-colors text-center"
+              className="bg-orange-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-orange-700 transition-colors text-center"
             >
               Get Started
             </Link>
             <Link
               to="/pools"
-              className="bg-white text-purple-600 px-8 py-3 rounded-lg text-lg font-semibold border-2 border-purple-600 hover:bg-purple-50 transition-colors text-center"
+              className="bg-white text-orange-600 px-8 py-3 rounded-lg text-lg font-semibold border-2 border-orange-600 hover:bg-orange-50 transition-colors text-center"
             >
               Explore Pools
             </Link>
@@ -108,10 +108,10 @@ export default function Home() {
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
-              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <FontAwesomeIcon
                   icon="video"
-                  className="w-8 h-8 text-purple-600"
+                  className="w-8 h-8 text-orange-600"
                 />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">
@@ -123,10 +123,10 @@ export default function Home() {
               </p>
             </div>
             <div className="text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <div className="w-16 h-16 bg-cyan-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <FontAwesomeIcon
                   icon="chart-line"
-                  className="w-8 h-8 text-blue-600"
+                  className="w-8 h-8 text-cyan-600"
                 />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">
@@ -161,25 +161,25 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8 text-center">
             <div>
-              <div className="text-4xl font-bold text-purple-600 mb-2">
+              <div className="text-4xl font-bold text-orange-600 mb-2">
                 10K+
               </div>
               <div className="text-gray-600">Active Predictors</div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-purple-600 mb-2">
+              <div className="text-4xl font-bold text-orange-600 mb-2">
                 500+
               </div>
               <div className="text-gray-600">Creators</div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-purple-600 mb-2">
+              <div className="text-4xl font-bold text-orange-600 mb-2">
                 $2M+
               </div>
               <div className="text-gray-600">Pool Rewards</div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-purple-600 mb-2">85%</div>
+              <div className="text-4xl font-bold text-orange-600 mb-2">85%</div>
               <div className="text-gray-600">Accuracy Rate</div>
             </div>
           </div>
@@ -187,18 +187,18 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-purple-600">
+      <section className="py-20 bg-orange-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Ready to Start Predicting?
           </h2>
-          <p className="text-xl text-purple-100 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-orange-100 mb-8 max-w-2xl mx-auto">
             Join thousands of predictors and creators in the most engaging way
             to interact with YouTube content.
           </p>
           <Link
             to="/onboarding"
-            className="bg-white text-purple-600 px-8 py-3 rounded-lg text-lg font-semibold hover:bg-gray-50 transition-colors inline-block"
+            className="bg-white text-orange-600 px-8 py-3 rounded-lg text-lg font-semibold hover:bg-gray-50 transition-colors inline-block"
           >
             Sign Up Now
           </Link>
@@ -210,7 +210,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center mb-4 md:mb-0">
-              <div className="w-8 h-8 bg-purple-600 rounded flex items-center justify-center">
+              <div className="w-8 h-8 bg-orange-600 rounded flex items-center justify-center">
                 <FontAwesomeIcon icon="play" className="w-5 h-5 text-white" />
               </div>
               <span className="ml-2 text-xl font-bold">Creator Pool</span>

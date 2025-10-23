@@ -61,11 +61,11 @@ const getStatusColor = (status: string) => {
     case "awaiting_release":
       return "bg-yellow-100 text-yellow-800";
     case "live_tracking":
-      return "bg-blue-100 text-blue-800";
+      return "bg-cyan-100 text-cyan-800";
     case "closed":
       return "bg-orange-100 text-orange-800";
     case "settled":
-      return "bg-purple-100 text-purple-800";
+      return "bg-orange-100 text-orange-800";
     default:
       return "bg-gray-100 text-gray-800";
   }
@@ -131,7 +131,7 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
           </p>
           <Link
             to="/predictor/pools"
-            className="mt-4 inline-block bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+            className="mt-4 inline-block bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
           >
             Back to Pools
           </Link>
@@ -290,7 +290,7 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                 {!userPrediction && pool.status === "open" && (
                   <button
                     onClick={() => setShowPredictionModal(true)}
-                    className="px-3 sm:px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center space-x-2 text-sm"
+                    className="px-3 sm:px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center space-x-2 text-sm"
                   >
                     <FontAwesomeIcon icon={faBullseye} className="w-4 h-4" />
                     <span className="hidden sm:inline">Make Prediction</span>
@@ -301,7 +301,7 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                 {userPrediction && (
                   <button
                     onClick={() => setShowPredictionModal(true)}
-                    className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 text-sm"
+                    className="px-3 sm:px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors flex items-center justify-center space-x-2 text-sm"
                   >
                     <FontAwesomeIcon icon={faEdit} className="w-4 h-4" />
                     <span className="hidden sm:inline">View My Prediction</span>
@@ -331,7 +331,7 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                   onClick={() => setActiveTab(tab.id)}
                   className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap flex items-center ${
                     activeTab === tab.id
-                      ? "border-purple-500 text-purple-600"
+                      ? "border-orange-500 text-orange-600"
                       : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                   }`}
                 >
@@ -404,7 +404,7 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                           href={pool.youtubeUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 flex items-center space-x-1 text-sm"
+                          className="text-cyan-600 hover:text-cyan-800 flex items-center space-x-1 text-sm"
                         >
                           <FontAwesomeIcon
                             icon={faExternalLinkAlt}
@@ -438,7 +438,7 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                         {pool.creatorVerified && (
                           <FontAwesomeIcon
                             icon={faCheckCircle}
-                            className="w-5 h-5 text-blue-500"
+                            className="w-5 h-5 text-cyan-500"
                           />
                         )}
                       </div>
@@ -446,7 +446,7 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                         {pool.creatorSubs}
                       </p>
                     </div>
-                    <button className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
+                    <button className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors">
                       Subscribe
                     </button>
                   </div>
@@ -456,7 +456,7 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                     <div className="flex items-center space-x-2 mb-3">
                       <FontAwesomeIcon
                         icon={faQuestionCircle}
-                        className="w-5 h-5 text-purple-600"
+                        className="w-5 h-5 text-orange-600"
                       />
                       <h4 className="text-lg font-medium text-gray-900">
                         Prediction Question
@@ -486,7 +486,7 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                             className={`h-3 rounded-full transition-all duration-300 ${
                               pool.currentViews / pool.targetViews > 1
                                 ? "bg-green-500"
-                                : "bg-purple-600"
+                                : "bg-orange-600"
                             }`}
                             style={{
                               width: `${Math.min((pool.currentViews / pool.targetViews) * 100, 100)}%`,
@@ -512,8 +512,8 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                   </h3>
                   <div className="space-y-4">
                     <div className="flex items-start space-x-3">
-                      <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-xs font-bold text-purple-600">
+                      <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-xs font-bold text-orange-600">
                           1
                         </span>
                       </div>
@@ -528,8 +528,8 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                       </div>
                     </div>
                     <div className="flex items-start space-x-3">
-                      <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-xs font-bold text-purple-600">
+                      <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-xs font-bold text-orange-600">
                           2
                         </span>
                       </div>
@@ -544,8 +544,8 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                       </div>
                     </div>
                     <div className="flex items-start space-x-3">
-                      <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-xs font-bold text-purple-600">
+                      <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-xs font-bold text-orange-600">
                           3
                         </span>
                       </div>
@@ -569,10 +569,10 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="bg-white rounded-lg border border-gray-200 p-6">
                     <div className="flex items-center">
-                      <div className="p-3 bg-blue-100 rounded-lg">
+                      <div className="p-3 bg-cyan-100 rounded-lg">
                         <FontAwesomeIcon
                           icon={faDollarSign}
-                          className="w-6 h-6 text-blue-600"
+                          className="w-6 h-6 text-cyan-600"
                         />
                       </div>
                       <div className="ml-4">
@@ -605,10 +605,10 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
 
                   <div className="bg-white rounded-lg border border-gray-200 p-6">
                     <div className="flex items-center">
-                      <div className="p-3 bg-purple-100 rounded-lg">
+                      <div className="p-3 bg-orange-100 rounded-lg">
                         <FontAwesomeIcon
                           icon={faChartLine}
-                          className="w-6 h-6 text-purple-600"
+                          className="w-6 h-6 text-orange-600"
                         />
                       </div>
                       <div className="ml-4">
@@ -723,10 +723,10 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                           className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
                         >
                           <div className="flex items-center space-x-4">
-                            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                            <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
                               <FontAwesomeIcon
                                 icon={faUser}
-                                className="w-5 h-5 text-purple-600"
+                                className="w-5 h-5 text-orange-600"
                               />
                             </div>
                             <div>
@@ -788,7 +788,7 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
 
                   {filteredPredictions.length > 0 && (
                     <div className="mt-6 flex justify-center">
-                      <button className="px-6 py-2 text-sm text-purple-600 hover:text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-50">
+                      <button className="px-6 py-2 text-sm text-orange-600 hover:text-orange-700 border border-orange-200 rounded-lg hover:bg-orange-50">
                         Load More Predictions
                       </button>
                     </div>
@@ -850,7 +850,7 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                   {pool.status === "open" && (
                     <button
                       onClick={() => setShowPredictionModal(true)}
-                      className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      className="w-full mt-4 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors"
                     >
                       Edit Prediction
                     </button>

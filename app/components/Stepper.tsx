@@ -25,7 +25,7 @@ const getStepIcon = (step: StepperStep) => {
     return (
       <FontAwesomeIcon
         icon={faCheckCircle}
-        className="w-4 h-4 text-purple-600"
+        className="w-4 h-4 text-orange-600"
       />
     );
   }
@@ -56,7 +56,7 @@ export default function Stepper({
             <div className="flex-shrink-0">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  step.completed ? "bg-purple-100" : "bg-gray-100"
+                  step.completed ? "bg-orange-100" : "bg-gray-100"
                 }`}
               >
                 {getStepIcon(step)}
@@ -95,7 +95,7 @@ export default function Stepper({
             <div className="flex flex-col items-center">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  step.completed ? "bg-purple-100" : "bg-gray-100"
+                  step.completed ? "bg-orange-100" : "bg-gray-100"
                 }`}
               >
                 {getStepIcon(step)}
@@ -114,7 +114,7 @@ export default function Stepper({
             {index < steps.length - 1 && (
               <div
                 className={`w-12 h-0.5 mx-4 ${
-                  steps[index + 1].completed ? "bg-purple-200" : "bg-gray-200"
+                  steps[index + 1].completed ? "bg-orange-200" : "bg-gray-200"
                 }`}
               ></div>
             )}

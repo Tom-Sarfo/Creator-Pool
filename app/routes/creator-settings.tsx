@@ -69,7 +69,7 @@ export default function CreatorSettings() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                   activeTab === tab.id
-                    ? "bg-purple-100 text-purple-700"
+                    ? "bg-orange-100 text-orange-700"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 }`}
               >
@@ -97,7 +97,7 @@ export default function CreatorSettings() {
                   <input
                     type="text"
                     defaultValue={settingsData.displayName}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
                   />
                 </div>
 
@@ -108,7 +108,7 @@ export default function CreatorSettings() {
                   <textarea
                     rows={4}
                     defaultValue={settingsData.bio}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
                   />
                 </div>
 
@@ -119,12 +119,12 @@ export default function CreatorSettings() {
                   <input
                     type="url"
                     placeholder="https://yourwebsite.com"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
                   />
                 </div>
 
                 <div className="flex justify-end">
-                  <button className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors">
+                  <button className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition-colors">
                     Save Changes
                   </button>
                 </div>
@@ -171,7 +171,7 @@ export default function CreatorSettings() {
                       <input
                         type="checkbox"
                         defaultChecked
-                        className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                        className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
                       />
                       <span className="ml-2 text-sm text-gray-700">
                         Automatically sync new videos
@@ -181,7 +181,7 @@ export default function CreatorSettings() {
                       <input
                         type="checkbox"
                         defaultChecked
-                        className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                        className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
                       />
                       <span className="ml-2 text-sm text-gray-700">
                         Sync video statistics daily
@@ -190,7 +190,7 @@ export default function CreatorSettings() {
                     <label className="flex items-center">
                       <input
                         type="checkbox"
-                        className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                        className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
                       />
                       <span className="ml-2 text-sm text-gray-700">
                         Include private videos in sync
@@ -200,7 +200,7 @@ export default function CreatorSettings() {
                 </div>
 
                 <div className="flex justify-end">
-                  <button className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors">
+                  <button className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition-colors">
                     Save Settings
                   </button>
                 </div>
@@ -242,7 +242,7 @@ export default function CreatorSettings() {
                           }
                           className="sr-only peer"
                         />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
                       </label>
                     </div>
 
@@ -267,7 +267,7 @@ export default function CreatorSettings() {
                           }
                           className="sr-only peer"
                         />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
                       </label>
                     </div>
 
@@ -292,7 +292,7 @@ export default function CreatorSettings() {
                           }
                           className="sr-only peer"
                         />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
                       </label>
                     </div>
 
@@ -317,14 +317,14 @@ export default function CreatorSettings() {
                           }
                           className="sr-only peer"
                         />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
                       </label>
                     </div>
                   </div>
                 </div>
 
                 <div className="flex justify-end">
-                  <button className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors">
+                  <button className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition-colors">
                     Save Preferences
                   </button>
                 </div>
@@ -361,7 +361,7 @@ export default function CreatorSettings() {
                   </h3>
                   <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                     <div className="flex items-center">
-                      <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center mr-3">
+                      <div className="w-8 h-8 bg-cyan-600 rounded flex items-center justify-center mr-3">
                         <FontAwesomeIcon
                           icon={faCreditCard}
                           className="w-5 h-5 text-white"
@@ -374,7 +374,7 @@ export default function CreatorSettings() {
                         <p className="text-xs text-gray-500">Expires 12/25</p>
                       </div>
                     </div>
-                    <button className="text-purple-600 hover:text-purple-700 text-sm font-medium">
+                    <button className="text-orange-600 hover:text-orange-700 text-sm font-medium">
                       Update
                     </button>
                   </div>
@@ -422,7 +422,7 @@ export default function CreatorSettings() {
                         type="radio"
                         name="visibility"
                         defaultChecked
-                        className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300"
+                        className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300"
                       />
                       <span className="ml-2 text-sm text-gray-700">
                         Public - Anyone can see my pools and participate
@@ -432,7 +432,7 @@ export default function CreatorSettings() {
                       <input
                         type="radio"
                         name="visibility"
-                        className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300"
+                        className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300"
                       />
                       <span className="ml-2 text-sm text-gray-700">
                         Private - Only followers can see my pools
@@ -450,7 +450,7 @@ export default function CreatorSettings() {
                       <input
                         type="checkbox"
                         defaultChecked
-                        className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                        className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
                       />
                       <span className="ml-2 text-sm text-gray-700">
                         Share anonymous analytics with Creator Pool
@@ -459,7 +459,7 @@ export default function CreatorSettings() {
                     <label className="flex items-center">
                       <input
                         type="checkbox"
-                        className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                        className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
                       />
                       <span className="ml-2 text-sm text-gray-700">
                         Allow my content to be featured in marketing
@@ -483,7 +483,7 @@ export default function CreatorSettings() {
                 </div>
 
                 <div className="flex justify-end">
-                  <button className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors">
+                  <button className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition-colors">
                     Save Settings
                   </button>
                 </div>
@@ -494,8 +494,8 @@ export default function CreatorSettings() {
       </div>
 
       {/* Mobile bottom navigation hint */}
-      <div className="lg:hidden mt-8 p-4 bg-purple-50 rounded-lg">
-        <p className="text-sm text-purple-700 text-center">
+      <div className="lg:hidden mt-8 p-4 bg-orange-50 rounded-lg">
+        <p className="text-sm text-orange-700 text-center">
           <FontAwesomeIcon icon={faLightbulb} className="mr-1" />
           Use the settings menu above to navigate between different sections
         </p>

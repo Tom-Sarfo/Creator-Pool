@@ -96,7 +96,7 @@ export default function CreatorLayout() {
             {/* Mobile header */}
             <div className="flex h-16 items-center justify-between px-6 border-b border-gray-200">
               <Link to="/" className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-purple-600 rounded flex items-center justify-center">
+                <div className="w-8 h-8 bg-orange-600 rounded flex items-center justify-center">
                   <FontAwesomeIcon
                     icon={faPlay}
                     className="w-5 h-5 text-white"
@@ -123,7 +123,7 @@ export default function CreatorLayout() {
                   onClick={() => setSidebarOpen(false)}
                   className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                     isActive(item.href)
-                      ? "bg-purple-100 text-purple-700"
+                      ? "bg-orange-100 text-orange-700"
                       : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                   }`}
                 >

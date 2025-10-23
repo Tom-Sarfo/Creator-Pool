@@ -50,7 +50,7 @@ export default function CreatorWallet() {
       </div>
 
       {/* Balance Overview */}
-      <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl p-6 text-white">
+      <div className="bg-gradient-to-r from-orange-600 to-cyan-600 rounded-xl p-6 text-white">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Available Balance</h2>
           <span className="text-2xl">💰</span>
@@ -58,7 +58,7 @@ export default function CreatorWallet() {
         <div className="text-3xl font-bold mb-2">
           ${walletData.balance.toFixed(2)}
         </div>
-        <div className="flex space-x-6 text-sm text-purple-100">
+        <div className="flex space-x-6 text-sm text-orange-100">
           <div>
             <span className="block">Total Earned</span>
             <span className="font-semibold">
@@ -115,7 +115,7 @@ export default function CreatorWallet() {
               onClick={() => setActiveTab("overview")}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === "overview"
-                  ? "border-purple-500 text-purple-600"
+                  ? "border-orange-500 text-orange-600"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
@@ -125,7 +125,7 @@ export default function CreatorWallet() {
               onClick={() => setActiveTab("transactions")}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === "transactions"
-                  ? "border-purple-500 text-purple-600"
+                  ? "border-orange-500 text-orange-600"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
@@ -135,7 +135,7 @@ export default function CreatorWallet() {
               onClick={() => setActiveTab("payment-methods")}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === "payment-methods"
-                  ? "border-purple-500 text-purple-600"
+                  ? "border-orange-500 text-orange-600"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
@@ -277,11 +277,11 @@ export default function CreatorWallet() {
                   </div>
                   <div className="flex items-center space-x-2">
                     {method.isDefault && (
-                      <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                      <span className="px-2 py-1 bg-cyan-100 text-cyan-800 text-xs rounded-full">
                         Default
                       </span>
                     )}
-                    <button className="text-purple-600 hover:text-purple-700 text-sm font-medium">
+                    <button className="text-orange-600 hover:text-orange-700 text-sm font-medium">
                       Edit
                     </button>
                   </div>

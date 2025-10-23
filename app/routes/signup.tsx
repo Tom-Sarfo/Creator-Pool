@@ -21,7 +21,7 @@ export default function SignUpPage() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-purple-600 rounded flex items-center justify-center">
+            <div className="w-8 h-8 bg-orange-600 rounded flex items-center justify-center">
               <FontAwesomeIcon icon={faPlay} className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold text-gray-800">
@@ -36,7 +36,7 @@ export default function SignUpPage() {
           Or{" "}
           <Link
             to="/login"
-            className="font-medium text-purple-600 hover:text-purple-500"
+            className="font-medium text-orange-600 hover:text-orange-500"
           >
             sign in to your existing account
           </Link>
@@ -49,14 +49,14 @@ export default function SignUpPage() {
             appearance={{
               elements: {
                 formButtonPrimary:
-                  "bg-purple-600 hover:bg-purple-700 text-sm normal-case",
+                  "bg-orange-600 hover:bg-orange-700 text-sm normal-case",
                 card: "shadow-none",
                 headerTitle: "hidden",
                 headerSubtitle: "hidden",
                 socialButtonsBlockButton: "border-gray-300 hover:bg-gray-50",
                 formFieldInput:
-                  "border-gray-300 focus:border-purple-500 focus:ring-purple-500",
-                footerActionLink: "text-purple-600 hover:text-purple-500",
+                  "border-gray-300 focus:border-orange-500 focus:ring-orange-500",
+                footerActionLink: "text-orange-600 hover:text-orange-500",
               },
             }}
             routing="hash"

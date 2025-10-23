@@ -53,7 +53,7 @@ export default function Toast({ toast, onClose }: ToastProps) {
         return "text-yellow-600";
       case "info":
       default:
-        return "text-blue-600";
+        return "text-cyan-600";
     }
   };
 
@@ -67,7 +67,7 @@ export default function Toast({ toast, onClose }: ToastProps) {
         return "bg-yellow-50 border-yellow-200";
       case "info":
       default:
-        return "bg-blue-50 border-blue-200";
+        return "bg-cyan-50 border-cyan-200";
     }
   };
 

@@ -90,7 +90,7 @@ export default function YouTubeTestPage({ loaderData }: Route.ComponentProps) {
             </h2>
             <button
               onClick={testAuthUrl}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              className="bg-cyan-600 text-white px-4 py-2 rounded-lg hover:bg-cyan-700 transition-colors"
             >
               Test Auth URL Generation
             </button>

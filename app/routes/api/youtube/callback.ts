@@ -1,4 +1,4 @@
-import type { Route } from "./+types/api/youtube/callback";
+import type { Route } from "./+types/callback";
 
 export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);

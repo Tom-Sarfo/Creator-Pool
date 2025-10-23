@@ -26,7 +26,7 @@ export default function Tabs({
             onClick={() => onTabChange(tab.id)}
             className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
               activeTab === tab.id
-                ? "border-purple-500 text-purple-600"
+                ? "border-orange-500 text-orange-600"
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
             }`}
           >
@@ -35,7 +35,7 @@ export default function Tabs({
               <span
                 className={`ml-2 py-0.5 px-2 rounded-full text-xs ${
                   activeTab === tab.id
-                    ? "bg-purple-100 text-purple-600"
+                    ? "bg-orange-100 text-orange-600"
                     : "bg-gray-100 text-gray-500"
                 }`}
               >

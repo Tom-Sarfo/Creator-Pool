@@ -63,11 +63,11 @@ export default function DashboardPage() {
       case "HOT":
         return "bg-red-100 text-red-800";
       case "TRENDING":
-        return "bg-blue-100 text-blue-800";
+        return "bg-cyan-100 text-cyan-800";
       case "LIVE":
         return "bg-green-100 text-green-800";
       case "NEW":
-        return "bg-purple-100 text-purple-800";
+        return "bg-orange-100 text-orange-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -141,7 +141,7 @@ export default function DashboardPage() {
                           placeholder="Search Pool"
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          className="w-full sm:w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          className="w-full sm:w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                         />
                         <FontAwesomeIcon
                           icon="search"
@@ -151,7 +151,7 @@ export default function DashboardPage() {
                       <select
                         value={selectedCategory}
                         onChange={(e) => setSelectedCategory(e.target.value)}
-                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       >
                         {categories.map((category) => (
                           <option key={category.id} value={category.id}>
@@ -204,7 +204,7 @@ export default function DashboardPage() {
                           {pool.creatorVerified && (
                             <FontAwesomeIcon
                               icon="check-circle"
-                              className="w-4 h-4 text-blue-500"
+                              className="w-4 h-4 text-cyan-500"
                             />
                           )}
                         </div>
@@ -254,7 +254,7 @@ export default function DashboardPage() {
                         </div>
 
                         {/* Action Button */}
-                        <button className="w-full bg-purple-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors">
+                        <button className="w-full bg-orange-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors">
                           Predict Now
                         </button>
                       </div>

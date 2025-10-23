@@ -160,7 +160,7 @@ export default function CreatorYouTubeSettings() {
       case "connected":
         return "text-green-600";
       case "syncing":
-        return "text-blue-600";
+        return "text-cyan-600";
       case "disconnected":
         return "text-gray-600";
       default:
@@ -313,7 +313,7 @@ export default function CreatorYouTubeSettings() {
                 <button
                   onClick={handleSync}
                   disabled={false}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                 >
                   <FontAwesomeIcon icon={faSync} className="w-4 h-4" />
                   <span>Sync Channel</span>
@@ -351,10 +351,10 @@ export default function CreatorYouTubeSettings() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-cyan-100 rounded-lg flex items-center justify-center">
                 <FontAwesomeIcon
                   icon={faEye}
-                  className="w-5 h-5 text-blue-600"
+                  className="w-5 h-5 text-cyan-600"
                 />
               </div>
               <div>
@@ -429,7 +429,7 @@ export default function CreatorYouTubeSettings() {
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" className="sr-only peer" defaultChecked />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
             </label>
           </div>
 
@@ -444,7 +444,7 @@ export default function CreatorYouTubeSettings() {
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" className="sr-only peer" defaultChecked />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
             </label>
           </div>
 
@@ -457,7 +457,7 @@ export default function CreatorYouTubeSettings() {
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" className="sr-only peer" defaultChecked />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
             </label>
           </div>
         </div>
@@ -535,7 +535,7 @@ export default function CreatorYouTubeSettings() {
                         href={`https://www.youtube.com/watch?v=${video.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800"
+                        className="text-cyan-600 hover:text-cyan-800"
                       >
                         <FontAwesomeIcon icon={faVideo} className="w-4 h-4" />
                       </a>
@@ -556,17 +556,17 @@ export default function CreatorYouTubeSettings() {
         )}
 
       {/* Privacy Notice */}
-      <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+      <div className="mt-8 bg-cyan-50 border border-cyan-200 rounded-lg p-6">
         <div className="flex items-start space-x-3">
           <FontAwesomeIcon
             icon={faInfoCircle}
-            className="w-5 h-5 text-blue-600 mt-0.5"
+            className="w-5 h-5 text-cyan-600 mt-0.5"
           />
           <div>
-            <h4 className="font-medium text-blue-900 mb-2">
+            <h4 className="font-medium text-cyan-900 mb-2">
               Privacy & Security
             </h4>
-            <ul className="text-sm text-blue-800 space-y-1">
+            <ul className="text-sm text-cyan-800 space-y-1">
               <li>
                 • Your YouTube data is accessed securely through Google's OAuth
                 2.0

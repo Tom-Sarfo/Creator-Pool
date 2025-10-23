@@ -352,14 +352,14 @@ export const PREDICTOR_QUICK_ACTIONS = [
     description: "Discover new prediction opportunities",
     icon: "bullseye",
     href: "/predictor/pools",
-    color: "bg-purple-500 hover:bg-purple-600",
+    color: "bg-orange-500 hover:bg-orange-600",
   },
   {
     title: "View My Predictions",
     description: "Track your active predictions",
     icon: "chart-line",
     href: "/predictor/predictions",
-    color: "bg-blue-500 hover:bg-blue-600",
+    color: "bg-cyan-500 hover:bg-cyan-600",
   },
   {
     title: "Manage Wallet",
@@ -1122,9 +1122,9 @@ export type PoolStatus =
 export const STATUS_COLORS = {
   open: "bg-green-100 text-green-800",
   awaiting_release: "bg-yellow-100 text-yellow-800",
-  live_tracking: "bg-blue-100 text-blue-800",
+  live_tracking: "bg-cyan-100 text-cyan-800",
   closed: "bg-orange-100 text-orange-800",
-  settled: "bg-purple-100 text-purple-800",
+  settled: "bg-orange-100 text-orange-800",
   expired: "bg-gray-100 text-gray-800",
   paused: "bg-yellow-100 text-yellow-800",
 } as const;

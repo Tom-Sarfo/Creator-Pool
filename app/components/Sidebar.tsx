@@ -24,7 +24,7 @@ export default function Sidebar({
           to="/"
           className="flex items-center space-x-2 mb-8 hover:opacity-80 transition-opacity"
         >
-          <div className="w-8 h-8 bg-purple-600 rounded flex items-center justify-center">
+          <div className="w-8 h-8 bg-orange-600 rounded flex items-center justify-center">
             <FontAwesomeIcon icon="chart-line" className="w-5 h-5 text-white" />
           </div>
           <span className="text-xl font-bold text-gray-800">Creator Pool</span>
@@ -46,7 +46,7 @@ export default function Sidebar({
                 to={item.href}
                 className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
                   isActive
-                    ? "bg-purple-100 text-purple-700"
+                    ? "bg-orange-100 text-orange-700"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 }`}
               >
@@ -63,7 +63,7 @@ export default function Sidebar({
               to="/settings"
               className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
                 location.pathname === "/settings"
-                  ? "bg-purple-100 text-purple-700"
+                  ? "bg-orange-100 text-orange-700"
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
               }`}
             >

@@ -38,7 +38,7 @@ export default function PredictorProfile() {
       {/* Profile Header */}
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center space-x-6">
-          <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+          <div className="w-20 h-20 bg-gradient-to-r from-orange-500 to-cyan-500 rounded-full flex items-center justify-center">
             <span className="text-2xl text-white font-bold">
               {profileData.username.charAt(0)}
             </span>
@@ -57,7 +57,7 @@ export default function PredictorProfile() {
               Member since {profileData.joinDate}
             </p>
           </div>
-          <button className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
+          <button className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors">
             Edit Profile
           </button>
         </div>
@@ -69,7 +69,7 @@ export default function PredictorProfile() {
             {profileData.badges.map((badge, index) => (
               <span
                 key={index}
-                className="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full"
+                className="px-3 py-1 bg-cyan-100 text-cyan-800 text-sm font-medium rounded-full"
               >
                 {badge}
               </span>
@@ -83,7 +83,7 @@ export default function PredictorProfile() {
         {stats.map((stat, index) => (
           <div key={index} className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-purple-100 rounded-lg">
+              <div className="p-2 bg-orange-100 rounded-lg">
                 <span className="text-2xl">{stat.icon}</span>
               </div>
               <div className="ml-4">
@@ -105,7 +105,7 @@ export default function PredictorProfile() {
               onClick={() => setActiveTab("profile")}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === "profile"
-                  ? "border-purple-500 text-purple-600"
+                  ? "border-orange-500 text-orange-600"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
@@ -115,7 +115,7 @@ export default function PredictorProfile() {
               onClick={() => setActiveTab("achievements")}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === "achievements"
-                  ? "border-purple-500 text-purple-600"
+                  ? "border-orange-500 text-orange-600"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
@@ -125,7 +125,7 @@ export default function PredictorProfile() {
               onClick={() => setActiveTab("preferences")}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === "preferences"
-                  ? "border-purple-500 text-purple-600"
+                  ? "border-orange-500 text-orange-600"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
@@ -149,7 +149,7 @@ export default function PredictorProfile() {
                     <input
                       type="text"
                       value={profileData.username}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -159,7 +159,7 @@ export default function PredictorProfile() {
                     <input
                       type="email"
                       value={profileData.email}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     />
                   </div>
                 </div>
@@ -247,7 +247,7 @@ export default function PredictorProfile() {
                         className="sr-only peer"
                         defaultChecked
                       />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
                     </label>
                   </div>
                   <div className="flex items-center justify-between">
@@ -265,7 +265,7 @@ export default function PredictorProfile() {
                         className="sr-only peer"
                         defaultChecked
                       />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
                     </label>
                   </div>
                   <div className="flex items-center justify-between">
@@ -279,7 +279,7 @@ export default function PredictorProfile() {
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input type="checkbox" className="sr-only peer" />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
                     </label>
                   </div>
                 </div>
@@ -305,7 +305,7 @@ export default function PredictorProfile() {
                         className="sr-only peer"
                         defaultChecked
                       />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
                     </label>
                   </div>
                 </div>

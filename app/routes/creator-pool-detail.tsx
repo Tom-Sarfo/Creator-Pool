@@ -296,7 +296,7 @@ export default function CreatorPoolDetailPage({
                 {pool.status !== "settled" && (
                   <button
                     onClick={() => transitionPoolToNextStage(poolId)}
-                    className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 text-sm"
+                    className="px-3 sm:px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors flex items-center justify-center space-x-2 text-sm"
                   >
                     <FontAwesomeIcon icon={faArrowUp} className="w-4 h-4" />
                     <span className="hidden sm:inline">Next Stage</span>
@@ -306,7 +306,7 @@ export default function CreatorPoolDetailPage({
                 {pool.pledgeStatus === "pending" && (
                   <button
                     onClick={() => setShowPledgeModal(true)}
-                    className="px-3 sm:px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center space-x-2 text-sm"
+                    className="px-3 sm:px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center space-x-2 text-sm"
                   >
                     <FontAwesomeIcon icon={faCoins} className="w-4 h-4" />
                     <span className="hidden sm:inline">Deposit Pledge</span>
@@ -337,7 +337,7 @@ export default function CreatorPoolDetailPage({
                   onClick={() => setActiveTab(tab.id)}
                   className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap flex items-center ${
                     activeTab === tab.id
-                      ? "border-purple-500 text-purple-600"
+                      ? "border-orange-500 text-orange-600"
                       : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                   }`}
                 >
@@ -374,7 +374,7 @@ export default function CreatorPoolDetailPage({
                       Pool Timeline
                     </h3>
                     <div className="flex items-center space-x-2 text-sm text-gray-500">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
                       <span>Progress</span>
                     </div>
                   </div>
@@ -433,7 +433,7 @@ export default function CreatorPoolDetailPage({
                           href={pool.youtubeUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 flex items-center space-x-1 text-sm"
+                          className="text-cyan-600 hover:text-cyan-800 flex items-center space-x-1 text-sm"
                         >
                           <FontAwesomeIcon
                             icon={faExternalLinkAlt}
@@ -462,7 +462,7 @@ export default function CreatorPoolDetailPage({
                     <div className="flex items-center space-x-2 mb-3">
                       <FontAwesomeIcon
                         icon={faQuestionCircle}
-                        className="w-5 h-5 text-purple-600"
+                        className="w-5 h-5 text-orange-600"
                       />
                       <h4 className="text-lg font-medium text-gray-900">
                         Prediction Question
@@ -485,7 +485,7 @@ export default function CreatorPoolDetailPage({
                           className={`h-3 rounded-full transition-all duration-300 ${
                             pool.progress > 100
                               ? "bg-green-500"
-                              : "bg-purple-600"
+                              : "bg-orange-600"
                           }`}
                           style={{ width: `${Math.min(pool.progress, 100)}%` }}
                         ></div>
@@ -540,10 +540,10 @@ export default function CreatorPoolDetailPage({
                           className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
                         >
                           <div className="flex items-center space-x-4">
-                            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                            <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
                               <FontAwesomeIcon
                                 icon={faUser}
-                                className="w-5 h-5 text-purple-600"
+                                className="w-5 h-5 text-orange-600"
                               />
                             </div>
                             <div>
@@ -589,7 +589,7 @@ export default function CreatorPoolDetailPage({
                                   className="w-4 h-4"
                                 />
                               </button>
-                              <button className="p-2 text-gray-400 hover:text-blue-600">
+                              <button className="p-2 text-gray-400 hover:text-cyan-600">
                                 <FontAwesomeIcon
                                   icon={faBan}
                                   className="w-4 h-4"
@@ -612,7 +612,7 @@ export default function CreatorPoolDetailPage({
                           This pool hasn't received any predictions yet. Share
                           your pool to get started!
                         </p>
-                        <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                        <button className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors">
                           Share Pool
                         </button>
                       </div>
@@ -621,7 +621,7 @@ export default function CreatorPoolDetailPage({
 
                   {hasPredictions && (
                     <div className="mt-6 flex justify-center">
-                      <button className="px-6 py-2 text-sm text-purple-600 hover:text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-50">
+                      <button className="px-6 py-2 text-sm text-orange-600 hover:text-orange-700 border border-orange-200 rounded-lg hover:bg-orange-50">
                         Load More Predictions
                       </button>
                     </div>
@@ -636,10 +636,10 @@ export default function CreatorPoolDetailPage({
                 <div className="flex items-center justify-center min-h-[40vh]">
                   <div className="text-center max-w-md mx-auto">
                     <div className="mb-6">
-                      <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <FontAwesomeIcon
                           icon={faChartLine}
-                          className="w-10 h-10 text-purple-600"
+                          className="w-10 h-10 text-orange-600"
                         />
                       </div>
                       <h3 className="text-xl font-bold text-gray-900 mb-2">
@@ -652,12 +652,12 @@ export default function CreatorPoolDetailPage({
                       </p>
                     </div>
 
-                    <div className="bg-purple-50 rounded-lg p-4 text-left">
-                      <h4 className="font-semibold text-purple-900 mb-2">
+                    <div className="bg-orange-50 rounded-lg p-4 text-left">
+                      <h4 className="font-semibold text-orange-900 mb-2">
                         <FontAwesomeIcon icon={faInfoCircle} className="mr-2" />
                         What's Coming
                       </h4>
-                      <ul className="space-y-1 text-sm text-purple-800">
+                      <ul className="space-y-1 text-sm text-orange-800">
                         <li>• Real-time participation tracking</li>
                         <li>• Revenue and earnings breakdown</li>
                         <li>• Participant behavior insights</li>
@@ -739,7 +739,7 @@ export default function CreatorPoolDetailPage({
                       <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
                         Cancel
                       </button>
-                      <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                      <button className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
                         Save Changes
                       </button>
                     </div>
@@ -931,7 +931,7 @@ export default function CreatorPoolDetailPage({
               <div className="flex items-center space-x-3 mb-4">
                 <FontAwesomeIcon
                   icon={faCoins}
-                  className="w-6 h-6 text-purple-600"
+                  className="w-6 h-6 text-orange-600"
                 />
                 <h3 className="text-lg font-medium text-gray-900">
                   Deposit Creator Pledge
@@ -939,17 +939,17 @@ export default function CreatorPoolDetailPage({
               </div>
 
               <div className="space-y-4 mb-6">
-                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
                   <div className="flex items-center space-x-2 mb-2">
                     <FontAwesomeIcon
                       icon={faInfoCircle}
-                      className="w-4 h-4 text-purple-600"
+                      className="w-4 h-4 text-orange-600"
                     />
-                    <span className="text-sm font-medium text-purple-900">
+                    <span className="text-sm font-medium text-orange-900">
                       Pledge Details
                     </span>
                   </div>
-                  <p className="text-sm text-purple-700">
+                  <p className="text-sm text-orange-700">
                     You pledged <strong>15%</strong> of your estimated AdSense
                     revenue from this video to add to the pool for disbursement.
                   </p>
@@ -1007,7 +1007,7 @@ export default function CreatorPoolDetailPage({
                 <button
                   className={`flex-1 px-4 py-2 rounded-lg transition-colors flex items-center justify-center space-x-2 ${
                     pool.creatorWalletBalance >= pool.creatorPledge
-                      ? "bg-purple-600 text-white hover:bg-purple-700"
+                      ? "bg-orange-600 text-white hover:bg-orange-700"
                       : "bg-gray-400 text-white cursor-not-allowed"
                   }`}
                   disabled={pool.creatorWalletBalance < pool.creatorPledge}
@@ -1024,7 +1024,7 @@ export default function CreatorPoolDetailPage({
                     {pool.creatorPledge.toLocaleString()} but only have $
                     {pool.creatorWalletBalance.toLocaleString()}.
                   </p>
-                  <button className="text-sm text-blue-600 hover:text-blue-800 mt-1">
+                  <button className="text-sm text-cyan-600 hover:text-cyan-800 mt-1">
                     Add Funds to Wallet
                   </button>
                 </div>

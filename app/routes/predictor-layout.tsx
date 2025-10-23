@@ -69,7 +69,7 @@ export default function PredictorLayout() {
                     to={item.href}
                     className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
                       location.pathname === item.href
-                        ? "bg-purple-100 text-purple-700"
+                        ? "bg-orange-100 text-orange-700"
                         : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                     }`}
                     onClick={() => setSidebarOpen(false)}

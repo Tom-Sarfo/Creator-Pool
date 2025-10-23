@@ -62,13 +62,13 @@ export default function Header({
             <input
               type="text"
               placeholder="Search videos..."
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             />
           </div>
         )}
 
         {/* Wallet Balance */}
-        <div className="flex items-center space-x-2 text-purple-600">
+        <div className="flex items-center space-x-2 text-orange-600">
           <FontAwesomeIcon icon={faWallet} className="h-5 w-5" />
           <span className="font-semibold">
             ${walletBalance.toLocaleString()}
