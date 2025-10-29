@@ -6,12 +6,11 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
-import { ClerkProvider } from "@clerk/react-router";
-import { rootAuthLoader } from "@clerk/react-router/server";
 
 import type { Route } from "./+types/root";
 import "./app.css";
 import "./lib/fontawesome";
+import { AuthProvider } from "./contexts/AuthContext";
 import { AppProvider } from "./contexts/AppContext";
 import AppWrapper from "./components/AppWrapper";
 
@@ -47,16 +46,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export async function loader(args: Route.LoaderArgs) {
-  return rootAuthLoader(args);
+  // No auth loader needed - we'll handle auth in AuthContext
+  return {};
 }
 
 export default function App({ loaderData }: Route.ComponentProps) {
   return (
-    <ClerkProvider loaderData={loaderData}>
+    <AuthProvider>
       <AppProvider>
         <AppWrapper />
       </AppProvider>
-    </ClerkProvider>
+    </AuthProvider>
   );
 }
 

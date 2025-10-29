@@ -1,12 +1,7 @@
 import type { Route } from "./+types/home";
 import { Link } from "react-router";
-import {
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  UserButton,
-} from "@clerk/react-router";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useAuth } from "../contexts/AuthContext";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -20,6 +15,8 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Home() {
+  const { isAuthenticated, user, logout } = useAuth();
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -35,29 +32,42 @@ export default function Home() {
               </span>
             </div>
             <div className="flex items-center space-x-4">
-              <SignedIn>
-                <Link
-                  to="/dashboard"
-                  className="text-gray-600 hover:text-gray-800 text-sm font-medium"
-                >
-                  Go to Dashboard
-                </Link>
-                <UserButton afterSignOutUrl="/" />
-              </SignedIn>
-              <SignedOut>
-                <Link
-                  to="/onboarding"
-                  className="text-gray-600 hover:text-gray-800 text-sm font-medium"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  to="/onboarding"
-                  className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
-                >
-                  Get Started
-                </Link>
-              </SignedOut>
+              {isAuthenticated ? (
+                <>
+                  <Link
+                    to="/dashboard"
+                    className="text-gray-600 hover:text-gray-800 text-sm font-medium"
+                  >
+                    Go to Dashboard
+                  </Link>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">
+                      {user?.name || user?.email}
+                    </span>
+                    <button
+                      onClick={logout}
+                      className="text-gray-600 hover:text-gray-800 text-sm font-medium"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    className="text-gray-600 hover:text-gray-800 text-sm font-medium"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    to="/signup"
+                    className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
+                  >
+                    Get Started
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -80,7 +90,7 @@ export default function Home() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              to="/onboarding"
+              to="/signup"
               className="bg-orange-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-orange-700 transition-colors text-center"
             >
               Get Started
@@ -197,7 +207,7 @@ export default function Home() {
             to interact with YouTube content.
           </p>
           <Link
-            to="/onboarding"
+            to="/signup"
             className="bg-white text-orange-600 px-8 py-3 rounded-lg text-lg font-semibold hover:bg-gray-50 transition-colors inline-block"
           >
             Sign Up Now

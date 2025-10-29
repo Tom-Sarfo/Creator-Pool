@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Link } from "react-router";
-import { useUser } from "@clerk/react-router";
+import { Link  } from "react-router";
+import { useAuth } from "../contexts/AuthContext";
 import { CATEGORIES } from "../lib/constants";
 import { useAppContext } from "../contexts/AppContext";
 import type { Pool } from "../contexts/AppContext";
@@ -36,7 +36,7 @@ export default function PredictorPools() {
   const itemsPerPage = 6;
 
   const { pools, addPrediction, addToast, calculatePoolOdds } = useAppContext();
-  const { user } = useUser();
+  const { user } = useAuth();
   const categories = CATEGORIES;
   const [currentTime, setCurrentTime] = useState(new Date());
 

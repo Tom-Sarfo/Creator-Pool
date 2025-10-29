@@ -1,51 +1,52 @@
-import type { Route } from "./+types/api/youtube/auth";
+import { youtubeService } from "../../../services/youtube.service";
+import { API_CONFIG } from "../../../lib/api-config";
 
-export async function loader({ request }: Route.LoaderArgs) {
+export async function loader({ request }: { request: Request }) {
   try {
-    console.log("YouTube Auth Route Hit");
+    // Extract token from request headers or cookies for server-side
+    const authHeader = request.headers.get("Authorization");
+    const cookies = request.headers.get("Cookie");
+    let token: string | null = null;
 
-    // Generate the OAuth authorization URL directly
-    const clientId = process.env.YOUTUBE_CLIENT_ID;
-    const redirectUri =
-      process.env.YOUTUBE_REDIRECT_URI ||
-      "http://localhost:5178/api/youtube/callback";
-
-    console.log("Auth Debug:", {
-      hasClientId: !!clientId,
-      redirectUri,
-      clientId: clientId ? `${clientId.substring(0, 10)}...` : "missing",
-    });
-
-    if (!clientId) {
-      throw new Error("YouTube client ID not configured");
+    if (authHeader?.startsWith("Bearer ")) {
+      token = authHeader.substring(7);
+    } else if (cookies) {
+      // Try to extract token from cookies if using cookie-based auth
+      const tokenMatch = cookies.match(
+        new RegExp(`${API_CONFIG.ACCESS_TOKEN_KEY}=([^;]+)`)
+      );
+      token = tokenMatch ? tokenMatch[1] : null;
     }
 
-    const scopes = [
-      "https://www.googleapis.com/auth/youtube.readonly",
-      "https://www.googleapis.com/auth/youtube.force-ssl",
-    ];
+    const response = await youtubeService.getAuthUrl(token);
 
-    const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
-    authUrl.searchParams.set("client_id", clientId);
-    authUrl.searchParams.set("redirect_uri", redirectUri);
-    authUrl.searchParams.set("response_type", "code");
-    authUrl.searchParams.set("scope", scopes.join(" "));
-    authUrl.searchParams.set("access_type", "offline");
-    authUrl.searchParams.set("prompt", "consent");
+    // Handle both direct response and response.data
+    const authUrl = response.authUrl || (response as any).data?.authUrl;
 
-    // Return the authorization URL
+    if (!authUrl) {
+      return Response.json(
+        {
+          error: "No authorization URL in backend response",
+          success: false,
+          details: response,
+        },
+        { status: 500 }
+      );
+    }
+
     return Response.json({
-      authUrl: authUrl.toString(),
+      authUrl: authUrl,
       success: true,
     });
-  } catch (error) {
-    console.error("Error generating auth URL:", error);
+  } catch (error: any) {
     return Response.json(
       {
-        error: "Failed to generate authorization URL",
+        error: "Failed to get authorization URL from backend",
         success: false,
+        details: error?.message || error?.toString() || "Unknown error",
+        status: error?.status || 500,
       },
-      { status: 500 }
+      { status: error?.status || 500 }
     );
   }
 }

@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useUser } from "@clerk/react-router";
 import {
   faChartBar,
   faBullseye,
@@ -20,6 +19,7 @@ import {
 import Tabs from "../components/Tabs";
 import StatsCard from "../components/StatsCard";
 import { useAppContext } from "../contexts/AppContext";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function PredictorPredictions() {
   const [activeTab, setActiveTab] = useState("active");
@@ -52,8 +52,7 @@ export default function PredictorPredictions() {
     getPredictionsByPredictor,
   } = context;
 
-  const { user } = useUser();
-
+  const { user } = useAuth();
   const userPredictions = getPredictionsByPredictor(user?.id || "anonymous");
   const activePredictions = userPredictions.filter(
     (p) => p.result === "pending"

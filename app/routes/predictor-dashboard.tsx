@@ -1,6 +1,6 @@
-import { Link } from "react-router";
+import { Link  } from "react-router";
+import { useAuth } from "../contexts/AuthContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useUser } from "@clerk/react-router";
 import { useState, useEffect } from "react";
 import {
   faBullseye,
@@ -30,7 +30,7 @@ import StatsCard from "../components/StatsCard";
 
 export default function PredictorDashboard() {
   const { pools, predictions } = useAppContext();
-  const { user } = useUser();
+  const { user } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {

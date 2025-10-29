@@ -1,8 +1,8 @@
 import type { Route } from "./+types/pool-detail";
 import { useState, useEffect } from "react";
-import { Link, useSearchParams } from "react-router";
+import { Link, useSearchParams  } from "react-router";
+import { useAuth } from "../contexts/AuthContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useUser } from "@clerk/react-router";
 import {
   faClock,
   faCheckCircle,
@@ -49,7 +49,7 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
   const [showPredictionModal, setShowPredictionModal] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  const { user } = useUser();
+  const { user } = useAuth();
   const {
     getPoolById,
     getVideoById,

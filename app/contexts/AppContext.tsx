@@ -2,43 +2,71 @@ import React, {
   createContext,
   useContext,
   useState,
+  useEffect,
+  useCallback,
   type ReactNode,
 } from "react";
-import { ALL_VIDEOS, type PoolStatus } from "../lib/constants";
-import { calculateDynamicOdds } from "../lib/utils";
+import { API_CONFIG } from "../lib/api-config";
+import { useAuth } from "./AuthContext";
+import { useWebSocket } from "../services/websocket.service";
+import {
+  youtubeService,
+  poolService,
+  predictionService,
+  walletService,
+  analyticsService,
+  PoolService,
+} from "../services";
+import type {
+  Video,
+  Pool,
+  Prediction,
+  User,
+  WalletBalanceResponse,
+  CreatorAnalyticsResponse,
+  PredictorAnalyticsResponse,
+} from "../types/api";
 import type { ToastData } from "../components/Toast";
-import type { YouTubeVideo, YouTubeChannel } from "../lib/youtube-video-api";
 
+// Feature flag for mock data fallback
+const USE_MOCK_DATA = API_CONFIG.USE_MOCK_DATA;
+
+// Mock data imports (fallback)
+import { ALL_VIDEOS } from "../lib/constants";
+
+// Unified interfaces for backward compatibility
 export interface UnifiedVideo {
-  id: number;
+  // Core video fields
+  id: string;
+  youtubeId: string;
   title: string;
+  description?: string;
   thumbnail: string;
-  status: string;
-  views: number;
-  likes: number;
+  status: "unlisted" | "private" | "public";
+  viewCount: number;
+  likeCount: number;
+  commentCount: number;
   duration: string;
-  uploadDate: string;
+  publishedAt: string;
+  lastSyncedAt?: string;
+  creatorId: string;
+  createdAt: string;
+  updatedAt: string;
 
-  // Creator info
+  // Legacy fields for backward compatibility
   creator: string;
   creatorVerified: boolean;
   creatorSubs: string;
   category: string;
 
-  // YouTube integration
-  youtubeId?: string; // Actual YouTube video ID
-  youtubeChannelId?: string;
-  lastSyncedAt?: string;
-  isYouTubeVideo?: boolean; // Flag to distinguish from dummy data
-
   // Pool info - initially null/0 for unlisted videos
   poolId: number | null;
-  poolStatus: PoolStatus | null;
+  poolStatus: string | null;
   poolQuestion: string | null;
   poolParticipants: number;
   poolTotalStake: number;
-  poolCreatorPledge: number; // Creator's pledged amount
-  poolPredictorStakes: number; // Total amount staked by predictors
+  poolCreatorPledge: number;
+  poolPredictorStakes: number;
   poolTimeRemaining: string | null;
   poolTargetViews: number | null;
   poolCurrentViews: number;
@@ -47,8 +75,8 @@ export interface UnifiedVideo {
   poolPublishedAt?: string | null;
   poolClosedAt?: string | null;
   poolSettledAt?: string | null;
-  poolDuration?: number; // Duration in days for the pool question
-  poolPredictionWindow?: number; // Duration in minutes for prediction window
+  poolDuration?: number;
+  poolPredictionWindow?: number;
   poolOdds: { yes: number; no: number } | null;
   poolYesStake: number;
   poolNoStake: number;
@@ -56,278 +84,355 @@ export interface UnifiedVideo {
   poolNoCount: number;
 }
 
-// Prediction interfaces
-export interface Prediction {
-  id: number;
-  poolId: number;
-  predictorId: string; // User ID
-  predictorName: string;
-  choice: "yes" | "no";
-  stake: number;
-  predictedAt: string;
-  potentialPayout?: number;
-  actualPayout?: number;
-  result?: "won" | "lost" | "pending";
-  settledAt?: string;
-}
-
-export interface PredictorPoolStats {
+export interface UnifiedPool {
+  // Core pool fields
+  id: string;
+  videoId: string;
+  creatorId: string;
+  question: string;
+  targetViews: number;
+  duration: number;
+  predictionWindow: number;
+  status: "open" | "awaiting_release" | "live_tracking" | "closed" | "settled";
+  totalStake: number;
+  creatorPledge: number;
+  predictorStakes: number;
   yesStake: number;
   noStake: number;
   yesCount: number;
   noCount: number;
-  yesPercentage: number;
-  noPercentage: number;
-}
+  participants: number;
+  currentViews: number;
+  yesOdds?: number;
+  noOdds?: number;
+  result?: boolean;
+  creatorEarnings: number;
+  closesAt?: string;
+  publishedAt?: string;
+  closedAt?: string;
+  settledAt?: string;
+  createdAt: string;
+  updatedAt: string;
 
-// Pool interfaces
-export interface Pool {
-  id: number;
+  // Legacy fields for backward compatibility
   title?: string;
   videoTitle?: string;
-  videoId?: number; // ID of the associated video
   creator?: string;
   creatorVerified?: boolean;
   creatorSubs?: string;
   thumbnail?: string;
   category?: string;
-  question: string;
-  participants: number;
-  totalStake: number; // Total pool amount (includes both predictor stakes and creator pledge)
-  creatorPledge?: number; // Creator's pledged amount (separate from predictor stakes)
-  predictorStakes?: number; // Total amount staked by predictors only
   timeRemaining: string;
-  status: PoolStatus;
-  createdAt?: string;
-  targetViews?: number;
-  currentViews?: number;
-  duration?: number; // Duration in days for the pool question
-  predictionWindow?: number; // Duration in minutes for prediction window
-  odds?: { yes: number; no: number };
-  // Lifecycle timestamps
-  closesAt?: string | null;
-  publishedAt?: string | null;
-  closedAt?: string | null;
-  settledAt?: string | null;
-  result?: string;
-  creatorEarnings?: number;
-  predictions?: Prediction[]; // Individual predictions on this pool
-  yesStake?: number; // Total stake on YES
-  noStake?: number; // Total stake on NO
-  yesCount?: number; // Number of YES predictors
-  noCount?: number; // Number of NO predictors
+}
+
+export interface UnifiedPrediction extends Prediction {
+  // Legacy fields for backward compatibility
+  predictorName: string;
 }
 
 interface AppState {
+  // UI State
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
-
-  // Theme state
   theme: "light" | "dark";
   setTheme: (theme: "light" | "dark") => void;
 
-  // Unified video/pool state
-  videos: UnifiedVideo[];
-  setVideos: (videos: UnifiedVideo[]) => void;
-  updateVideo: (id: number, updates: Partial<UnifiedVideo>) => void;
-  getVideoById: (id: number) => UnifiedVideo | undefined;
+  // Loading States
+  isLoading: boolean;
+  isYouTubeLoading: boolean;
+  isPoolsLoading: boolean;
+  isPredictionsLoading: boolean;
+  isWalletLoading: boolean;
 
-  // YouTube integration state
-  youtubeChannel: YouTubeChannel | null;
-  setYoutubeChannel: (channel: YouTubeChannel | null) => void;
-  syncYouTubeVideos: () => Promise<void>;
+  // Data State
+  videos: UnifiedVideo[];
+  pools: UnifiedPool[];
+  predictions: UnifiedPrediction[];
+  walletBalance: WalletBalanceResponse | null;
+  creatorAnalytics: CreatorAnalyticsResponse | null;
+  predictorAnalytics: PredictorAnalyticsResponse | null;
+
+  // YouTube Integration
+  youtubeChannel: any | null;
   isYouTubeConnected: boolean;
   lastYouTubeSync: string | null;
+  syncYouTubeVideos: () => Promise<void>;
 
-  // Pool state (derived from videos)
-  pools: Pool[];
-  addPool: (pool: Omit<Pool, "id">) => void;
-  updatePool: (id: number, updates: Partial<Pool>) => void;
-  deletePool: (id: number) => void;
-  getPoolById: (id: number) => Pool | undefined;
-  filteredPools: (filter: "active" | "settled" | "expired" | "all") => Pool[];
+  // Data Management Functions
+  updateVideo: (id: string, updates: Partial<UnifiedVideo>) => void;
+  getVideoById: (id: string) => UnifiedVideo | undefined;
+  addPool: (pool: Omit<UnifiedPool, "id">) => Promise<void>;
+  updatePool: (id: string, updates: Partial<UnifiedPool>) => Promise<void>;
+  deletePool: (id: string) => Promise<void>;
+  getPoolById: (id: string) => UnifiedPool | undefined;
+  filteredPools: (
+    filter: "active" | "settled" | "expired" | "all"
+  ) => UnifiedPool[];
+  addPrediction: (prediction: Omit<UnifiedPrediction, "id">) => Promise<void>;
+  updatePrediction: (
+    id: string,
+    updates: Partial<UnifiedPrediction>
+  ) => Promise<void>;
+  getPredictionsByPoolId: (poolId: string) => UnifiedPrediction[];
+  getPredictionsByPredictor: (predictorId: string) => UnifiedPrediction[];
+  calculatePoolOdds: (poolId: string) => { yes: number; no: number };
 
-  // Pool lifecycle management
-  updatePoolStatus: (poolId: number, newStatus: PoolStatus) => void;
-  transitionPoolToNextStage: (poolId: number) => void;
-  checkAndUpdatePoolLifecycle: () => void;
+  // Pool Lifecycle Management
+  updatePoolStatus: (poolId: string, newStatus: string) => Promise<void>;
+  transitionPoolToNextStage: (poolId: string) => Promise<void>;
+  checkAndUpdatePoolLifecycle: () => Promise<void>;
 
-  // Prediction state
-  predictions: Prediction[];
-  addPrediction: (prediction: Omit<Prediction, "id">) => void;
-  updatePrediction: (id: number, updates: Partial<Prediction>) => void;
-  getPredictionsByPoolId: (poolId: number) => Prediction[];
-  getPredictionsByPredictor: (predictorId: string) => Prediction[];
-  calculatePoolOdds: (poolId: number) => { yes: number; no: number };
-
-  // Toast state
+  // Toast Management
   toasts: ToastData[];
   addToast: (toast: Omit<ToastData, "id">) => void;
   removeToast: (id: string) => void;
+
+  // Error Handling
+  error: string | null;
+  clearError: () => void;
+
+  // Refresh Functions
+  refreshVideos: () => Promise<void>;
+  refreshPools: () => Promise<void>;
+  refreshPredictions: () => Promise<void>;
+  refreshWallet: () => Promise<void>;
+  refreshAnalytics: () => Promise<void>;
+  checkYouTubeConnection: () => Promise<void>;
 }
 
 const AppContext = createContext<AppState | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
+  const { user, isAuthenticated } = useAuth();
+  const { wsClient, on: wsOn, off: wsOff } = useWebSocket();
+
+  // UI State
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
-  // Initialize with unified video data
-  const [videos, setVideos] = useState<UnifiedVideo[]>(ALL_VIDEOS);
-  const [toasts, setToasts] = useState<ToastData[]>([]);
-  const [predictions, setPredictions] = useState<Prediction[]>([]);
+  // Loading States
+  const [isLoading, setIsLoading] = useState(false);
+  const [isYouTubeLoading, setIsYouTubeLoading] = useState(false);
+  const [isPoolsLoading, setIsPoolsLoading] = useState(false);
+  const [isPredictionsLoading, setIsPredictionsLoading] = useState(false);
+  const [isWalletLoading, setIsWalletLoading] = useState(false);
 
-  // YouTube integration state
-  const [youtubeChannel, setYoutubeChannel] = useState<YouTubeChannel | null>(
-    null
-  );
+  // Data State
+  const [videos, setVideos] = useState<UnifiedVideo[]>([]);
+  const [pools, setPools] = useState<UnifiedPool[]>([]);
+  const [predictions, setPredictions] = useState<UnifiedPrediction[]>([]);
+  const [walletBalance, setWalletBalance] =
+    useState<WalletBalanceResponse | null>(null);
+  const [creatorAnalytics, setCreatorAnalytics] =
+    useState<CreatorAnalyticsResponse | null>(null);
+  const [predictorAnalytics, setPredictorAnalytics] =
+    useState<PredictorAnalyticsResponse | null>(null);
+
+  // YouTube Integration State
+  const [youtubeChannel, setYoutubeChannel] = useState<any | null>(null);
+  const [isYouTubeConnected, setIsYouTubeConnected] = useState(false);
   const [lastYouTubeSync, setLastYouTubeSync] = useState<string | null>(null);
 
-  // Derive pools from videos that have pool data
-  const pools: Pool[] = videos
-    .filter(
-      (video) =>
-        video.poolId !== null &&
-        video.poolStatus !== null &&
-        video.poolQuestion !== null
-    )
-    .map((video) => ({
-      id: video.poolId!,
+  // Toast State
+  const [toasts, setToasts] = useState<ToastData[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  // Initialize data on mount
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      initializeData();
+    } else if (USE_MOCK_DATA) {
+      // Fallback to mock data when not authenticated
+      initializeMockData();
+    }
+  }, [isAuthenticated, user]);
+
+  // WebSocket event listeners
+  useEffect(() => {
+    if (!isAuthenticated || !user) return;
+
+    // Join user-specific room for personal updates
+    wsClient.joinUser(user.id);
+
+    // Set up WebSocket event listeners
+    const handlePoolUpdate = () => {
+      refreshPools();
+    };
+
+    const handleNewPrediction = () => {
+      refreshPredictions();
+      refreshPools();
+    };
+
+    const handleOddsUpdate = () => {
+      refreshPools();
+    };
+
+    const handlePoolStatusChange = () => {
+      refreshPools();
+    };
+
+    wsOn("poolUpdate", handlePoolUpdate);
+    wsOn("newPrediction", handleNewPrediction);
+    wsOn("oddsUpdate", handleOddsUpdate);
+    wsOn("poolStatusChange", handlePoolStatusChange);
+
+    return () => {
+      wsOff("poolUpdate", handlePoolUpdate);
+      wsOff("newPrediction", handleNewPrediction);
+      wsOff("oddsUpdate", handleOddsUpdate);
+      wsOff("poolStatusChange", handlePoolStatusChange);
+      wsClient.leaveUser(user.id);
+    };
+  }, [isAuthenticated, user, wsClient, wsOn, wsOff]);
+
+  // Initialize mock data (fallback)
+  const initializeMockData = useCallback(() => {
+    if (!USE_MOCK_DATA) return;
+
+    // Convert mock videos to UnifiedVideo format
+    const mockVideos: UnifiedVideo[] = ALL_VIDEOS.map((video) => ({
+      id: video.id.toString(),
+      youtubeId: `mock-${video.id}`,
+      title: video.title,
+      description: "",
+      thumbnail: video.thumbnail,
+      status: video.status as "unlisted" | "private" | "public",
+      viewCount: video.views,
+      likeCount: video.likes,
+      commentCount: 0,
+      duration: video.duration,
+      publishedAt: video.uploadDate,
+      lastSyncedAt: undefined,
+      creatorId: "mock-creator",
+      createdAt: video.uploadDate,
+      updatedAt: video.uploadDate,
+      // Legacy fields
+      creator: video.creator,
+      creatorVerified: video.creatorVerified,
+      creatorSubs: video.creatorSubs,
+      category: video.category,
+      // Pool fields
+      poolId: video.poolId,
+      poolStatus: video.poolStatus,
+      poolQuestion: video.poolQuestion,
+      poolParticipants: video.poolParticipants,
+      poolTotalStake: video.poolTotalStake,
+      poolCreatorPledge: video.poolCreatorPledge,
+      poolPredictorStakes: video.poolPredictorStakes,
+      poolTimeRemaining: video.poolTimeRemaining,
+      poolTargetViews: video.poolTargetViews,
+      poolCurrentViews: video.poolCurrentViews,
+      poolCreatedAt: video.poolCreatedAt,
+      poolClosesAt: undefined,
+      poolPublishedAt: undefined,
+      poolClosedAt: undefined,
+      poolSettledAt: undefined,
+      poolDuration: undefined,
+      poolPredictionWindow: undefined,
+      poolOdds: video.poolOdds,
+      poolYesStake: video.poolYesStake,
+      poolNoStake: video.poolNoStake,
+      poolYesCount: video.poolYesCount,
+      poolNoCount: video.poolNoCount,
+    }));
+
+    setVideos(mockVideos);
+
+    // Derive pools from mock videos
+    const mockPools: UnifiedPool[] = ALL_VIDEOS.filter(
+      (video) => video.poolId !== null
+    ).map((video, index) => ({
+      id: String(video.poolId),
+      videoId: video.id.toString(),
+      creatorId: "mock-creator",
+      question: video.poolQuestion || "Mock question",
+      targetViews: video.poolTargetViews || 10000,
+      duration: 7,
+      predictionWindow: 10,
+      status: (video.poolStatus || "open") as
+        | "open"
+        | "awaiting_release"
+        | "live_tracking"
+        | "closed"
+        | "settled",
+      totalStake: video.poolTotalStake || 0,
+      creatorPledge: video.poolCreatorPledge || 0,
+      predictorStakes: video.poolPredictorStakes || 0,
+      yesStake: video.poolYesStake || 0,
+      noStake: video.poolNoStake || 0,
+      yesCount: video.poolYesCount || 0,
+      noCount: video.poolNoCount || 0,
+      participants: video.poolParticipants || 0,
+      currentViews: video.poolCurrentViews || 0,
+      yesOdds: 0.5,
+      noOdds: 0.5,
+      result: undefined,
+      creatorEarnings: 0,
+      closesAt: undefined,
+      publishedAt: undefined,
+      closedAt: undefined,
+      settledAt: undefined,
+      createdAt: video.poolCreatedAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      // Legacy fields
       title: video.title,
       videoTitle: video.title,
-      videoId: video.id,
       creator: video.creator,
       creatorVerified: video.creatorVerified,
       creatorSubs: video.creatorSubs,
       thumbnail: video.thumbnail,
       category: video.category,
-      question: video.poolQuestion!,
-      participants: video.poolParticipants,
-      totalStake: video.poolTotalStake,
-      creatorPledge: video.poolCreatorPledge || 0,
-      predictorStakes: video.poolPredictorStakes || 0,
-      timeRemaining: video.poolTimeRemaining!,
-      status: video.poolStatus!,
-      createdAt: video.poolCreatedAt || undefined,
-      targetViews: video.poolTargetViews || undefined,
-      currentViews: video.poolCurrentViews,
-      duration: video.poolDuration || undefined,
-      predictionWindow: video.poolPredictionWindow || undefined,
-      odds: video.poolOdds || undefined,
-      yesStake: video.poolYesStake || 0,
-      noStake: video.poolNoStake || 0,
-      yesCount: video.poolYesCount || 0,
-      noCount: video.poolNoCount || 0,
-      predictions: predictions.filter((p) => p.poolId === video.poolId),
-      // Add timestamp fields for lifecycle tracking
-      closesAt: video.poolClosesAt,
-      publishedAt: video.poolPublishedAt,
-      closedAt: video.poolClosedAt,
-      settledAt: video.poolSettledAt,
+      timeRemaining: video.poolTimeRemaining || "10:00",
     }));
 
-  // Video management functions
-  const updateVideo = (id: number, updates: Partial<UnifiedVideo>) => {
-    setVideos((prev) =>
-      prev.map((video) => (video.id === id ? { ...video, ...updates } : video))
-    );
-  };
+    setPools(mockPools);
+  }, []);
 
-  const getVideoById = (id: number): UnifiedVideo | undefined => {
-    return videos.find((video) => video.id === id);
-  };
-
-  // Toast management functions
-  const addToast = (toast: Omit<ToastData, "id">) => {
-    const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
-    const newToast: ToastData = { ...toast, id };
-    setToasts((prev) => [...prev, newToast]);
-  };
-
-  const removeToast = (id: string) => {
-    setToasts((prev) => prev.filter((toast) => toast.id !== id));
-  };
-
-  // Pool management functions (working with unified video structure)
-  const addPool = (newPool: Omit<Pool, "id">) => {
-    const nextPoolId =
-      videos.reduce((maxId, video) => {
-        const videoPoolId = video.poolId || 0;
-        return videoPoolId > maxId ? videoPoolId : maxId;
-      }, 0) + 1;
-
-    // Find the video this pool is for and update it
-    if (newPool.videoId) {
-      const videoToUpdate = videos.find((v) => v.id === newPool.videoId);
-      if (videoToUpdate) {
-        updateVideo(videoToUpdate.id, {
-          poolId: nextPoolId,
-          poolStatus: "open", // Always start as open when pool is created
-          poolQuestion: newPool.question,
-          poolParticipants: newPool.participants,
-          poolTotalStake: newPool.totalStake,
-          poolCreatorPledge: newPool.creatorPledge || 0,
-          poolPredictorStakes: newPool.predictorStakes || 0,
-          poolTimeRemaining: "10m", // Set initial time remaining for 10-minute window
-          poolTargetViews: newPool.targetViews || null,
-          poolCurrentViews: newPool.currentViews || 0,
-          poolCreatedAt: new Date().toISOString(), // Set creation timestamp
-          poolDuration: newPool.duration || 7, // Default 7 days for pool question
-          poolPredictionWindow: newPool.predictionWindow || 10, // Default 10 minutes for prediction window
-          poolOdds: newPool.odds || null,
-          poolYesStake: newPool.yesStake || 0,
-          poolNoStake: newPool.noStake || 0,
-          poolYesCount: newPool.yesCount || 0,
-          poolNoCount: newPool.noCount || 0,
-        });
-      }
+  // Initialize real data from API
+  const initializeData = useCallback(async () => {
+    if (!user || !isAuthenticated) {
+      return;
     }
 
-    // Show success toast
-    addToast({
-      type: "success",
-      title: "Pool Created Successfully!",
-      message: `Your pool "${newPool.title}" is now live and accepting predictions.`,
-      duration: 4000,
-    });
-  };
-
-  const updatePool = (id: number, updates: Partial<Pool>) => {
-    // Find the video with this pool ID and update its pool data
-    const videoWithPool = videos.find((v) => v.poolId === id);
-    if (videoWithPool) {
-      updateVideo(videoWithPool.id, {
-        poolStatus: updates.status || videoWithPool.poolStatus,
-        poolQuestion: updates.question || videoWithPool.poolQuestion,
-        poolParticipants:
-          updates.participants ?? videoWithPool.poolParticipants,
-        poolTotalStake: updates.totalStake ?? videoWithPool.poolTotalStake,
-        poolCreatorPledge:
-          updates.creatorPledge ?? videoWithPool.poolCreatorPledge,
-        poolPredictorStakes:
-          updates.predictorStakes ?? videoWithPool.poolPredictorStakes,
-        poolTimeRemaining:
-          updates.timeRemaining || videoWithPool.poolTimeRemaining,
-        poolTargetViews: updates.targetViews ?? videoWithPool.poolTargetViews,
-        poolCurrentViews:
-          updates.currentViews ?? videoWithPool.poolCurrentViews,
-        poolDuration: updates.duration ?? videoWithPool.poolDuration,
-        poolPredictionWindow:
-          updates.predictionWindow ?? videoWithPool.poolPredictionWindow,
-        poolOdds: updates.odds || videoWithPool.poolOdds,
-        poolYesStake: updates.yesStake ?? videoWithPool.poolYesStake,
-        poolNoStake: updates.noStake ?? videoWithPool.poolNoStake,
-        poolYesCount: updates.yesCount ?? videoWithPool.poolYesCount,
-        poolNoCount: updates.noCount ?? videoWithPool.poolNoCount,
+    setIsLoading(true);
+    try {
+      await Promise.all([
+        refreshVideos(),
+        refreshPools(),
+        refreshPredictions(),
+        refreshWallet(),
+        refreshAnalytics(),
+        checkYouTubeConnection(),
+      ]);
+    } catch (error) {
+      console.error("AppContext: Error initializing data:", error);
+      console.error("AppContext: Error details:", {
+        error,
+        message: (error as any)?.message,
+        status: (error as any)?.status,
       });
+      setError("Failed to load data");
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, [user, isAuthenticated]);
 
-  const deletePool = (id: number) => {
-    // Find the video with this pool ID and remove its pool data
-    const videoWithPool = videos.find((v) => v.poolId === id);
-    if (videoWithPool) {
-      updateVideo(videoWithPool.id, {
+  // Data refresh functions
+  const refreshVideos = useCallback(async () => {
+    if (!isAuthenticated || USE_MOCK_DATA) return;
+
+    try {
+      const apiVideos = await youtubeService.getAllVideos();
+
+      const unifiedVideos = apiVideos.map((video) => ({
+        ...video,
+        // Legacy fields
+        creator: video.creator?.name || "Unknown",
+        creatorVerified: false,
+        creatorSubs: "0",
+        category: "Entertainment",
+        // Pool fields (will be populated by pools)
         poolId: null,
         poolStatus: null,
         poolQuestion: null,
@@ -337,7 +442,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         poolPredictorStakes: 0,
         poolTimeRemaining: null,
         poolTargetViews: null,
-        poolCurrentViews: 0,
+        poolCurrentViews: video.viewCount,
         poolCreatedAt: null,
         poolClosesAt: null,
         poolPublishedAt: null,
@@ -350,468 +455,522 @@ export function AppProvider({ children }: { children: ReactNode }) {
         poolNoStake: 0,
         poolYesCount: 0,
         poolNoCount: 0,
+      })) as UnifiedVideo[];
+
+      setVideos(unifiedVideos);
+    } catch (error) {
+      console.error("AppContext: Error refreshing videos:", error);
+      console.error("AppContext: Error details:", {
+        error,
+        message: (error as any)?.message,
+        status: (error as any)?.status,
       });
-    }
-  };
-
-  const getPoolById = (id: number): Pool | undefined => {
-    return pools.find((pool) => pool.id === id);
-  };
-
-  const filteredPools = (
-    filter: "active" | "settled" | "expired" | "all"
-  ): Pool[] => {
-    let filteredPools = pools;
-
-    if (filter !== "all") {
-      // Map old filter names to new status values
-      const statusMap: Record<string, PoolStatus[]> = {
-        active: ["open", "awaiting_release", "live_tracking", "closed"],
-        settled: ["settled"],
-        expired: ["settled"], // Treat expired as settled for now
-      };
-
-      const targetStatuses = statusMap[filter] || [filter as PoolStatus];
-      filteredPools = pools.filter((pool) =>
-        targetStatuses.includes(pool.status)
-      );
-    }
-
-    // Sort by ID descending (newest first), then by createdAt if available
-    return filteredPools.sort((a, b) => {
-      // First try to sort by createdAt if both have it
-      if (a.createdAt && b.createdAt) {
-        return (
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
+      if (USE_MOCK_DATA) {
+        initializeMockData();
       }
-      // Fallback to ID sorting (newer pools have higher IDs)
-      return b.id - a.id;
-    });
-  };
-
-  // Prediction management functions
-  const addPrediction = (newPrediction: Omit<Prediction, "id">) => {
-    const nextPredictionId =
-      predictions.length > 0
-        ? Math.max(...predictions.map((p) => p.id)) + 1
-        : 1;
-
-    const prediction: Prediction = {
-      ...newPrediction,
-      id: nextPredictionId,
-    };
-
-    setPredictions((prev) => [...prev, prediction]);
-
-    // Update pool aggregates
-    updatePoolStakes(prediction.poolId, prediction.choice, prediction.stake);
-  };
-
-  const updatePrediction = (id: number, updates: Partial<Prediction>) => {
-    setPredictions((prev) =>
-      prev.map((prediction) =>
-        prediction.id === id ? { ...prediction, ...updates } : prediction
-      )
-    );
-  };
-
-  const getPredictionsByPoolId = (poolId: number): Prediction[] => {
-    return predictions.filter((p) => p.poolId === poolId);
-  };
-
-  const getPredictionsByPredictor = (predictorId: string): Prediction[] => {
-    return predictions.filter((p) => p.predictorId === predictorId);
-  };
-
-  const calculatePoolOdds = (poolId: number): { yes: number; no: number } => {
-    const videoWithPool = videos.find((v) => v.poolId === poolId);
-    if (!videoWithPool) {
-      return { yes: 2.0, no: 2.0 };
     }
-    return calculateDynamicOdds(
-      videoWithPool.poolYesStake || 0,
-      videoWithPool.poolNoStake || 0
-    );
-  };
+  }, [isAuthenticated, initializeMockData]);
 
-  const updatePoolStakes = (
-    poolId: number,
-    choice: "yes" | "no",
-    stake: number
-  ) => {
-    const videoWithPool = videos.find((v) => v.poolId === poolId);
-    if (!videoWithPool) return;
+  const refreshPools = useCallback(async () => {
+    if (!isAuthenticated || USE_MOCK_DATA) return;
 
-    const updates: Partial<UnifiedVideo> = {
-      poolParticipants: videoWithPool.poolParticipants + 1,
-      poolPredictorStakes: videoWithPool.poolPredictorStakes + stake,
-      poolTotalStake: videoWithPool.poolTotalStake + stake,
-    };
+    setIsPoolsLoading(true);
+    try {
+      const apiPools = await poolService.getAllPools();
+      const unifiedPools: UnifiedPool[] = apiPools.map((pool) => ({
+        ...pool,
+        // Legacy fields
+        title: pool.video?.title,
+        videoTitle: pool.video?.title,
+        videoId: pool.videoId,
+        creator: pool.creator?.name,
+        creatorVerified: false,
+        creatorSubs: "0",
+        thumbnail: pool.video?.thumbnail,
+        category: "Entertainment",
+        timeRemaining: PoolService.getTimeRemaining(pool),
+      }));
 
-    if (choice === "yes") {
-      updates.poolYesStake = (videoWithPool.poolYesStake || 0) + stake;
-      updates.poolYesCount = (videoWithPool.poolYesCount || 0) + 1;
-    } else {
-      updates.poolNoStake = (videoWithPool.poolNoStake || 0) + stake;
-      updates.poolNoCount = (videoWithPool.poolNoCount || 0) + 1;
+      setPools(unifiedPools);
+    } catch (error) {
+      console.error("Error refreshing pools:", error);
+    } finally {
+      setIsPoolsLoading(false);
     }
+  }, [isAuthenticated]);
 
-    // Recalculate odds
-    const newOdds = calculateDynamicOdds(
-      updates.poolYesStake || videoWithPool.poolYesStake || 0,
-      updates.poolNoStake || videoWithPool.poolNoStake || 0
-    );
-    updates.poolOdds = newOdds;
+  const refreshPredictions = useCallback(async () => {
+    if (!isAuthenticated || USE_MOCK_DATA) return;
 
-    updateVideo(videoWithPool.id, updates);
-  };
+    setIsPredictionsLoading(true);
+    try {
+      const apiPredictions = await predictionService.getAllPredictions();
+      const unifiedPredictions = apiPredictions.map((prediction) => ({
+        ...prediction,
+        // Legacy fields
+        predictorName: prediction.predictor?.name || "Unknown",
+      })) as UnifiedPrediction[];
 
-  // Pool lifecycle management functions
-  const updatePoolStatus = (poolId: number, newStatus: PoolStatus) => {
-    const videoWithPool = videos.find((v) => v.poolId === poolId);
-    if (!videoWithPool) return;
+      setPredictions(unifiedPredictions);
+    } catch (error) {
+      console.error("Error refreshing predictions:", error);
+    } finally {
+      setIsPredictionsLoading(false);
+    }
+  }, [isAuthenticated]);
 
-    const now = new Date().toISOString();
-    const updates: Partial<UnifiedVideo> = {
-      poolStatus: newStatus,
-    };
+  const refreshWallet = useCallback(async () => {
+    if (!isAuthenticated || USE_MOCK_DATA) return;
 
-    // Add timestamps for lifecycle transitions
-    switch (newStatus) {
-      case "open":
-        updates.poolCreatedAt = now;
-        break;
-      case "awaiting_release":
-        updates.poolClosesAt = now;
-        break;
-      case "live_tracking":
-        updates.poolPublishedAt = now;
-        break;
-      case "closed":
-        updates.poolClosedAt = now;
-        break;
-      case "settled":
-        updates.poolSettledAt = now;
-        break;
+    setIsWalletLoading(true);
+    try {
+      const balance = await walletService.getBalance();
+      setWalletBalance(balance);
+    } catch (error) {
+      console.error("Error refreshing wallet:", error);
+    } finally {
+      setIsWalletLoading(false);
+    }
+  }, [isAuthenticated]);
+
+  const refreshAnalytics = useCallback(async () => {
+    if (!isAuthenticated || !user || USE_MOCK_DATA) return;
+
+    try {
+      if (user.role === "creator") {
+        const analytics = await analyticsService.getCreatorAnalytics(user.id);
+        setCreatorAnalytics(analytics);
+      } else if (user.role === "predictor") {
+        const analytics = await analyticsService.getPredictorAnalytics(user.id);
+        setPredictorAnalytics(analytics);
+      }
+    } catch (error) {
+      console.error("Error refreshing analytics:", error);
+    }
+  }, [isAuthenticated, user]);
+
+  const checkYouTubeConnection = useCallback(async () => {
+    if (!isAuthenticated) {
+      return;
     }
 
-    updateVideo(videoWithPool.id, updates);
-
-    // Show notification for status changes
-    addToast({
-      type: "info",
-      title: `Pool Status Updated`,
-      message: `Pool "${videoWithPool.title}" is now ${newStatus.replace("_", " ")}`,
-      duration: 3000,
-    });
-  };
-
-  const transitionPoolToNextStage = (poolId: number) => {
-    const videoWithPool = videos.find((v) => v.poolId === poolId);
-    if (!videoWithPool || !videoWithPool.poolStatus) return;
-
-    const currentStatus = videoWithPool.poolStatus;
-    let nextStatus: PoolStatus;
-
-    switch (currentStatus) {
-      case "open":
-        nextStatus = "awaiting_release";
-        break;
-      case "awaiting_release":
-        nextStatus = "live_tracking";
-        break;
-      case "live_tracking":
-        nextStatus = "closed";
-        break;
-      case "closed":
-        nextStatus = "settled";
-        break;
-      default:
-        return; // No transition available
+    if (USE_MOCK_DATA) {
+      return;
     }
 
-    updatePoolStatus(poolId, nextStatus);
-  };
+    setIsYouTubeLoading(true);
+    try {
+      const isConnected = await youtubeService.isConnected();
 
-  const calculateTimeRemaining = (
-    createdAt: string,
-    durationMinutes: number
-  ): string => {
-    const now = new Date();
-    const created = new Date(createdAt);
-    const deadline = new Date(created.getTime() + durationMinutes * 60 * 1000);
-    const remaining = deadline.getTime() - now.getTime();
+      if (isConnected) {
+        try {
+          const status = await youtubeService.getConnectionStatus();
 
-    if (remaining <= 0) return "0m";
-
-    const minutes = Math.floor(remaining / (1000 * 60));
-    const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
-
-    if (minutes > 0) {
-      return `${minutes}m ${seconds}s`;
-    } else {
-      return `${seconds}s`;
-    }
-  };
-
-  const checkAndUpdatePoolLifecycle = () => {
-    const now = new Date();
-
-    videos.forEach((video) => {
-      if (!video.poolId || !video.poolStatus || !video.poolCreatedAt) return;
-
-      const poolCreatedAt = new Date(video.poolCreatedAt);
-      const predictionWindow = video.poolPredictionWindow || 10; // Default 10 minutes
-      const predictionDeadline = new Date(
-        poolCreatedAt.getTime() + predictionWindow * 60 * 1000
-      );
-
-      // Update time remaining for open pools
-      if (video.poolStatus === "open") {
-        const timeRemaining = calculateTimeRemaining(
-          video.poolCreatedAt,
-          predictionWindow
-        );
-        updateVideo(video.id, { poolTimeRemaining: timeRemaining });
-
-        // Check if prediction period should end (open -> awaiting_release)
-        if (now >= predictionDeadline) {
-          updatePoolStatus(video.poolId, "awaiting_release");
-          return;
+          if (status.connected && status.channelId) {
+            setYoutubeChannel({
+              id: status.channelId,
+              name: `YouTube Channel`,
+              channelName: `YouTube Channel`,
+              channelId: status.channelId,
+              lastSyncAt: status.lastSyncAt,
+            });
+            setIsYouTubeConnected(true);
+          } else {
+            setIsYouTubeConnected(true);
+            setYoutubeChannel(null);
+          }
+        } catch {
+          setIsYouTubeConnected(true);
+          setYoutubeChannel(null);
         }
+      } else {
+        setIsYouTubeConnected(false);
+        setYoutubeChannel(null);
       }
-
-      // Check if video should be published (awaiting_release -> live_tracking)
-      if (
-        video.poolStatus === "awaiting_release" &&
-        video.status === "published"
-      ) {
-        updatePoolStatus(video.poolId, "live_tracking");
-        return;
-      }
-
-      // Check if tracking period should end (live_tracking -> closed)
-      if (video.poolStatus === "live_tracking" && video.poolPublishedAt) {
-        const publishedAt = new Date(video.poolPublishedAt);
-        const trackingDuration = 24; // 24 hours tracking period
-        const trackingDeadline = new Date(
-          publishedAt.getTime() + trackingDuration * 60 * 60 * 1000
-        );
-
-        if (now >= trackingDeadline) {
-          updatePoolStatus(video.poolId, "closed");
-          return;
-        }
-      }
-
-      // Check if settlement should complete (closed -> settled)
-      if (video.poolStatus === "closed" && video.poolClosedAt) {
-        const closedAt = new Date(video.poolClosedAt);
-        const settlementDelay = 1; // 1 hour processing time
-        const settlementDeadline = new Date(
-          closedAt.getTime() + settlementDelay * 60 * 60 * 1000
-        );
-
-        if (now >= settlementDeadline) {
-          updatePoolStatus(video.poolId, "settled");
-          return;
-        }
-      }
-    });
-  };
+    } catch (error: any) {
+      setIsYouTubeConnected(false);
+      setYoutubeChannel(null);
+      throw error;
+    } finally {
+      setIsYouTubeLoading(false);
+    }
+  }, [isAuthenticated]);
 
   // YouTube sync function
-  const syncYouTubeVideos = async () => {
-    console.log("AppContext: syncYouTubeVideos called");
-    console.log("AppContext: Current videos count before sync:", videos.length);
+  const syncYouTubeVideos = useCallback(async () => {
+    if (!isAuthenticated || USE_MOCK_DATA) return;
+
+    setIsYouTubeLoading(true);
     try {
-      const { syncYouTubeVideos } = await import("../lib/youtube-video-api");
-      const {
-        channel,
-        videos: youtubeVideos,
-        unlistedVideos,
-      } = await syncYouTubeVideos();
-
-      console.log("AppContext: Received from API:", {
-        channelTitle: channel.title,
-        totalVideos: youtubeVideos.length,
-        unlistedVideos: unlistedVideos.length,
-      });
-
-      // Convert YouTube videos to UnifiedVideo format
-      const nextVideoId = Math.max(...videos.map((v) => v.id), 0) + 1;
-      console.log(
-        "AppContext: Processing YouTube videos:",
-        youtubeVideos.map((v) => ({
-          id: v.id,
-          title: v.title,
-          status: v.status,
-        }))
-      );
-
-      const unifiedYouTubeVideos: UnifiedVideo[] = youtubeVideos.map(
-        (video, index) => ({
-          id: nextVideoId + index,
-          title: video.title,
-          thumbnail: video.thumbnail,
-          status: video.status,
-          views: video.viewCount,
-          likes: video.likeCount,
-          duration: video.duration,
-          uploadDate: new Date(video.publishedAt).toLocaleDateString(),
-          creator: channel.title,
-          creatorVerified: true,
-          creatorSubs: `${channel.subscriberCount.toLocaleString()} subs`,
-          category: "general",
-          youtubeId: video.id,
-          youtubeChannelId: video.channelId,
-          lastSyncedAt: new Date().toISOString(),
-          isYouTubeVideo: true,
-          // Pool fields - initially empty for new videos
-          poolId: null,
-          poolStatus: null,
-          poolQuestion: null,
-          poolParticipants: 0,
-          poolTotalStake: 0,
-          poolCreatorPledge: 0,
-          poolPredictorStakes: 0,
-          poolTimeRemaining: null,
-          poolTargetViews: null,
-          poolCurrentViews: 0,
-          poolCreatedAt: null,
-          poolClosesAt: null,
-          poolPublishedAt: null,
-          poolClosedAt: null,
-          poolSettledAt: null,
-          poolDuration: undefined,
-          poolPredictionWindow: undefined,
-          poolOdds: null,
-          poolYesStake: 0,
-          poolNoStake: 0,
-          poolYesCount: 0,
-          poolNoCount: 0,
-        })
-      );
-
-      // Merge with existing videos, replacing any existing YouTube videos
-      const existingNonYouTubeVideos = videos.filter((v) => !v.isYouTubeVideo);
-      const newVideos = [...existingNonYouTubeVideos, ...unifiedYouTubeVideos];
-
-      console.log(
-        `AppContext: Syncing ${unifiedYouTubeVideos.length} YouTube videos`
-      );
-      console.log(
-        "YouTube video statuses:",
-        unifiedYouTubeVideos.map((v) => ({ title: v.title, status: v.status }))
-      );
-      console.log(
-        "Unlisted videos:",
-        unifiedYouTubeVideos.filter((v) => v.status === "unlisted").length
-      );
-
-      console.log("AppContext: About to set videos:", {
-        currentVideosCount: videos.length,
-        newVideosCount: newVideos.length,
-        youtubeVideosCount: unifiedYouTubeVideos.length,
-      });
-
-      setVideos(newVideos);
-      setYoutubeChannel(channel);
+      await youtubeService.syncVideos();
       setLastYouTubeSync(new Date().toISOString());
 
-      console.log("AppContext: State update called");
-      console.log("AppContext: New videos count after sync:", newVideos.length);
-      console.log(
-        "AppContext: YouTube videos in new state:",
-        newVideos.filter((v) => v.isYouTubeVideo).length
-      );
+      // Add a small delay to ensure backend has finished processing
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      // Debug: Log the actual video data being set
-      console.log("AppContext: Setting videos with data:", {
-        totalVideos: newVideos.length,
-        youtubeVideos: newVideos.filter((v) => v.isYouTubeVideo).length,
-        sampleVideos: newVideos.slice(0, 3).map((v) => ({
-          id: v.id,
-          title: v.title,
-          isYouTube: v.isYouTubeVideo,
-          status: v.status,
-        })),
-      });
+      await refreshVideos();
 
       addToast({
         type: "success",
-        title: "YouTube Videos Synced!",
-        message: `Successfully synced ${youtubeVideos.length} videos from your channel.`,
-        duration: 4000,
+        title: "YouTube Sync Complete",
+        message: `Your videos have been synced successfully. ${videos.length} videos available.`,
       });
     } catch (error) {
-      console.error("Failed to sync YouTube videos:", error);
+      console.error("AppContext: Error syncing YouTube videos:", error);
       addToast({
         type: "error",
         title: "Sync Failed",
-        message:
-          error instanceof Error
-            ? error.message
-            : "Failed to sync YouTube videos",
-        duration: 5000,
+        message: "Failed to sync YouTube videos. Please try again.",
       });
+      throw error; // Re-throw so caller can show error
+    } finally {
+      setIsYouTubeLoading(false);
     }
+  }, [isAuthenticated, refreshVideos, videos.length]);
+
+  // Data management functions
+  const updateVideo = useCallback(
+    (id: string, updates: Partial<UnifiedVideo>) => {
+      setVideos((prev) =>
+        prev.map((video) =>
+          video.id === id ? { ...video, ...updates } : video
+        )
+      );
+    },
+    []
+  );
+
+  const getVideoById = useCallback(
+    (id: string): UnifiedVideo | undefined => {
+      return videos.find((video) => video.id === id);
+    },
+    [videos]
+  );
+
+  const addPool = useCallback(
+    async (poolData: Omit<UnifiedPool, "id">) => {
+      if (USE_MOCK_DATA) {
+        const newPool = {
+          ...poolData,
+          id: Date.now().toString(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        } as UnifiedPool;
+        setPools((prev) => [...prev, newPool]);
+        return;
+      }
+
+      try {
+        const newPool = await poolService.createPool({
+          videoId: poolData.videoId!.toString(),
+          question: poolData.question,
+          targetViews: poolData.targetViews || 10000,
+          duration: poolData.duration,
+          predictionWindow: poolData.predictionWindow,
+          creatorPledge: poolData.creatorPledge,
+        });
+
+        await refreshPools();
+        addToast({
+          type: "success",
+          title: "Pool Created",
+          message: "Your prediction pool has been created successfully.",
+        });
+      } catch (error) {
+        console.error("Error creating pool:", error);
+        addToast({
+          type: "error",
+          title: "Creation Failed",
+          message: "Failed to create pool. Please try again.",
+        });
+      }
+    },
+    [refreshPools]
+  );
+
+  const updatePool = useCallback(
+    async (id: string, updates: Partial<UnifiedPool>) => {
+      if (USE_MOCK_DATA) {
+        setPools((prev) =>
+          prev.map((pool) =>
+            pool.id === id
+              ? { ...pool, ...updates, updatedAt: new Date().toISOString() }
+              : pool
+          )
+        );
+        return;
+      }
+
+      try {
+        await poolService.updatePoolStatus(id, updates.status!);
+        await refreshPools();
+      } catch (error) {
+        console.error("Error updating pool:", error);
+      }
+    },
+    [refreshPools]
+  );
+
+  const deletePool = useCallback(
+    async (id: string) => {
+      if (USE_MOCK_DATA) {
+        setPools((prev) => prev.filter((pool) => pool.id !== id));
+        return;
+      }
+
+      try {
+        // Note: Backend might not support pool deletion
+        await refreshPools();
+      } catch (error) {
+        console.error("Error deleting pool:", error);
+      }
+    },
+    [refreshPools]
+  );
+
+  const getPoolById = useCallback(
+    (id: string): UnifiedPool | undefined => {
+      return pools.find((pool) => pool.id === id);
+    },
+    [pools]
+  );
+
+  const filteredPools = useCallback(
+    (filter: "active" | "settled" | "expired" | "all"): UnifiedPool[] => {
+      switch (filter) {
+        case "active":
+          return pools.filter((pool) =>
+            ["open", "awaiting_release", "live_tracking"].includes(pool.status)
+          );
+        case "settled":
+          return pools.filter((pool) => pool.status === "settled");
+        case "expired":
+          return pools.filter((pool) => pool.status === "closed");
+        case "all":
+        default:
+          return pools;
+      }
+    },
+    [pools]
+  );
+
+  const addPrediction = useCallback(
+    async (predictionData: Omit<UnifiedPrediction, "id">) => {
+      if (USE_MOCK_DATA) {
+        const newPrediction = {
+          ...predictionData,
+          id: Date.now().toString(),
+          predictedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        } as UnifiedPrediction;
+        setPredictions((prev) => [...prev, newPrediction]);
+        return;
+      }
+
+      try {
+        await predictionService.createPrediction({
+          poolId: predictionData.poolId,
+          choice: predictionData.choice,
+          stake: predictionData.stake,
+        });
+
+        await refreshPredictions();
+        await refreshPools();
+        addToast({
+          type: "success",
+          title: "Prediction Placed",
+          message: "Your prediction has been placed successfully.",
+        });
+      } catch (error) {
+        console.error("Error creating prediction:", error);
+        addToast({
+          type: "error",
+          title: "Prediction Failed",
+          message: "Failed to place prediction. Please try again.",
+        });
+      }
+    },
+    [refreshPredictions, refreshPools]
+  );
+
+  const updatePrediction = useCallback(
+    async (id: string, updates: Partial<UnifiedPrediction>) => {
+      if (USE_MOCK_DATA) {
+        setPredictions((prev) =>
+          prev.map((prediction) =>
+            prediction.id === id
+              ? {
+                  ...prediction,
+                  ...updates,
+                  updatedAt: new Date().toISOString(),
+                }
+              : prediction
+          )
+        );
+        return;
+      }
+
+      try {
+        // Note: Backend might not support prediction updates
+        await refreshPredictions();
+      } catch (error) {
+        console.error("Error updating prediction:", error);
+      }
+    },
+    [refreshPredictions]
+  );
+
+  const getPredictionsByPoolId = useCallback(
+    (poolId: string): UnifiedPrediction[] => {
+      return predictions.filter((prediction) => prediction.poolId === poolId);
+    },
+    [predictions]
+  );
+
+  const getPredictionsByPredictor = useCallback(
+    (predictorId: string): UnifiedPrediction[] => {
+      return predictions.filter(
+        (prediction) => prediction.predictorId === predictorId
+      );
+    },
+    [predictions]
+  );
+
+  const calculatePoolOdds = useCallback(
+    (poolId: string): { yes: number; no: number } => {
+      const pool = getPoolById(poolId);
+      if (!pool) return { yes: 0.5, no: 0.5 };
+
+      return PoolService.calculateOdds(pool.yesStake || 0, pool.noStake || 0);
+    },
+    [getPoolById]
+  );
+
+  // Pool lifecycle management
+  const updatePoolStatus = useCallback(
+    async (poolId: string, newStatus: string) => {
+      await updatePool(poolId, {
+        status: newStatus as
+          | "open"
+          | "awaiting_release"
+          | "live_tracking"
+          | "closed"
+          | "settled",
+      });
+    },
+    [updatePool]
+  );
+
+  const transitionPoolToNextStage = useCallback(
+    async (poolId: string) => {
+      const pool = getPoolById(poolId);
+      if (!pool) return;
+
+      const statusTransitions: Record<string, string> = {
+        open: "awaiting_release",
+        awaiting_release: "live_tracking",
+        live_tracking: "closed",
+        closed: "settled",
+      };
+
+      const nextStatus = statusTransitions[pool.status];
+      if (nextStatus) {
+        await updatePoolStatus(poolId, nextStatus);
+      }
+    },
+    [getPoolById, updatePoolStatus]
+  );
+
+  const checkAndUpdatePoolLifecycle = useCallback(async () => {
+    if (USE_MOCK_DATA) return;
+
+    // This would typically be handled by the backend with scheduled tasks
+    // For now, we'll just refresh the pools to get the latest status
+    await refreshPools();
+  }, [refreshPools]);
+
+  // Toast management
+  const addToast = useCallback((toast: Omit<ToastData, "id">) => {
+    const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+    const newToast: ToastData = { ...toast, id };
+    setToasts((prev) => [...prev, newToast]);
+  }, []);
+
+  const removeToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  }, []);
+
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
+  const contextValue: AppState = {
+    // UI State
+    sidebarOpen,
+    setSidebarOpen,
+    theme,
+    setTheme,
+
+    // Loading States
+    isLoading,
+    isYouTubeLoading,
+    isPoolsLoading,
+    isPredictionsLoading,
+    isWalletLoading,
+
+    // Data State
+    videos,
+    pools,
+    predictions,
+    walletBalance,
+    creatorAnalytics,
+    predictorAnalytics,
+
+    // YouTube Integration
+    youtubeChannel,
+    isYouTubeConnected,
+    lastYouTubeSync,
+    syncYouTubeVideos,
+
+    // Data Management Functions
+    updateVideo,
+    getVideoById,
+    addPool,
+    updatePool,
+    deletePool,
+    getPoolById,
+    filteredPools,
+    addPrediction,
+    updatePrediction,
+    getPredictionsByPoolId,
+    getPredictionsByPredictor,
+    calculatePoolOdds,
+
+    // Pool Lifecycle Management
+    updatePoolStatus,
+    transitionPoolToNextStage,
+    checkAndUpdatePoolLifecycle,
+
+    // Toast Management
+    toasts,
+    addToast,
+    removeToast,
+
+    // Error Handling
+    error,
+    clearError,
+
+    // Refresh Functions
+    refreshVideos,
+    refreshPools,
+    refreshPredictions,
+    refreshWallet,
+    refreshAnalytics,
+    checkYouTubeConnection,
   };
 
-  // Set up automatic lifecycle checking (every 30 seconds for responsive 10-minute timer)
-  React.useEffect(() => {
-    const interval = setInterval(checkAndUpdatePoolLifecycle, 30 * 1000);
-    return () => clearInterval(interval);
-  }, [videos]);
-
-  // Debug: Monitor videos state changes
-  React.useEffect(() => {
-    console.log("AppContext: Videos state changed:", {
-      totalVideos: videos.length,
-      youtubeVideos: videos.filter((v) => v.isYouTubeVideo).length,
-      unlistedVideos: videos.filter((v) => v.status === "unlisted").length,
-    });
-  }, [videos]);
-
   return (
-    <AppContext.Provider
-      value={{
-        sidebarOpen,
-        setSidebarOpen,
-        theme,
-        setTheme,
-        videos,
-        setVideos,
-        updateVideo,
-        getVideoById,
-        youtubeChannel,
-        setYoutubeChannel,
-        syncYouTubeVideos,
-        isYouTubeConnected: !!youtubeChannel,
-        lastYouTubeSync,
-        pools,
-        addPool,
-        updatePool,
-        deletePool,
-        getPoolById,
-        filteredPools,
-        predictions,
-        addPrediction,
-        updatePrediction,
-        getPredictionsByPoolId,
-        getPredictionsByPredictor,
-        calculatePoolOdds,
-        updatePoolStatus,
-        transitionPoolToNextStage,
-        checkAndUpdatePoolLifecycle,
-        toasts,
-        addToast,
-        removeToast,
-      }}
-    >
-      {children}
-    </AppContext.Provider>
+    <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>
   );
 }
 

@@ -1,15 +1,10 @@
 import type { Route } from "./+types/pools";
-import {
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  UserButton,
-} from "@clerk/react-router";
 import { Link, useNavigate } from "react-router";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useState, useEffect } from "react";
 import { CATEGORIES } from "../lib/constants";
 import { useAppContext } from "../contexts/AppContext";
+import { useAuth } from "../contexts/AuthContext";
 import {
   calculateRemainingTime,
   isTimerUrgent,
@@ -38,6 +33,7 @@ export function meta({}: Route.MetaArgs) {
 
 export default function PoolsPage() {
   const navigate = useNavigate();
+  const { isAuthenticated, user, logout } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -120,27 +116,40 @@ export default function PoolsPage() {
               </span>
             </Link>
             <div className="flex items-center space-x-4">
-              <SignedIn>
-                <div className="flex items-center space-x-2 text-orange-600">
-                  <FontAwesomeIcon icon="wallet" className="w-5 h-5" />
-                  <span className="font-semibold">$2,450.00</span>
-                </div>
-                <UserButton afterSignOutUrl="/" />
-              </SignedIn>
-              <SignedOut>
-                <Link
-                  to="/onboarding"
-                  className="text-gray-600 hover:text-gray-800 text-sm font-medium"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  to="/onboarding"
-                  className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
-                >
-                  Get Started
-                </Link>
-              </SignedOut>
+              {isAuthenticated ? (
+                <>
+                  <div className="flex items-center space-x-2 text-orange-600">
+                    <FontAwesomeIcon icon="wallet" className="w-5 h-5" />
+                    <span className="font-semibold">$2,450.00</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">
+                      {user?.name || user?.email || "User"}
+                    </span>
+                    <button
+                      onClick={logout}
+                      className="text-gray-600 hover:text-gray-800 text-sm font-medium"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    className="text-gray-600 hover:text-gray-800 text-sm font-medium"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    to="/signup"
+                    className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
+                  >
+                    Get Started
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -343,8 +352,8 @@ export default function PoolsPage() {
                   </div>
 
                   {/* Action Button */}
-                  <SignedIn>
-                    {(() => {
+                  {isAuthenticated ? (
+                    (() => {
                       const isPoolOpen = pool.status === "open";
                       return (
                         <button
@@ -361,16 +370,15 @@ export default function PoolsPage() {
                           {isPoolOpen ? "Predict Now" : "Pool Closed"}
                         </button>
                       );
-                    })()}
-                  </SignedIn>
-                  <SignedOut>
+                    })()
+                  ) : (
                     <Link
-                      to="/onboarding"
+                      to="/login"
                       className="w-full bg-orange-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors flex items-center justify-center"
                     >
                       Sign In to Predict
                     </Link>
-                  </SignedOut>
+                  )}
                 </div>
               </div>
             ))}

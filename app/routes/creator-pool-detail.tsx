@@ -1,8 +1,8 @@
 import type { Route } from "./+types/creator-pool-detail";
 import { useState } from "react";
-import { Link, useSearchParams } from "react-router";
+import { Link, useSearchParams  } from "react-router";
+import { useAuth } from "../contexts/AuthContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useUser } from "@clerk/react-router";
 import {
   faClock,
   faCheckCircle,
@@ -70,7 +70,7 @@ export default function CreatorPoolDetailPage({
     getPredictionsByPoolId,
     transitionPoolToNextStage,
   } = useAppContext();
-  const { user } = useUser();
+  const { user } = useAuth();
   const statusParam = searchParams.get("status") || "active";
 
   const poolData = getPoolById(poolId) ||

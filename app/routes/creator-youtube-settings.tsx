@@ -45,7 +45,6 @@ export default function CreatorYouTubeSettings() {
   // Use AppContext instead of local state
   const {
     youtubeChannel,
-    setYoutubeChannel,
     syncYouTubeVideos: contextSyncYouTubeVideos,
     isYouTubeConnected,
     lastYouTubeSync,
@@ -62,45 +61,12 @@ export default function CreatorYouTubeSettings() {
         type: "success",
         message: "YouTube channel connected successfully!",
       });
-      // Update AppContext with connection info
-      const channelInfo = {
-        id: "UCov_rKILCSYoqumH3FZCDsg", // From the terminal logs
-        title: "Your YouTube Channel",
-        thumbnail: "https://via.placeholder.com/150",
-        subscriberCount: 0,
-        description: "Your YouTube Channel",
-        videoCount: 0,
-      };
-      setYoutubeChannel(channelInfo);
-
-      // Store connection data in localStorage
-      // Note: The access token is stored in cookies by the callback route
-      // We'll need to get it from there or store it separately
-      const connectionData = {
-        status: "connected",
-        lastSyncedAt: new Date().toLocaleString(),
-        channelInfo: {
-          id: "UCov_rKILCSYoqumH3FZCDsg", // From the terminal logs
-          title: "Your YouTube Channel",
-          thumbnail: "https://via.placeholder.com/150",
-          subscriberCount: 0,
-        },
-        connectedAt: new Date().toISOString(),
-        // We'll need to get the access token from cookies or store it here
-        // For now, we'll add a placeholder
-        hasAccessToken: true,
-      };
-      localStorage.setItem(
-        "youtube_connection",
-        JSON.stringify(connectionData)
-      );
+      // Connection is managed by AppContext - no need to set it manually
     } else if (youtubeError) {
       setOauthMessage({
         type: "error",
         message: `Connection failed: ${youtubeError}`,
       });
-      // Clear any existing connection
-      setYoutubeChannel(null);
     }
 
     // Clear URL parameters after processing
@@ -112,31 +78,13 @@ export default function CreatorYouTubeSettings() {
     }
   }, [searchParams]);
 
-  // Check for stored connection status on mount
-  useEffect(() => {
-    // Check if we have a stored connection
-    const storedConnection = localStorage.getItem("youtube_connection");
-    if (storedConnection) {
-      try {
-        const connection = JSON.parse(storedConnection);
-        // Update AppContext with stored connection
-        if (connection.channelInfo) {
-          setYoutubeChannel(connection.channelInfo);
-        }
-      } catch (error) {
-        console.error("Failed to parse stored connection:", error);
-        localStorage.removeItem("youtube_connection");
-      }
-    }
-  }, []);
+  // Connection status is managed by AppContext - no need to check localStorage
 
   const handleSync = async () => {
     setSyncError(null);
 
     try {
-      // Use the AppContext sync function
       await contextSyncYouTubeVideos();
-      console.log("Sync completed successfully");
     } catch (error) {
       console.error("Sync failed:", error);
       setSyncError(
@@ -146,11 +94,7 @@ export default function CreatorYouTubeSettings() {
   };
 
   const handleDisconnect = () => {
-    // Clear stored connection
-    localStorage.removeItem("youtube_connection");
-
-    // Clear AppContext
-    setYoutubeChannel(null);
+    // TODO: Implement disconnect via YouTube service
     setSyncError(null);
     setOauthMessage(null);
   };
@@ -360,7 +304,7 @@ export default function CreatorYouTubeSettings() {
               <div>
                 <h4 className="font-medium text-gray-900">Total Videos</h4>
                 <p className="text-2xl font-bold text-gray-900">
-                  {videos.filter((v) => v.isYouTubeVideo).length}
+                  {videos.length}
                 </p>
               </div>
             </div>
@@ -378,11 +322,7 @@ export default function CreatorYouTubeSettings() {
               <div>
                 <h4 className="font-medium text-gray-900">Unlisted Videos</h4>
                 <p className="text-2xl font-bold text-gray-900">
-                  {
-                    videos.filter(
-                      (v) => v.isYouTubeVideo && v.status === "unlisted"
-                    ).length
-                  }
+                  {videos.filter((v) => v.status === "unlisted").length}
                 </p>
               </div>
             </div>
@@ -400,11 +340,7 @@ export default function CreatorYouTubeSettings() {
               <div>
                 <h4 className="font-medium text-gray-900">Public Videos</h4>
                 <p className="text-2xl font-bold text-gray-900">
-                  {
-                    videos.filter(
-                      (v) => v.isYouTubeVideo && v.status === "public"
-                    ).length
-                  }
+                  {videos.filter((v) => v.status === "public").length}
                 </p>
               </div>
             </div>
@@ -481,79 +417,74 @@ export default function CreatorYouTubeSettings() {
       </div>
 
       {/* Synced Videos */}
-      {isYouTubeConnected &&
-        videos.filter((v) => v.isYouTubeVideo).length > 0 && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-medium text-gray-900">
-                Your YouTube Videos
-              </h3>
-              <span className="text-sm text-gray-500">
-                {videos.filter((v) => v.isYouTubeVideo).length} videos synced
-              </span>
-            </div>
-
-            <div className="space-y-4">
-              {videos
-                .filter((v) => v.isYouTubeVideo)
-                .slice(0, 10)
-                .map((video) => (
-                  <div
-                    key={video.id}
-                    className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg"
-                  >
-                    <img
-                      src={video.thumbnail}
-                      alt={video.title}
-                      className="w-20 h-14 object-cover rounded"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium text-gray-900 truncate">
-                        {video.title}
-                      </h4>
-                      <div className="flex items-center space-x-4 text-xs text-gray-500 mt-1">
-                        <span
-                          className={`px-2 py-1 rounded-full ${
-                            video.status === "unlisted"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : video.status === "public"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {video.status}
-                        </span>
-                        <span>{video.views.toLocaleString()} views</span>
-                        <span>{video.likes.toLocaleString()} likes</span>
-                        <span>
-                          {new Date(video.uploadDate).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex-shrink-0">
-                      <a
-                        href={`https://www.youtube.com/watch?v=${video.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-cyan-600 hover:text-cyan-800"
-                      >
-                        <FontAwesomeIcon icon={faVideo} className="w-4 h-4" />
-                      </a>
-                    </div>
-                  </div>
-                ))}
-
-              {videos.filter((v) => v.isYouTubeVideo).length > 10 && (
-                <div className="text-center py-4">
-                  <p className="text-sm text-gray-500">
-                    Showing 10 of{" "}
-                    {videos.filter((v) => v.isYouTubeVideo).length} videos
-                  </p>
-                </div>
-              )}
-            </div>
+      {isYouTubeConnected && videos.length > 0 && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-medium text-gray-900">
+              Your YouTube Videos
+            </h3>
+            <span className="text-sm text-gray-500">
+              {videos.length} videos synced
+            </span>
           </div>
-        )}
+
+          <div className="space-y-4">
+            {videos.slice(0, 10).map((video) => (
+              <div
+                key={video.id}
+                className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg"
+              >
+                <img
+                  src={video.thumbnail}
+                  alt={video.title}
+                  className="w-20 h-14 object-cover rounded"
+                />
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-medium text-gray-900 truncate">
+                    {video.title}
+                  </h4>
+                  <div className="flex items-center space-x-4 text-xs text-gray-500 mt-1">
+                    <span
+                      className={`px-2 py-1 rounded-full ${
+                        video.status === "unlisted"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : video.status === "public"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {video.status}
+                    </span>
+                    <span>{video.viewCount.toLocaleString()} views</span>
+                    <span>{video.likeCount.toLocaleString()} likes</span>
+                    <span>
+                      {new Date(video.publishedAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex-shrink-0">
+                  <a
+                    href={`https://www.youtube.com/watch?v=${video.youtubeId || video.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-cyan-600 hover:text-cyan-800"
+                  >
+                    <FontAwesomeIcon icon={faVideo} className="w-4 h-4" />
+                  </a>
+                </div>
+              </div>
+            ))}
+
+            {videos.length > 10 && (
+              <div className="text-center py-4">
+                <p className="text-sm text-gray-500">
+                  Showing 10 of {videos.length} videos
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Privacy Notice */}
       <div className="mt-8 bg-cyan-50 border border-cyan-200 rounded-lg p-6">

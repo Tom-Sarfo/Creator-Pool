@@ -7,7 +7,7 @@ import {
   faCheckCircle,
   faSync,
 } from "@fortawesome/free-solid-svg-icons";
-// import { youtubeAPI } from "../lib/youtube-api";
+import { youtubeService } from "../services/youtube.service";
 
 interface YouTubeConnectionButtonProps {
   onConnectionSuccess?: (data: any) => void;
@@ -18,8 +18,6 @@ export default function YouTubeConnectionButton({
   onConnectionSuccess,
   onConnectionError,
 }: YouTubeConnectionButtonProps) {
-  console.log("YouTubeConnectionButton: Component mounted");
-
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<
@@ -50,25 +48,14 @@ export default function YouTubeConnectionButton({
     setError(null);
 
     try {
-      console.log("YouTubeConnectionButton: Starting OAuth flow");
+      const response = await youtubeService.getAuthUrl();
+      const authUrl = response.authUrl || (response as any).data?.authUrl;
 
-      // Call our API to get the authorization URL
-      const response = await fetch("/api/youtube/auth");
-      console.log(
-        "YouTubeConnectionButton: Auth response status:",
-        response.status
-      );
-
-      const data = await response.json();
-      console.log("YouTubeConnectionButton: Auth response data:", data);
-
-      if (!data.success) {
-        throw new Error(data.error || "Failed to get authorization URL");
+      if (!authUrl) {
+        throw new Error("Failed to get authorization URL from backend");
       }
 
-      console.log("YouTubeConnectionButton: Redirecting to:", data.authUrl);
-      // Redirect to YouTube OAuth
-      window.location.href = data.authUrl;
+      window.location.href = authUrl;
     } catch (err) {
       const errorMessage =
         err instanceof Error
@@ -143,10 +130,7 @@ export default function YouTubeConnectionButton({
     <div className="space-y-4">
       {connectionStatus === "disconnected" && (
         <button
-          onClick={() => {
-            console.log("YouTubeConnectionButton: Button clicked!");
-            handleConnect();
-          }}
+          onClick={handleConnect}
           disabled={isLoading}
           className="w-full bg-red-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
         >
