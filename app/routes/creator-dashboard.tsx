@@ -387,10 +387,6 @@ export default function CreatorDashboard() {
               <h3 className="text-base sm:text-lg font-medium text-gray-900">
                 YouTube Channel Connection
               </h3>
-              <div
-                className={`w-3 h-3 rounded-full ${isYouTubeConnected ? "bg-green-500 animate-pulse" : "bg-yellow-500"}`}
-                title={isYouTubeConnected ? "Connected" : "Not Connected"}
-              ></div>
             </div>
 
             {isYouTubeConnected && youtubeChannel ? (
@@ -418,18 +414,7 @@ export default function CreatorDashboard() {
               </p>
             )}
 
-            <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-500">
-              <div
-                className={`w-2 h-2 rounded-full ${isYouTubeConnected ? "bg-green-500" : "bg-yellow-500"}`}
-              ></div>
-              <span>
-                {isYouTubeLoading
-                  ? "Checking connection..."
-                  : isYouTubeConnected
-                    ? `Connected${lastYouTubeSync ? ` • Last synced: ${new Date(lastYouTubeSync).toLocaleString()}` : ""}`
-                    : "Not connected"}
-              </span>
-            </div>
+            {/* Status dots and debug text removed for cleaner UI */}
           </div>
           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
             {isYouTubeConnected ? (
@@ -445,58 +430,10 @@ export default function CreatorDashboard() {
                   />
                   <span>{isYouTubeLoading ? "Syncing..." : "Sync Videos"}</span>
                 </button>
-                <button
-                  onClick={checkYouTubeConnection}
-                  disabled={isYouTubeLoading}
-                  className="px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors inline-flex items-center justify-center space-x-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Refresh connection status"
-                >
-                  <FontAwesomeIcon icon={faSync} className="w-4 h-4" />
-                  <span>Check Status</span>
-                </button>
               </>
             ) : (
               <>
                 <YouTubeConnectionButton />
-                <button
-                  onClick={async () => {
-                    try {
-                      await checkYouTubeConnection();
-                      addToast({
-                        title: "Connection Check",
-                        message: isYouTubeConnected
-                          ? "YouTube is connected!"
-                          : "YouTube is not connected. Please connect your channel.",
-                        type: isYouTubeConnected ? "success" : "info",
-                      });
-                    } catch (error: any) {
-                      console.error("Connection check failed:", error);
-                      console.error("Error details:", {
-                        status: error?.status,
-                        statusText: error?.statusText,
-                        message: error?.message,
-                      });
-                      addToast({
-                        title: "Connection Check Failed",
-                        message:
-                          error?.message ||
-                          "Failed to check YouTube connection. Please try again.",
-                        type: "error",
-                      });
-                    }
-                  }}
-                  disabled={isYouTubeLoading}
-                  className="px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors inline-flex items-center justify-center space-x-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Manually check connection status"
-                >
-                  <FontAwesomeIcon
-                    icon={faSync}
-                    className={`w-4 h-4 ${isYouTubeLoading ? "animate-spin" : ""}`}
-                  />
-                  <span>
-                    {isYouTubeLoading ? "Checking..." : "Check Status"}
-                  </span>
-                </button>
               </>
             )}
           </div>
@@ -537,9 +474,11 @@ export default function CreatorDashboard() {
         <StatsCard
           title="Total Royalties Earned"
           value={`$${pools
-            .filter((p) => p.creatorEarnings)
-            .reduce((sum, pool) => sum + (pool.creatorEarnings || 0), 0)
-            .toFixed(2)}`}
+            .reduce((sum, pool) => sum + Number(pool.creatorEarnings ?? 0), 0)
+            .toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}`}
           icon={faTrophy}
           iconColor="text-red-600"
           iconBgColor="bg-red-100"

@@ -52,47 +52,115 @@ export function validateStake(
   return { valid: true };
 }
 
-// Calculate remaining time for open pools with precise formatting
-export function calculateRemainingTime(pool: Pool, currentTime: Date) {
-  if (pool.status !== "open" || !pool.createdAt) {
-    return pool.timeRemaining || "N/A";
+// Parse backend time format "MM:SS" to { minutes, seconds }
+function parseTimeRemaining(
+  timeStr: string
+): { minutes: number; seconds: number } | null {
+  const parts = timeStr.split(":");
+  if (parts.length !== 2) return null;
+
+  const minutes = parseInt(parts[0], 10);
+  const seconds = parseInt(parts[1], 10);
+
+  if (isNaN(minutes) || isNaN(seconds)) return null;
+  return { minutes, seconds };
+}
+
+// Format minutes:seconds to MM:SS
+function formatMinutesSeconds(totalMinutes: number, seconds: number): string {
+  return `${totalMinutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+}
+
+// Format longer durations to "Xd Yh Zm"
+function formatLongDuration(totalMinutes: number, seconds: number): string {
+  const days = Math.floor(totalMinutes / (24 * 60));
+  const remainingMinutes = totalMinutes % (24 * 60);
+  const hours = Math.floor(remainingMinutes / 60);
+  const minutes = remainingMinutes % 60;
+
+  const parts: string[] = [];
+  if (days > 0) parts.push(`${days}d`);
+  if (hours > 0) parts.push(`${hours}h`);
+  if (minutes > 0 && days === 0) parts.push(`${minutes}m`);
+
+  return parts.length > 0
+    ? parts.join(" ")
+    : seconds > 0
+      ? `${seconds}s`
+      : "00:00";
+}
+
+// Format time remaining from backend (format: "42113:45" = minutes:seconds)
+export function formatTimeRemaining(
+  timeRemaining: string | undefined | null
+): string {
+  if (!timeRemaining || timeRemaining === "N/A") return "N/A";
+
+  const parsed = parseTimeRemaining(timeRemaining);
+  if (!parsed) return timeRemaining;
+
+  const { minutes: totalMinutes, seconds } = parsed;
+
+  if (totalMinutes < 60) {
+    return formatMinutesSeconds(totalMinutes, seconds);
   }
 
-  const poolCreatedAt = new Date(pool.createdAt);
-  const predictionWindow = pool.predictionWindow || 10; // Default 10 minutes
+  return formatLongDuration(totalMinutes, seconds);
+}
+
+// Calculate remaining time for open pools with precise formatting
+export function calculateRemainingTime(pool: Pool, currentTime: Date): string {
+  if (pool.timeRemaining && pool.timeRemaining !== "N/A") {
+    const parsed = parseTimeRemaining(pool.timeRemaining);
+    if (parsed) {
+      const { minutes: totalMinutes, seconds } = parsed;
+      // For open pools under 1 hour, show MM:SS format for precision
+      if (pool.status === "open" && totalMinutes < 60) {
+        return formatMinutesSeconds(totalMinutes, seconds);
+      }
+      return formatTimeRemaining(pool.timeRemaining);
+    }
+    return pool.timeRemaining;
+  }
+
+  // Fallback to calculation if backend value is not available
+  if (pool.status !== "open" || !pool.createdAt) return "N/A";
+
   const deadline = new Date(
-    poolCreatedAt.getTime() + predictionWindow * 60 * 1000
+    new Date(pool.createdAt).getTime() +
+      (pool.predictionWindow || 43200) * 60 * 1000
   );
   const remaining = deadline.getTime() - currentTime.getTime();
 
-  if (remaining <= 0) {
-    return "00:00";
-  }
+  if (remaining <= 0) return "00:00";
 
   const minutes = Math.floor(remaining / (1000 * 60));
   const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
-
-  // Format with leading zeros for better visual consistency
-  const formattedMinutes = minutes.toString().padStart(2, "0");
-  const formattedSeconds = seconds.toString().padStart(2, "0");
-
-  return `${formattedMinutes}:${formattedSeconds}`;
+  return formatMinutesSeconds(minutes, seconds);
 }
 
 // Check if timer is in final 30 seconds (for visual urgency)
-export function isTimerUrgent(pool: Pool, currentTime: Date) {
-  if (pool.status !== "open" || !pool.createdAt) {
+export function isTimerUrgent(pool: Pool, currentTime: Date): boolean {
+  if (pool.status !== "open") return false;
+
+  if (pool.timeRemaining && pool.timeRemaining !== "N/A") {
+    const parsed = parseTimeRemaining(pool.timeRemaining);
+    if (parsed) {
+      const totalSeconds = parsed.minutes * 60 + parsed.seconds;
+      return totalSeconds <= 30 && totalSeconds > 0;
+    }
     return false;
   }
 
-  const poolCreatedAt = new Date(pool.createdAt);
-  const predictionWindow = pool.predictionWindow || 10;
+  // Fallback to calculation
+  if (!pool.createdAt) return false;
+
   const deadline = new Date(
-    poolCreatedAt.getTime() + predictionWindow * 60 * 1000
+    new Date(pool.createdAt).getTime() +
+      (pool.predictionWindow || 10) * 60 * 1000
   );
   const remaining = deadline.getTime() - currentTime.getTime();
-
-  return remaining <= 30000 && remaining > 0; // Last 30 seconds
+  return remaining <= 30000 && remaining > 0;
 }
 
 // Utility to extract duration from question text and calculate time remaining

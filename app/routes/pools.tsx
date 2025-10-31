@@ -10,6 +10,7 @@ import {
   isTimerUrgent,
   getPoolStatusColor,
   getPoolStatusLabel,
+  calculateDynamicOdds,
 } from "../lib/utils";
 import PlayButtonOverlay from "../components/PlayButtonOverlay";
 import Pagination from "../components/Pagination";
@@ -286,6 +287,12 @@ export default function PoolsPage() {
                   <div className="flex space-x-2 mb-4">
                     {(() => {
                       const isPoolOpen = pool.status === "open";
+                      const derivedOdds = calculateDynamicOdds(
+                        Number(pool.yesStake || 0),
+                        Number(pool.noStake || 0)
+                      );
+                      const yesOdds = Number(derivedOdds?.yes ?? 2.0);
+                      const noOdds = Number(derivedOdds?.no ?? 2.0);
                       return (
                         <>
                           <div
@@ -307,14 +314,17 @@ export default function PoolsPage() {
                                 isPoolOpen ? "text-green-700" : "text-gray-600"
                               }`}
                             >
-                              {pool.odds?.yes || 0}
+                              {yesOdds.toFixed(2)}x
                             </div>
                             <div
                               className={`text-xs ${
                                 isPoolOpen ? "text-green-600" : "text-gray-500"
                               }`}
                             >
-                              {Math.round(pool.odds?.yes || 0 * 100)}% chance
+                              {Math.round(
+                                (yesOdds / (yesOdds + noOdds)) * 100
+                              ) || 0}
+                              % chance
                             </div>
                           </div>
                           <div
@@ -336,14 +346,17 @@ export default function PoolsPage() {
                                 isPoolOpen ? "text-red-700" : "text-gray-600"
                               }`}
                             >
-                              {pool.odds?.no || 0}
+                              {noOdds.toFixed(2)}x
                             </div>
                             <div
                               className={`text-xs ${
                                 isPoolOpen ? "text-red-600" : "text-gray-500"
                               }`}
                             >
-                              {Math.round(pool.odds?.no || 0 * 100)}% chance
+                              {Math.round(
+                                (noOdds / (yesOdds + noOdds)) * 100
+                              ) || 0}
+                              % chance
                             </div>
                           </div>
                         </>

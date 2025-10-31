@@ -260,7 +260,7 @@ export class PoolService {
     }
 
     const poolCreatedAt = new Date(pool.createdAt);
-    const predictionWindow = pool.predictionWindow || 10; // Default 10 minutes
+    const predictionWindow = pool.predictionWindow || 43200; // Default 30 days in minutes
     const deadline = new Date(
       poolCreatedAt.getTime() + predictionWindow * 60 * 1000
     );

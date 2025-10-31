@@ -19,7 +19,6 @@ import {
 } from "../services";
 import type {
   Video,
-  Pool,
   Prediction,
   User,
   WalletBalanceResponse,
@@ -28,11 +27,7 @@ import type {
 } from "../types/api";
 import type { ToastData } from "../components/Toast";
 
-// Feature flag for mock data fallback
-const USE_MOCK_DATA = API_CONFIG.USE_MOCK_DATA;
-
-// Mock data imports (fallback)
-import { ALL_VIDEOS } from "../lib/constants";
+// Mock data removed – always use real backend data
 
 // Unified interfaces for backward compatibility
 export interface UnifiedVideo {
@@ -124,6 +119,8 @@ export interface UnifiedPool {
   category?: string;
   timeRemaining: string;
 }
+
+export type Pool = UnifiedPool;
 
 export interface UnifiedPrediction extends Prediction {
   // Legacy fields for backward compatibility
@@ -241,9 +238,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isAuthenticated && user) {
       initializeData();
-    } else if (USE_MOCK_DATA) {
-      // Fallback to mock data when not authenticated
-      initializeMockData();
     }
   }, [isAuthenticated, user]);
 
@@ -286,108 +280,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   }, [isAuthenticated, user, wsClient, wsOn, wsOff]);
 
-  // Initialize mock data (fallback)
-  const initializeMockData = useCallback(() => {
-    if (!USE_MOCK_DATA) return;
-
-    // Convert mock videos to UnifiedVideo format
-    const mockVideos: UnifiedVideo[] = ALL_VIDEOS.map((video) => ({
-      id: video.id.toString(),
-      youtubeId: `mock-${video.id}`,
-      title: video.title,
-      description: "",
-      thumbnail: video.thumbnail,
-      status: video.status as "unlisted" | "private" | "public",
-      viewCount: video.views,
-      likeCount: video.likes,
-      commentCount: 0,
-      duration: video.duration,
-      publishedAt: video.uploadDate,
-      lastSyncedAt: undefined,
-      creatorId: "mock-creator",
-      createdAt: video.uploadDate,
-      updatedAt: video.uploadDate,
-      // Legacy fields
-      creator: video.creator,
-      creatorVerified: video.creatorVerified,
-      creatorSubs: video.creatorSubs,
-      category: video.category,
-      // Pool fields
-      poolId: video.poolId,
-      poolStatus: video.poolStatus,
-      poolQuestion: video.poolQuestion,
-      poolParticipants: video.poolParticipants,
-      poolTotalStake: video.poolTotalStake,
-      poolCreatorPledge: video.poolCreatorPledge,
-      poolPredictorStakes: video.poolPredictorStakes,
-      poolTimeRemaining: video.poolTimeRemaining,
-      poolTargetViews: video.poolTargetViews,
-      poolCurrentViews: video.poolCurrentViews,
-      poolCreatedAt: video.poolCreatedAt,
-      poolClosesAt: undefined,
-      poolPublishedAt: undefined,
-      poolClosedAt: undefined,
-      poolSettledAt: undefined,
-      poolDuration: undefined,
-      poolPredictionWindow: undefined,
-      poolOdds: video.poolOdds,
-      poolYesStake: video.poolYesStake,
-      poolNoStake: video.poolNoStake,
-      poolYesCount: video.poolYesCount,
-      poolNoCount: video.poolNoCount,
-    }));
-
-    setVideos(mockVideos);
-
-    // Derive pools from mock videos
-    const mockPools: UnifiedPool[] = ALL_VIDEOS.filter(
-      (video) => video.poolId !== null
-    ).map((video, index) => ({
-      id: String(video.poolId),
-      videoId: video.id.toString(),
-      creatorId: "mock-creator",
-      question: video.poolQuestion || "Mock question",
-      targetViews: video.poolTargetViews || 10000,
-      duration: 7,
-      predictionWindow: 10,
-      status: (video.poolStatus || "open") as
-        | "open"
-        | "awaiting_release"
-        | "live_tracking"
-        | "closed"
-        | "settled",
-      totalStake: video.poolTotalStake || 0,
-      creatorPledge: video.poolCreatorPledge || 0,
-      predictorStakes: video.poolPredictorStakes || 0,
-      yesStake: video.poolYesStake || 0,
-      noStake: video.poolNoStake || 0,
-      yesCount: video.poolYesCount || 0,
-      noCount: video.poolNoCount || 0,
-      participants: video.poolParticipants || 0,
-      currentViews: video.poolCurrentViews || 0,
-      yesOdds: 0.5,
-      noOdds: 0.5,
-      result: undefined,
-      creatorEarnings: 0,
-      closesAt: undefined,
-      publishedAt: undefined,
-      closedAt: undefined,
-      settledAt: undefined,
-      createdAt: video.poolCreatedAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      // Legacy fields
-      title: video.title,
-      videoTitle: video.title,
-      creator: video.creator,
-      creatorVerified: video.creatorVerified,
-      creatorSubs: video.creatorSubs,
-      thumbnail: video.thumbnail,
-      category: video.category,
-      timeRemaining: video.poolTimeRemaining || "10:00",
-    }));
-
-    setPools(mockPools);
-  }, []);
+  // Mock initialization removed
 
   // Initialize real data from API
   const initializeData = useCallback(async () => {
@@ -420,7 +313,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Data refresh functions
   const refreshVideos = useCallback(async () => {
-    if (!isAuthenticated || USE_MOCK_DATA) return;
+    if (!isAuthenticated) return;
 
     try {
       const apiVideos = await youtubeService.getAllVideos();
@@ -465,20 +358,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
         message: (error as any)?.message,
         status: (error as any)?.status,
       });
-      if (USE_MOCK_DATA) {
-        initializeMockData();
-      }
     }
-  }, [isAuthenticated, initializeMockData]);
+  }, [isAuthenticated]);
 
   const refreshPools = useCallback(async () => {
-    if (!isAuthenticated || USE_MOCK_DATA) return;
+    if (!isAuthenticated) return;
 
     setIsPoolsLoading(true);
     try {
       const apiPools = await poolService.getAllPools();
       const unifiedPools: UnifiedPool[] = apiPools.map((pool) => ({
         ...pool,
+        // Ensure numeric fields are numbers (avoid NaN in UI)
+        totalStake: Number(pool.totalStake ?? 0),
+        creatorPledge: Number(pool.creatorPledge ?? 0),
+        predictorStakes: Number(pool.predictorStakes ?? 0),
+        yesStake: Number(pool.yesStake ?? 0),
+        noStake: Number(pool.noStake ?? 0),
+        yesCount: Number(pool.yesCount ?? 0),
+        noCount: Number(pool.noCount ?? 0),
+        participants: Number(pool.participants ?? 0),
+        creatorEarnings: Number(pool.creatorEarnings ?? 0),
         // Legacy fields
         title: pool.video?.title,
         videoTitle: pool.video?.title,
@@ -500,7 +400,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [isAuthenticated]);
 
   const refreshPredictions = useCallback(async () => {
-    if (!isAuthenticated || USE_MOCK_DATA) return;
+    if (!isAuthenticated) return;
 
     setIsPredictionsLoading(true);
     try {
@@ -520,7 +420,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [isAuthenticated]);
 
   const refreshWallet = useCallback(async () => {
-    if (!isAuthenticated || USE_MOCK_DATA) return;
+    if (!isAuthenticated) return;
 
     setIsWalletLoading(true);
     try {
@@ -534,7 +434,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [isAuthenticated]);
 
   const refreshAnalytics = useCallback(async () => {
-    if (!isAuthenticated || !user || USE_MOCK_DATA) return;
+    if (!isAuthenticated || !user) return;
 
     try {
       if (user.role === "creator") {
@@ -551,10 +451,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const checkYouTubeConnection = useCallback(async () => {
     if (!isAuthenticated) {
-      return;
-    }
-
-    if (USE_MOCK_DATA) {
       return;
     }
 
@@ -598,7 +494,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // YouTube sync function
   const syncYouTubeVideos = useCallback(async () => {
-    if (!isAuthenticated || USE_MOCK_DATA) return;
+    if (!isAuthenticated) return;
 
     setIsYouTubeLoading(true);
     try {
@@ -649,17 +545,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const addPool = useCallback(
     async (poolData: Omit<UnifiedPool, "id">) => {
-      if (USE_MOCK_DATA) {
-        const newPool = {
-          ...poolData,
-          id: Date.now().toString(),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        } as UnifiedPool;
-        setPools((prev) => [...prev, newPool]);
-        return;
-      }
-
       try {
         const newPool = await poolService.createPool({
           videoId: poolData.videoId!.toString(),
@@ -690,17 +575,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updatePool = useCallback(
     async (id: string, updates: Partial<UnifiedPool>) => {
-      if (USE_MOCK_DATA) {
-        setPools((prev) =>
-          prev.map((pool) =>
-            pool.id === id
-              ? { ...pool, ...updates, updatedAt: new Date().toISOString() }
-              : pool
-          )
-        );
-        return;
-      }
-
       try {
         await poolService.updatePoolStatus(id, updates.status!);
         await refreshPools();
@@ -713,11 +587,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const deletePool = useCallback(
     async (id: string) => {
-      if (USE_MOCK_DATA) {
-        setPools((prev) => prev.filter((pool) => pool.id !== id));
-        return;
-      }
-
       try {
         // Note: Backend might not support pool deletion
         await refreshPools();
@@ -756,17 +625,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const addPrediction = useCallback(
     async (predictionData: Omit<UnifiedPrediction, "id">) => {
-      if (USE_MOCK_DATA) {
-        const newPrediction = {
-          ...predictionData,
-          id: Date.now().toString(),
-          predictedAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        } as UnifiedPrediction;
-        setPredictions((prev) => [...prev, newPrediction]);
-        return;
-      }
-
       try {
         await predictionService.createPrediction({
           poolId: predictionData.poolId,
@@ -795,21 +653,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updatePrediction = useCallback(
     async (id: string, updates: Partial<UnifiedPrediction>) => {
-      if (USE_MOCK_DATA) {
-        setPredictions((prev) =>
-          prev.map((prediction) =>
-            prediction.id === id
-              ? {
-                  ...prediction,
-                  ...updates,
-                  updatedAt: new Date().toISOString(),
-                }
-              : prediction
-          )
-        );
-        return;
-      }
-
       try {
         // Note: Backend might not support prediction updates
         await refreshPredictions();
@@ -882,8 +725,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const checkAndUpdatePoolLifecycle = useCallback(async () => {
-    if (USE_MOCK_DATA) return;
-
     // This would typically be handled by the backend with scheduled tasks
     // For now, we'll just refresh the pools to get the latest status
     await refreshPools();

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Link  } from "react-router";
+import { Link } from "react-router";
 import { useAuth } from "../contexts/AuthContext";
 import { CATEGORIES } from "../lib/constants";
 import { useAppContext } from "../contexts/AppContext";
@@ -114,10 +114,11 @@ export default function PredictorPools() {
     addPrediction({
       poolId: selectedPool.id,
       predictorId: user?.id || "anonymous",
-      predictorName: user?.fullName || user?.firstName || "Anonymous User",
+      predictorName: user?.name || "Anonymous User",
       choice: prediction.choice,
       stake: prediction.stake,
       predictedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       result: "pending",
     });
 
@@ -132,7 +133,7 @@ export default function PredictorPools() {
     setShowPredictionModal(false);
     setSelectedPool(null);
   };
-
+  // console.log("filteredPools", filteredPools.map((pool) => pool.closedAt));
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -304,8 +305,12 @@ export default function PredictorPools() {
               <div className="flex space-x-2 mb-4">
                 {(() => {
                   const odds =
-                    pool.odds ||
-                    calculateDynamicOdds(pool.yesStake || 0, pool.noStake || 0);
+                    pool.yesOdds && pool.noOdds
+                      ? { yes: pool.yesOdds, no: pool.noOdds }
+                      : calculateDynamicOdds(
+                          pool.yesStake || 0,
+                          pool.noStake || 0
+                        );
                   const isPoolOpen = pool.status === "open";
                   return (
                     <>
