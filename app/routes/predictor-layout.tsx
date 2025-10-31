@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import { useAuth } from "../contexts/AuthContext";
+import { UserRole as UserRoleEnum } from "../lib/types";
 import {
   faHome,
   faChartLine,
@@ -69,7 +70,7 @@ export default function PredictorLayout() {
   // Redirect to appropriate dashboard if user doesn't have predictor role
   useEffect(() => {
     if (!isLoading && isAuthenticated && !hasRole("predictor")) {
-      if (user?.role === "creator") {
+      if (user?.role === UserRoleEnum.CREATOR) {
         navigate("/creator");
       } else {
         navigate("/dashboard");
@@ -78,7 +79,13 @@ export default function PredictorLayout() {
   }, [isLoading, isAuthenticated, hasRole, user, navigate]);
 
   // Show access denied message if user is not a predictor
-  if (!isLoading && isAuthenticated && !hasRole("predictor")) {
+  // Check if user role is USER (predictor role) - handle both enum and string values
+  const userRole = user?.role as string | UserRoleEnum | undefined;
+  const isPredictor =
+    userRole === UserRoleEnum.USER ||
+    userRole === "user" ||
+    userRole === "predictor";
+  if (!isLoading && isAuthenticated && !isPredictor) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -86,8 +93,10 @@ export default function PredictorLayout() {
             Access Denied
           </h1>
           <p className="text-gray-600 mb-6">
-            You don't have access to predictor pages. Redirecting to your
-            dashboard...
+            You don't have access to predictor pages. Your current role:{" "}
+            {user?.role || "unknown"}
+            <br />
+            Redirecting to your dashboard...
           </p>
         </div>
       </div>

@@ -200,8 +200,8 @@ export default function DashboardPage() {
                   {/* Pool Image */}
                   <div className="relative">
                     <img
-                      src={pool.thumbnail}
-                      alt={pool.title}
+                      src={pool.video?.thumbnail || ""}
+                      alt={pool.video?.title || pool.question}
                       className="w-full h-48 object-cover"
                     />
                     <PlayButtonOverlay className="bg-black bg-opacity-20" />
@@ -226,19 +226,13 @@ export default function DashboardPage() {
                     <div className="flex items-center space-x-2 mb-2">
                       <div className="w-6 h-6 bg-gray-300 rounded-full"></div>
                       <span className="text-sm font-medium text-gray-900">
-                        {pool.creator}
+                        {pool.creator?.name || "Unknown"}
                       </span>
-                      {pool.creatorVerified && (
-                        <FontAwesomeIcon
-                          icon="check-circle"
-                          className="w-4 h-4 text-cyan-500"
-                        />
-                      )}
                     </div>
 
                     {/* Video Title */}
                     <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2">
-                      {pool.title}
+                      {pool.video?.title || pool.question}
                     </h3>
 
                     {/* Prediction Question */}

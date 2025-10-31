@@ -1491,7 +1491,7 @@ export const generateTimelineForStatus = (
         : poolData.createdAt
           ? new Date(
               new Date(poolData.createdAt).getTime() +
-                (poolData.predictionWindow || 10) * 60 * 1000
+                (poolData.predictionWindowMinutes || 10) * 60 * 1000
             ).toLocaleString()
           : "TBD",
       completed: status !== "open",

@@ -3,19 +3,20 @@ import { API_ENDPOINTS } from "../lib/api-config";
 import type {
   CreatePoolRequest,
   CreatePoolResponse,
-  GetPoolsRequest,
+  PoolFilters,
   GetPoolsResponse,
   GetPoolResponse,
   UpdatePoolStatusRequest,
   SettlePoolResponse,
   Pool,
   PoolStatus,
-} from "../types/api";
+} from "../lib/types";
+import { PoolStatus as PoolStatusEnum } from "../lib/types";
 
 // Pool service class
 export class PoolService {
   // Get pools with filters and pagination
-  async getPools(params?: GetPoolsRequest): Promise<GetPoolsResponse> {
+  async getPools(params?: PoolFilters): Promise<GetPoolsResponse> {
     const queryString = params ? buildQueryString(params) : "";
     return apiClient.get<GetPoolsResponse>(
       `${API_ENDPOINTS.POOLS.LIST}${queryString}`
@@ -50,7 +51,7 @@ export class PoolService {
 
   // Get settled pools
   async getSettledPools(): Promise<Pool[]> {
-    return this.getPoolsByStatus("settled");
+    return this.getPoolsByStatus(PoolStatusEnum.SETTLED);
   }
 
   // Get pool by ID with full details
@@ -187,13 +188,16 @@ export class PoolService {
       errors.push("Target views must be at least 1,000");
     }
 
-    if (data.duration && (data.duration < 1 || data.duration > 30)) {
-      errors.push("Duration must be between 1 and 30 days");
+    if (
+      data.trackingDurationDays &&
+      (data.trackingDurationDays < 1 || data.trackingDurationDays > 30)
+    ) {
+      errors.push("Tracking duration must be between 1 and 30 days");
     }
 
     if (
-      data.predictionWindow &&
-      (data.predictionWindow < 5 || data.predictionWindow > 60)
+      data.predictionWindowMinutes &&
+      (data.predictionWindowMinutes < 5 || data.predictionWindowMinutes > 60)
     ) {
       errors.push("Prediction window must be between 5 and 60 minutes");
     }
@@ -260,9 +264,9 @@ export class PoolService {
     }
 
     const poolCreatedAt = new Date(pool.createdAt);
-    const predictionWindow = pool.predictionWindow || 43200; // Default 30 days in minutes
+    const predictionWindowMinutes = pool.predictionWindowMinutes || 43200; // Default 30 days in minutes
     const deadline = new Date(
-      poolCreatedAt.getTime() + predictionWindow * 60 * 1000
+      poolCreatedAt.getTime() + predictionWindowMinutes * 60 * 1000
     );
     const remaining = deadline.getTime() - new Date().getTime();
 
@@ -286,9 +290,9 @@ export class PoolService {
     }
 
     const poolCreatedAt = new Date(pool.createdAt);
-    const predictionWindow = pool.predictionWindow || 10;
+    const predictionWindowMinutes = pool.predictionWindowMinutes || 10;
     const deadline = new Date(
-      poolCreatedAt.getTime() + predictionWindow * 60 * 1000
+      poolCreatedAt.getTime() + predictionWindowMinutes * 60 * 1000
     );
     const remaining = deadline.getTime() - new Date().getTime();
 

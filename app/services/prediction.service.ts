@@ -3,19 +3,19 @@ import { API_ENDPOINTS } from "../lib/api-config";
 import type {
   CreatePredictionRequest,
   CreatePredictionResponse,
-  GetPredictionsRequest,
+  PredictionFilters,
   GetPredictionsResponse,
   GetPredictionResponse,
   Prediction,
   PredictionChoice,
   PredictionResult,
-} from "../types/api";
+} from "../lib/types";
 
 // Prediction service class
 export class PredictionService {
   // Get predictions with filters and pagination
   async getPredictions(
-    params?: GetPredictionsRequest
+    params?: PredictionFilters
   ): Promise<GetPredictionsResponse> {
     const queryString = params ? buildQueryString(params) : "";
     return apiClient.get<GetPredictionsResponse>(

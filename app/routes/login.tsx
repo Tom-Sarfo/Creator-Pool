@@ -4,7 +4,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay, faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import type { LoginRequest } from "../types/api";
+import type { LoginRequest } from "../lib/types";
+import { UserRole as UserRoleEnum } from "../lib/types";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -26,12 +27,13 @@ export default function LoginPage() {
     Record<string, string>
   >({});
 
+  console.log("user", user);
   // Redirect based on user role after successful login
   useEffect(() => {
     if (isAuthenticated && user) {
-      if (user.role === "creator") {
+      if (user.role === UserRoleEnum.CREATOR) {
         navigate("/creator");
-      } else if (user.role === "predictor") {
+      } else if (user.role === UserRoleEnum.USER) {
         navigate("/predictor");
       } else {
         navigate("/dashboard");

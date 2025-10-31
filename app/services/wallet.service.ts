@@ -11,7 +11,7 @@ import type {
   Transaction,
   TransactionType,
   TransactionStatus,
-} from "../types/api";
+} from "../lib/types";
 
 // Wallet service class
 export class WalletService {
@@ -211,12 +211,12 @@ export class WalletService {
       errors.push("Maximum deposit amount is $10,000");
     }
 
-    if (
-      !data.paymentMethod ||
-      !["stripe", "paypal"].includes(data.paymentMethod)
-    ) {
-      errors.push('Payment method must be either "stripe" or "paypal"');
-    }
+    // if (
+    //   !data.paymentMethod ||
+    //   !["stripe", "paypal"].includes(data.paymentMethod)
+    // ) {
+    //   errors.push('Payment method must be either "stripe" or "paypal"');
+    // }
 
     return {
       valid: errors.length === 0,

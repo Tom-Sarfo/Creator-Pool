@@ -44,6 +44,15 @@ export const API_ENDPOINTS = {
     LOGOUT: "/api/auth/logout",
   },
 
+  // Wallet
+  WALLET: {
+    BALANCE: "/api/auth/wallet/balance",
+    DEPOSIT: "/api/auth/wallet/add-funds",
+    WITHDRAW: "/api/wallet/withdraw",
+    TRANSACTIONS: "/api/transactions",
+  },
+
+
   // YouTube
   YOUTUBE: {
     AUTH_URL: "/api/youtube/auth-url",
@@ -72,14 +81,7 @@ export const API_ENDPOINTS = {
     GET_BY_ID: (id: string) => `/api/predictions/${id}`,
   },
 
-  // Wallet
-  WALLET: {
-    BALANCE: "/api/wallet/balance",
-    DEPOSIT: "/api/wallet/deposit",
-    WITHDRAW: "/api/wallet/withdraw",
-    TRANSACTIONS: "/api/transactions",
-  },
-
+  
   // Analytics
   ANALYTICS: {
     CREATOR: (id: string) => `/api/analytics/creator/${id}`,

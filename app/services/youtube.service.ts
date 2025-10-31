@@ -7,8 +7,7 @@ import type {
   SyncVideosResponse,
   VideosResponse,
   Video,
-  YouTubeChannel,
-} from "../types/api";
+} from "../lib/types";
 
 // YouTube service class
 export class YouTubeService {

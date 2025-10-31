@@ -19,113 +19,20 @@ import {
 } from "../services";
 import type {
   Video,
+  Pool,
   Prediction,
   User,
   WalletBalanceResponse,
   CreatorAnalyticsResponse,
   PredictorAnalyticsResponse,
-} from "../types/api";
+  PoolStatus,
+  UserRole,
+} from "../lib/types";
+import {
+  UserRole as UserRoleEnum,
+  PoolStatus as PoolStatusEnum,
+} from "../lib/types";
 import type { ToastData } from "../components/Toast";
-
-// Mock data removed – always use real backend data
-
-// Unified interfaces for backward compatibility
-export interface UnifiedVideo {
-  // Core video fields
-  id: string;
-  youtubeId: string;
-  title: string;
-  description?: string;
-  thumbnail: string;
-  status: "unlisted" | "private" | "public";
-  viewCount: number;
-  likeCount: number;
-  commentCount: number;
-  duration: string;
-  publishedAt: string;
-  lastSyncedAt?: string;
-  creatorId: string;
-  createdAt: string;
-  updatedAt: string;
-
-  // Legacy fields for backward compatibility
-  creator: string;
-  creatorVerified: boolean;
-  creatorSubs: string;
-  category: string;
-
-  // Pool info - initially null/0 for unlisted videos
-  poolId: number | null;
-  poolStatus: string | null;
-  poolQuestion: string | null;
-  poolParticipants: number;
-  poolTotalStake: number;
-  poolCreatorPledge: number;
-  poolPredictorStakes: number;
-  poolTimeRemaining: string | null;
-  poolTargetViews: number | null;
-  poolCurrentViews: number;
-  poolCreatedAt: string | null;
-  poolClosesAt?: string | null;
-  poolPublishedAt?: string | null;
-  poolClosedAt?: string | null;
-  poolSettledAt?: string | null;
-  poolDuration?: number;
-  poolPredictionWindow?: number;
-  poolOdds: { yes: number; no: number } | null;
-  poolYesStake: number;
-  poolNoStake: number;
-  poolYesCount: number;
-  poolNoCount: number;
-}
-
-export interface UnifiedPool {
-  // Core pool fields
-  id: string;
-  videoId: string;
-  creatorId: string;
-  question: string;
-  targetViews: number;
-  duration: number;
-  predictionWindow: number;
-  status: "open" | "awaiting_release" | "live_tracking" | "closed" | "settled";
-  totalStake: number;
-  creatorPledge: number;
-  predictorStakes: number;
-  yesStake: number;
-  noStake: number;
-  yesCount: number;
-  noCount: number;
-  participants: number;
-  currentViews: number;
-  yesOdds?: number;
-  noOdds?: number;
-  result?: boolean;
-  creatorEarnings: number;
-  closesAt?: string;
-  publishedAt?: string;
-  closedAt?: string;
-  settledAt?: string;
-  createdAt: string;
-  updatedAt: string;
-
-  // Legacy fields for backward compatibility
-  title?: string;
-  videoTitle?: string;
-  creator?: string;
-  creatorVerified?: boolean;
-  creatorSubs?: string;
-  thumbnail?: string;
-  category?: string;
-  timeRemaining: string;
-}
-
-export type Pool = UnifiedPool;
-
-export interface UnifiedPrediction extends Prediction {
-  // Legacy fields for backward compatibility
-  predictorName: string;
-}
 
 interface AppState {
   // UI State
@@ -142,9 +49,9 @@ interface AppState {
   isWalletLoading: boolean;
 
   // Data State
-  videos: UnifiedVideo[];
-  pools: UnifiedPool[];
-  predictions: UnifiedPrediction[];
+  videos: Video[];
+  pools: Pool[];
+  predictions: Prediction[];
   walletBalance: WalletBalanceResponse | null;
   creatorAnalytics: CreatorAnalyticsResponse | null;
   predictorAnalytics: PredictorAnalyticsResponse | null;
@@ -156,26 +63,25 @@ interface AppState {
   syncYouTubeVideos: () => Promise<void>;
 
   // Data Management Functions
-  updateVideo: (id: string, updates: Partial<UnifiedVideo>) => void;
-  getVideoById: (id: string) => UnifiedVideo | undefined;
-  addPool: (pool: Omit<UnifiedPool, "id">) => Promise<void>;
-  updatePool: (id: string, updates: Partial<UnifiedPool>) => Promise<void>;
-  deletePool: (id: string) => Promise<void>;
-  getPoolById: (id: string) => UnifiedPool | undefined;
-  filteredPools: (
-    filter: "active" | "settled" | "expired" | "all"
-  ) => UnifiedPool[];
-  addPrediction: (prediction: Omit<UnifiedPrediction, "id">) => Promise<void>;
-  updatePrediction: (
-    id: string,
-    updates: Partial<UnifiedPrediction>
+  updateVideo: (id: string, updates: Partial<Video>) => void;
+  getVideoById: (id: string) => Video | undefined;
+  addPool: (
+    pool: Omit<Pool, "id" | "createdAt" | "updatedAt">
   ) => Promise<void>;
-  getPredictionsByPoolId: (poolId: string) => UnifiedPrediction[];
-  getPredictionsByPredictor: (predictorId: string) => UnifiedPrediction[];
+  updatePool: (id: string, updates: Partial<Pool>) => Promise<void>;
+  deletePool: (id: string) => Promise<void>;
+  getPoolById: (id: string) => Pool | undefined;
+  filteredPools: (filter: "active" | "settled" | "expired" | "all") => Pool[];
+  addPrediction: (
+    prediction: Omit<Prediction, "id" | "predictedAt" | "updatedAt">
+  ) => Promise<void>;
+  updatePrediction: (id: string, updates: Partial<Prediction>) => Promise<void>;
+  getPredictionsByPoolId: (poolId: string) => Prediction[];
+  getPredictionsByPredictor: (predictorId: string) => Prediction[];
   calculatePoolOdds: (poolId: string) => { yes: number; no: number };
 
   // Pool Lifecycle Management
-  updatePoolStatus: (poolId: string, newStatus: string) => Promise<void>;
+  updatePoolStatus: (poolId: string, newStatus: PoolStatus) => Promise<void>;
   transitionPoolToNextStage: (poolId: string) => Promise<void>;
   checkAndUpdatePoolLifecycle: () => Promise<void>;
 
@@ -215,9 +121,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [isWalletLoading, setIsWalletLoading] = useState(false);
 
   // Data State
-  const [videos, setVideos] = useState<UnifiedVideo[]>([]);
-  const [pools, setPools] = useState<UnifiedPool[]>([]);
-  const [predictions, setPredictions] = useState<UnifiedPrediction[]>([]);
+  const [videos, setVideos] = useState<Video[]>([]);
+  const [pools, setPools] = useState<Pool[]>([]);
+  const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [walletBalance, setWalletBalance] =
     useState<WalletBalanceResponse | null>(null);
   const [creatorAnalytics, setCreatorAnalytics] =
@@ -317,40 +223,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     try {
       const apiVideos = await youtubeService.getAllVideos();
-
-      const unifiedVideos = apiVideos.map((video) => ({
-        ...video,
-        // Legacy fields
-        creator: video.creator?.name || "Unknown",
-        creatorVerified: false,
-        creatorSubs: "0",
-        category: "Entertainment",
-        // Pool fields (will be populated by pools)
-        poolId: null,
-        poolStatus: null,
-        poolQuestion: null,
-        poolParticipants: 0,
-        poolTotalStake: 0,
-        poolCreatorPledge: 0,
-        poolPredictorStakes: 0,
-        poolTimeRemaining: null,
-        poolTargetViews: null,
-        poolCurrentViews: video.viewCount,
-        poolCreatedAt: null,
-        poolClosesAt: null,
-        poolPublishedAt: null,
-        poolClosedAt: null,
-        poolSettledAt: null,
-        poolDuration: undefined,
-        poolPredictionWindow: undefined,
-        poolOdds: null,
-        poolYesStake: 0,
-        poolNoStake: 0,
-        poolYesCount: 0,
-        poolNoCount: 0,
-      })) as UnifiedVideo[];
-
-      setVideos(unifiedVideos);
+      setVideos(apiVideos);
     } catch (error) {
       console.error("AppContext: Error refreshing videos:", error);
       console.error("AppContext: Error details:", {
@@ -367,9 +240,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setIsPoolsLoading(true);
     try {
       const apiPools = await poolService.getAllPools();
-      const unifiedPools: UnifiedPool[] = apiPools.map((pool) => ({
+      // Ensure numeric fields are numbers (avoid NaN in UI)
+      const pools: Pool[] = apiPools.map((pool) => ({
         ...pool,
-        // Ensure numeric fields are numbers (avoid NaN in UI)
         totalStake: Number(pool.totalStake ?? 0),
         creatorPledge: Number(pool.creatorPledge ?? 0),
         predictorStakes: Number(pool.predictorStakes ?? 0),
@@ -379,19 +252,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         noCount: Number(pool.noCount ?? 0),
         participants: Number(pool.participants ?? 0),
         creatorEarnings: Number(pool.creatorEarnings ?? 0),
-        // Legacy fields
-        title: pool.video?.title,
-        videoTitle: pool.video?.title,
-        videoId: pool.videoId,
-        creator: pool.creator?.name,
-        creatorVerified: false,
-        creatorSubs: "0",
-        thumbnail: pool.video?.thumbnail,
-        category: "Entertainment",
-        timeRemaining: PoolService.getTimeRemaining(pool),
       }));
-
-      setPools(unifiedPools);
+      setPools(pools);
     } catch (error) {
       console.error("Error refreshing pools:", error);
     } finally {
@@ -405,13 +267,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setIsPredictionsLoading(true);
     try {
       const apiPredictions = await predictionService.getAllPredictions();
-      const unifiedPredictions = apiPredictions.map((prediction) => ({
-        ...prediction,
-        // Legacy fields
-        predictorName: prediction.predictor?.name || "Unknown",
-      })) as UnifiedPrediction[];
-
-      setPredictions(unifiedPredictions);
+      setPredictions(apiPredictions);
     } catch (error) {
       console.error("Error refreshing predictions:", error);
     } finally {
@@ -437,10 +293,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!isAuthenticated || !user) return;
 
     try {
-      if (user.role === "creator") {
+      if (user.role === UserRoleEnum.CREATOR) {
         const analytics = await analyticsService.getCreatorAnalytics(user.id);
         setCreatorAnalytics(analytics);
-      } else if (user.role === "predictor") {
+      } else if (user.role === UserRoleEnum.USER) {
         const analytics = await analyticsService.getPredictorAnalytics(user.id);
         setPredictorAnalytics(analytics);
       }
@@ -525,33 +381,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [isAuthenticated, refreshVideos, videos.length]);
 
   // Data management functions
-  const updateVideo = useCallback(
-    (id: string, updates: Partial<UnifiedVideo>) => {
-      setVideos((prev) =>
-        prev.map((video) =>
-          video.id === id ? { ...video, ...updates } : video
-        )
-      );
-    },
-    []
-  );
+  const updateVideo = useCallback((id: string, updates: Partial<Video>) => {
+    setVideos((prev) =>
+      prev.map((video) => (video.id === id ? { ...video, ...updates } : video))
+    );
+  }, []);
 
   const getVideoById = useCallback(
-    (id: string): UnifiedVideo | undefined => {
+    (id: string): Video | undefined => {
       return videos.find((video) => video.id === id);
     },
     [videos]
   );
 
   const addPool = useCallback(
-    async (poolData: Omit<UnifiedPool, "id">) => {
+    async (poolData: Omit<Pool, "id" | "createdAt" | "updatedAt">) => {
       try {
         const newPool = await poolService.createPool({
           videoId: poolData.videoId!.toString(),
           question: poolData.question,
           targetViews: poolData.targetViews || 10000,
-          duration: poolData.duration,
-          predictionWindow: poolData.predictionWindow,
+          trackingDurationDays: poolData.trackingDurationDays,
+          predictionWindowMinutes: poolData.predictionWindowMinutes,
           creatorPledge: poolData.creatorPledge,
         });
 
@@ -574,9 +425,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const updatePool = useCallback(
-    async (id: string, updates: Partial<UnifiedPool>) => {
+    async (id: string, updates: Partial<Pool>) => {
       try {
-        await poolService.updatePoolStatus(id, updates.status!);
+        if (updates.status) {
+          await poolService.updatePoolStatus(id, updates.status);
+        }
         await refreshPools();
       } catch (error) {
         console.error("Error updating pool:", error);
@@ -598,23 +451,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const getPoolById = useCallback(
-    (id: string): UnifiedPool | undefined => {
+    (id: string): Pool | undefined => {
       return pools.find((pool) => pool.id === id);
     },
     [pools]
   );
 
   const filteredPools = useCallback(
-    (filter: "active" | "settled" | "expired" | "all"): UnifiedPool[] => {
+    (filter: "active" | "settled" | "expired" | "all"): Pool[] => {
       switch (filter) {
         case "active":
           return pools.filter((pool) =>
-            ["open", "awaiting_release", "live_tracking"].includes(pool.status)
+            [
+              PoolStatusEnum.OPEN,
+              PoolStatusEnum.AWAITING_RELEASE,
+              PoolStatusEnum.LIVE_TRACKING,
+            ].includes(pool.status)
           );
         case "settled":
-          return pools.filter((pool) => pool.status === "settled");
+          return pools.filter((pool) => pool.status === PoolStatusEnum.SETTLED);
         case "expired":
-          return pools.filter((pool) => pool.status === "closed");
+          return pools.filter((pool) => pool.status === PoolStatusEnum.CLOSED);
         case "all":
         default:
           return pools;
@@ -624,7 +481,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const addPrediction = useCallback(
-    async (predictionData: Omit<UnifiedPrediction, "id">) => {
+    async (
+      predictionData: Omit<Prediction, "id" | "predictedAt" | "updatedAt">
+    ) => {
       try {
         await predictionService.createPrediction({
           poolId: predictionData.poolId,
@@ -652,7 +511,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const updatePrediction = useCallback(
-    async (id: string, updates: Partial<UnifiedPrediction>) => {
+    async (id: string, updates: Partial<Prediction>) => {
       try {
         // Note: Backend might not support prediction updates
         await refreshPredictions();
@@ -664,14 +523,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const getPredictionsByPoolId = useCallback(
-    (poolId: string): UnifiedPrediction[] => {
+    (poolId: string): Prediction[] => {
       return predictions.filter((prediction) => prediction.poolId === poolId);
     },
     [predictions]
   );
 
   const getPredictionsByPredictor = useCallback(
-    (predictorId: string): UnifiedPrediction[] => {
+    (predictorId: string): Prediction[] => {
       return predictions.filter(
         (prediction) => prediction.predictorId === predictorId
       );
@@ -691,15 +550,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Pool lifecycle management
   const updatePoolStatus = useCallback(
-    async (poolId: string, newStatus: string) => {
-      await updatePool(poolId, {
-        status: newStatus as
-          | "open"
-          | "awaiting_release"
-          | "live_tracking"
-          | "closed"
-          | "settled",
-      });
+    async (poolId: string, newStatus: PoolStatus) => {
+      await updatePool(poolId, { status: newStatus });
     },
     [updatePool]
   );
@@ -709,11 +561,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const pool = getPoolById(poolId);
       if (!pool) return;
 
-      const statusTransitions: Record<string, string> = {
-        open: "awaiting_release",
-        awaiting_release: "live_tracking",
-        live_tracking: "closed",
-        closed: "settled",
+      const statusTransitions: Record<PoolStatus, PoolStatus | null> = {
+        [PoolStatusEnum.OPEN]: PoolStatusEnum.AWAITING_RELEASE,
+        [PoolStatusEnum.AWAITING_RELEASE]: PoolStatusEnum.LIVE_TRACKING,
+        [PoolStatusEnum.LIVE_TRACKING]: PoolStatusEnum.CLOSED,
+        [PoolStatusEnum.CLOSED]: PoolStatusEnum.SETTLED,
+        [PoolStatusEnum.SETTLED]: null,
       };
 
       const nextStatus = statusTransitions[pool.status];

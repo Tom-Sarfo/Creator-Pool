@@ -12,7 +12,9 @@ import type {
   LoginRequest,
   RegisterRequest,
   GoogleAuthRequest,
-} from "../types/api";
+  UserRole,
+} from "../lib/types";
+import { UserRole as UserRoleEnum } from "../lib/types";
 
 interface AuthState {
   user: User | null;
@@ -28,7 +30,7 @@ interface AuthContextType extends AuthState {
   logout: () => Promise<void>;
   refreshToken: () => Promise<void>;
   clearError: () => void;
-  hasRole: (role: "creator" | "predictor" | "admin") => boolean;
+  hasRole: (role: UserRole | "creator" | "predictor" | "admin") => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -129,7 +131,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
-      const response = await authService.register(userData);
+      // Convert RegisterRequest with name to format expected by backend
+      const registerData: RegisterRequest = {
+        ...userData,
+        name:
+          userData.name ||
+          `${userData.firstName || ""} ${userData.lastName || ""}`.trim() ||
+          undefined,
+      };
+
+      const response = await authService.register(registerData);
 
       setState({
         user: response.user,
@@ -223,8 +234,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({ ...prev, error: null }));
   };
 
-  const hasRole = (role: "creator" | "predictor" | "admin"): boolean => {
-    return state.user?.role === role;
+  const hasRole = (
+    role: UserRole | "creator" | "predictor" | "admin"
+  ): boolean => {
+    if (!state.user) return false;
+
+    const userRole = state.user.role as string | UserRole;
+
+    // Handle "predictor" role - check if user role is USER, "user", or "predictor"
+    if (role === "predictor") {
+      return (
+        userRole === UserRoleEnum.USER ||
+        userRole === "user" ||
+        userRole === "predictor"
+      );
+    }
+
+    // Handle "creator" role - check if user role is CREATOR or "creator"
+    if (role === "creator") {
+      return userRole === UserRoleEnum.CREATOR || userRole === "creator";
+    }
+
+    // Handle "admin" role - check if user role is ADMIN or "admin"
+    if (role === "admin") {
+      return userRole === UserRoleEnum.ADMIN || userRole === "admin";
+    }
+
+    // Direct enum comparison
+    return userRole === role;
   };
 
   const contextValue: AuthContextType = {
@@ -266,18 +303,16 @@ export function useRequireAuth() {
 }
 
 // Hook for role-based access
-export function useRequireRole(
-  requiredRole: "creator" | "predictor" | "admin"
-) {
+export function useRequireRole(requiredRole: UserRoleEnum) {
   const { isAuthenticated, isLoading, hasRole, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && !hasRole(requiredRole)) {
       // Route to appropriate dashboard based on user role
-      if (user?.role === "creator") {
+      if (user?.role === UserRoleEnum.CREATOR) {
         navigate("/creator");
-      } else if (user?.role === "predictor") {
+      } else if (user?.role === UserRoleEnum.USER) {
         navigate("/predictor");
       } else {
         navigate("/dashboard");

@@ -1,53 +1,16 @@
 import { apiClient, TokenManager } from "./api-client";
 import { API_ENDPOINTS } from "../lib/api-config";
-
-// Auth service interfaces
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface RegisterRequest {
-  email: string;
-  name: string;
-  password: string;
-  role: "creator" | "predictor";
-}
-
-export interface GoogleAuthRequest {
-  googleToken: string;
-  role: "creator" | "predictor";
-}
-
-export interface AuthResponse {
-  user: User;
-  accessToken: string;
-  refreshToken: string;
-}
-
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: "creator" | "predictor" | "admin";
-  walletBalance: number;
-  googleId?: string;
-  youtubeChannelId?: string;
-  youtubeAccessToken?: string;
-  youtubeRefreshToken?: string;
-  youtubeTokenExpiresAt?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface RefreshRequest {
-  refreshToken: string;
-}
-
-export interface RefreshResponse {
-  accessToken: string;
-  refreshToken: string;
-}
+import type {
+  LoginRequest,
+  RegisterRequest,
+  GoogleAuthRequest,
+  AuthResponse,
+  User,
+  RefreshRequest,
+  RefreshResponse,
+  UserRole,
+} from "../lib/types";
+import { UserRole as UserRoleEnum } from "../lib/types";
 
 // Auth service class
 export class AuthService {
@@ -151,9 +114,14 @@ export class AuthService {
   }
 
   // Check if user has specific role
-  hasRole(role: "creator" | "predictor" | "admin"): boolean {
+  hasRole(role: UserRole | "creator" | "predictor" | "admin"): boolean {
     const user = this.getCurrentUser();
-    return user?.role === role;
+    if (!user) return false;
+    // Map "predictor" to USER for backward compatibility
+    if (role === "predictor") {
+      return user.role === UserRoleEnum.USER;
+    }
+    return user.role === role;
   }
 
   // Get user ID

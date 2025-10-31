@@ -25,4 +25,4 @@ export {
   DEFAULT_REQUEST_CONFIG,
   HTTP_STATUS,
 } from "../lib/api-config";
-export type * from "../types/api";
+export type * from "../lib/types";

@@ -4,7 +4,11 @@ import { Link } from "react-router";
 import { useAuth } from "../contexts/AuthContext";
 import { CATEGORIES } from "../lib/constants";
 import { useAppContext } from "../contexts/AppContext";
-import type { Pool } from "../contexts/AppContext";
+import type { Pool, PredictionChoice, PredictionResult } from "../lib/types";
+import {
+  PredictionChoice as PredictionChoiceEnum,
+  PredictionResult as PredictionResultEnum,
+} from "../lib/types";
 import PredictionModal from "../components/PredictionModal";
 import PlayButtonOverlay from "../components/PlayButtonOverlay";
 import {
@@ -30,8 +34,8 @@ export default function PredictorPools() {
   const [showPredictionModal, setShowPredictionModal] = useState(false);
   const [selectedPool, setSelectedPool] = useState<Pool | null>(null);
   const [preselectedChoice, setPreselectedChoice] = useState<
-    "yes" | "no" | undefined
-  >();
+    PredictionChoice | undefined
+  >(undefined);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
@@ -83,12 +87,11 @@ export default function PredictorPools() {
   };
 
   const allFilteredPools = pools.filter((pool) => {
-    const matchesCategory =
-      selectedCategory === "all" || pool.category === selectedCategory;
+    const matchesCategory = selectedCategory === "all"; // Category not available on Pool type, filter only by search
     const matchesSearch =
       searchQuery === "" ||
-      pool.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      pool.creator?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      pool.video?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      pool.creator?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       pool.question?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
@@ -98,14 +101,14 @@ export default function PredictorPools() {
   const endIndex = startIndex + itemsPerPage;
   const filteredPools = allFilteredPools.slice(startIndex, endIndex);
 
-  const handlePredictClick = (pool: Pool, choice: "yes" | "no") => {
+  const handlePredictClick = (pool: Pool, choice: PredictionChoice) => {
     setSelectedPool(pool);
     setPreselectedChoice(choice);
     setShowPredictionModal(true);
   };
 
   const handlePredictionSubmit = (prediction: {
-    choice: "yes" | "no";
+    choice: PredictionChoice;
     stake: number;
   }) => {
     if (!selectedPool) return;
@@ -114,12 +117,9 @@ export default function PredictorPools() {
     addPrediction({
       poolId: selectedPool.id,
       predictorId: user?.id || "anonymous",
-      predictorName: user?.name || "Anonymous User",
       choice: prediction.choice,
       stake: prediction.stake,
-      predictedAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      result: "pending",
+      result: PredictionResultEnum.PENDING,
     });
 
     // Show success toast
@@ -217,8 +217,8 @@ export default function PredictorPools() {
             <div className="relative group">
               <Link to={`/predictor/pool/${pool.id}`}>
                 <img
-                  src={pool.thumbnail}
-                  alt={pool.title}
+                  src={pool.video?.thumbnail || ""}
+                  alt={pool.video?.title || pool.question}
                   className="w-full h-48 object-cover cursor-pointer"
                   onError={(e) => {
                     // Fallback if image fails to load
@@ -262,23 +262,18 @@ export default function PredictorPools() {
               <div className="flex items-center space-x-2 mb-2">
                 <div className="w-6 h-6 bg-gray-300 rounded-full"></div>
                 <span className="text-sm font-medium text-gray-900">
-                  {pool.creator}
+                  {pool.creator?.name || "Unknown"}
                 </span>
-                {pool.creatorVerified && (
-                  <FontAwesomeIcon
-                    icon="check-circle"
-                    className="w-4 h-4 text-cyan-500"
-                  />
-                )}
+                {/* Creator verified status not available on Pool type */}
                 <span className="text-xs text-gray-500">
-                  {pool.creatorSubs}
+                  {/* Creator subs not available on Pool type */}
                 </span>
               </div>
 
               {/* Video Title */}
               <Link to={`/predictor/pool/${pool.id}`}>
                 <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2 hover:text-orange-600 cursor-pointer transition-colors">
-                  {pool.title}
+                  {pool.video?.title || pool.question}
                 </h3>
               </Link>
 
@@ -316,7 +311,8 @@ export default function PredictorPools() {
                     <>
                       <button
                         onClick={() =>
-                          isPoolOpen && handlePredictClick(pool, "yes")
+                          isPoolOpen &&
+                          handlePredictClick(pool, PredictionChoiceEnum.YES)
                         }
                         disabled={!isPoolOpen}
                         className={`flex-1 rounded-lg p-2 text-center transition-all ${
@@ -342,7 +338,8 @@ export default function PredictorPools() {
                       </button>
                       <button
                         onClick={() =>
-                          isPoolOpen && handlePredictClick(pool, "no")
+                          isPoolOpen &&
+                          handlePredictClick(pool, PredictionChoiceEnum.NO)
                         }
                         disabled={!isPoolOpen}
                         className={`flex-1 rounded-lg p-2 text-center transition-all ${

@@ -1,6 +1,6 @@
 import type { Route } from "./+types/creator-pool-detail";
 import { useState } from "react";
-import { Link, useSearchParams  } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { useAuth } from "../contexts/AuthContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -108,7 +108,9 @@ export default function CreatorPoolDetailPage({
     odds: poolData.odds,
     question: poolData.question || "Prediction question not available",
     targetViews: poolData.targetViews || 0,
-    targetTimeframe: poolData.duration ? `${poolData.duration} days` : "7 days",
+    targetTimeframe: poolData.trackingDurationDays
+      ? `${poolData.trackingDurationDays} days`
+      : "7 days",
     description: poolData.title || poolData.videoTitle || "Pool description",
     youtubeUrl: videoData?.id
       ? `https://youtube.com/watch?v=video${videoData.id}`
@@ -118,12 +120,14 @@ export default function CreatorPoolDetailPage({
       ? new Date(poolData.createdAt).toLocaleDateString()
       : "Unknown",
     expectedDuration: videoData?.duration || "Unknown duration",
-    poolDuration: poolData.duration ? `${poolData.duration} days` : "7 days",
+    poolDuration: poolData.trackingDurationDays
+      ? `${poolData.trackingDurationDays} days`
+      : "7 days",
     createdAt: poolData.createdAt || new Date().toISOString(),
     closesAt: poolData.createdAt
       ? new Date(
           new Date(poolData.createdAt).getTime() +
-            (poolData.duration || 7) * 24 * 60 * 60 * 1000
+            (poolData.trackingDurationDays || 7) * 24 * 60 * 60 * 1000
         ).toISOString()
       : new Date().toISOString(),
     publishedAt: videoData?.uploadDate || new Date().toISOString(),

@@ -4,7 +4,7 @@ import type {
   Pool,
   Prediction,
   PoolStatus,
-} from "../types/api";
+} from "../lib/types";
 
 // WebSocket client for real-time updates
 export class WebSocketClient {

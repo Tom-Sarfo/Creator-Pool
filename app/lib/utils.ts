@@ -1,5 +1,5 @@
 // Import types
-import type { Pool } from "../contexts/AppContext";
+import type { Pool } from "./types";
 
 // Prediction and odds calculation utilities
 export function calculateDynamicOdds(yesStake: number, noStake: number) {
@@ -110,25 +110,19 @@ export function formatTimeRemaining(
 
 // Calculate remaining time for open pools with precise formatting
 export function calculateRemainingTime(pool: Pool, currentTime: Date): string {
-  if (pool.timeRemaining && pool.timeRemaining !== "N/A") {
-    const parsed = parseTimeRemaining(pool.timeRemaining);
-    if (parsed) {
-      const { minutes: totalMinutes, seconds } = parsed;
-      // For open pools under 1 hour, show MM:SS format for precision
-      if (pool.status === "open" && totalMinutes < 60) {
-        return formatMinutesSeconds(totalMinutes, seconds);
-      }
-      return formatTimeRemaining(pool.timeRemaining);
-    }
-    return pool.timeRemaining;
-  }
+  // timeRemaining is a computed property, calculate it instead
+  // Pool type doesn't have timeRemaining, so always calculate
 
   // Fallback to calculation if backend value is not available
   if (pool.status !== "open" || !pool.createdAt) return "N/A";
 
   const deadline = new Date(
-    new Date(pool.createdAt).getTime() +
-      (pool.predictionWindow || 43200) * 60 * 1000
+    new Date(
+      typeof pool.createdAt === "string"
+        ? pool.createdAt
+        : pool.createdAt.toISOString()
+    ).getTime() +
+      (pool.predictionWindowMinutes || 43200) * 60 * 1000
   );
   const remaining = deadline.getTime() - currentTime.getTime();
 
@@ -143,21 +137,18 @@ export function calculateRemainingTime(pool: Pool, currentTime: Date): string {
 export function isTimerUrgent(pool: Pool, currentTime: Date): boolean {
   if (pool.status !== "open") return false;
 
-  if (pool.timeRemaining && pool.timeRemaining !== "N/A") {
-    const parsed = parseTimeRemaining(pool.timeRemaining);
-    if (parsed) {
-      const totalSeconds = parsed.minutes * 60 + parsed.seconds;
-      return totalSeconds <= 30 && totalSeconds > 0;
-    }
-    return false;
-  }
+  // Always calculate since timeRemaining is not part of Pool type
 
   // Fallback to calculation
   if (!pool.createdAt) return false;
 
   const deadline = new Date(
-    new Date(pool.createdAt).getTime() +
-      (pool.predictionWindow || 10) * 60 * 1000
+    new Date(
+      typeof pool.createdAt === "string"
+        ? pool.createdAt
+        : pool.createdAt.toISOString()
+    ).getTime() +
+      (pool.predictionWindowMinutes || 10) * 60 * 1000
   );
   const remaining = deadline.getTime() - currentTime.getTime();
   return remaining <= 30000 && remaining > 0;

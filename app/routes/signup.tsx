@@ -4,7 +4,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay, faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import type { RegisterRequest } from "../types/api";
+import type { RegisterRequest, UserRole } from "../lib/types";
+import { UserRole as UserRoleEnum } from "../lib/types";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -25,7 +26,7 @@ export default function SignUpPage() {
     email: "",
     name: "",
     password: "",
-    role: "predictor",
+    role: undefined,
   });
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -37,9 +38,9 @@ export default function SignUpPage() {
   // Redirect based on user role after successful registration
   useEffect(() => {
     if (isAuthenticated && user) {
-      if (user.role === "creator") {
+      if (user.role === UserRoleEnum.CREATOR) {
         navigate("/creator");
-      } else if (user.role === "predictor") {
+      } else if (user.role === UserRoleEnum.USER) {
         navigate("/predictor");
       } else {
         navigate("/dashboard");
@@ -78,7 +79,7 @@ export default function SignUpPage() {
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
 
-    if (!formData.name.trim()) {
+    if (!formData.name || !formData.name.trim()) {
       errors.name = "Name is required";
     } else if (formData.name.trim().length < 2) {
       errors.name = "Name must be at least 2 characters";
@@ -240,10 +241,10 @@ export default function SignUpPage() {
                   }`}
                 >
                   <option value="">Select your role</option>
-                  <option value="predictor">
+                  <option value={UserRoleEnum.USER}>
                     Predictor - I want to predict video performance
                   </option>
-                  <option value="creator">
+                  <option value={UserRoleEnum.CREATOR}>
                     Creator - I want to create prediction pools for my videos
                   </option>
                 </select>

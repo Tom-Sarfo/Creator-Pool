@@ -6,7 +6,7 @@ import type {
   MonthlyAnalytics,
   PoolPerformance,
   PredictionHistory,
-} from "../types/api";
+} from "../lib/types";
 
 // Analytics service class
 export class AnalyticsService {

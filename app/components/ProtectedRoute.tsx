@@ -1,14 +1,15 @@
-import { ReactNode } from "react";
+import { type ReactNode } from "react";
 import {
   useAuth,
   useRequireAuth,
   useRequireRole,
 } from "../contexts/AuthContext";
+import { UserRole as UserRoleEnum } from "../lib/types";
 
 interface ProtectedRouteProps {
   children: ReactNode;
   requireAuth?: boolean;
-  requiredRole?: "creator" | "predictor" | "admin";
+  requiredRole?: UserRoleEnum;
   fallback?: ReactNode;
 }
 
@@ -68,7 +69,7 @@ export function CreatorRoute({
   fallback?: ReactNode;
 }) {
   return (
-    <ProtectedRoute requiredRole="creator" fallback={fallback}>
+    <ProtectedRoute requiredRole={UserRoleEnum.CREATOR} fallback={fallback}>
       {children}
     </ProtectedRoute>
   );
@@ -82,7 +83,7 @@ export function PredictorRoute({
   fallback?: ReactNode;
 }) {
   return (
-    <ProtectedRoute requiredRole="predictor" fallback={fallback}>
+    <ProtectedRoute requiredRole={UserRoleEnum.USER} fallback={fallback}>
       {children}
     </ProtectedRoute>
   );
@@ -96,7 +97,7 @@ export function AdminRoute({
   fallback?: ReactNode;
 }) {
   return (
-    <ProtectedRoute requiredRole="admin" fallback={fallback}>
+    <ProtectedRoute requiredRole={UserRoleEnum.ADMIN} fallback={fallback}>
       {children}
     </ProtectedRoute>
   );

@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimes, faDollarSign } from "@fortawesome/free-solid-svg-icons";
-import type { Pool } from "../contexts/AppContext";
+import type { Pool, PredictionChoice } from "../lib/types";
+import { PredictionChoice as PredictionChoiceEnum } from "../lib/types";
 import {
   calculateDynamicOdds,
   calculatePotentialPayout,
@@ -12,8 +13,8 @@ interface PredictionModalProps {
   isOpen: boolean;
   onClose: () => void;
   pool: Pool;
-  preselectedChoice?: "yes" | "no";
-  onSubmit: (prediction: { choice: "yes" | "no"; stake: number }) => void;
+  preselectedChoice?: PredictionChoice;
+  onSubmit: (prediction: { choice: PredictionChoice; stake: number }) => void;
 }
 
 const QUICK_STAKES = [10, 25, 50, 100];
@@ -25,15 +26,15 @@ export default function PredictionModal({
   preselectedChoice,
   onSubmit,
 }: PredictionModalProps) {
-  const [choice, setChoice] = useState<"yes" | "no">(
-    preselectedChoice || "yes"
+  const [choice, setChoice] = useState<PredictionChoice>(
+    preselectedChoice || PredictionChoiceEnum.YES
   );
   const [stake, setStake] = useState("");
   const [error, setError] = useState("");
 
   // Calculate current odds
   const odds = calculateDynamicOdds(pool.yesStake || 0, pool.noStake || 0);
-  const currentOdds = choice === "yes" ? odds.yes : odds.no;
+  const currentOdds = choice === PredictionChoiceEnum.YES ? odds.yes : odds.no;
   const potentialPayout = stake
     ? calculatePotentialPayout(parseFloat(stake), currentOdds)
     : 0;
@@ -79,7 +80,7 @@ export default function PredictionModal({
   // Reset form when modal opens/closes
   useEffect(() => {
     if (isOpen) {
-      setChoice(preselectedChoice || "yes");
+      setChoice(preselectedChoice || PredictionChoiceEnum.YES);
       setStake("");
       setError("");
     }
@@ -116,15 +117,17 @@ export default function PredictionModal({
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="flex items-center space-x-3 mb-2">
                 <img
-                  src={pool.thumbnail}
-                  alt={pool.title}
+                  src={pool.video?.thumbnail || ""}
+                  alt={pool.video?.title || pool.question}
                   className="w-12 h-8 object-cover rounded"
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">
-                    {pool.title}
+                    {pool.video?.title || pool.question}
                   </p>
-                  <p className="text-xs text-gray-500">{pool.creator}</p>
+                  <p className="text-xs text-gray-500">
+                    {pool.creator?.name || "Unknown"}
+                  </p>
                 </div>
               </div>
               <p className="text-sm text-gray-600">{pool.question}</p>
@@ -137,9 +140,9 @@ export default function PredictionModal({
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <button
-                  onClick={() => setChoice("yes")}
+                  onClick={() => setChoice(PredictionChoiceEnum.YES)}
                   className={`p-4 rounded-lg border-2 transition-all ${
-                    choice === "yes"
+                    choice === PredictionChoiceEnum.YES
                       ? "border-green-500 bg-green-50 text-green-700"
                       : "border-gray-200 hover:border-green-300"
                   }`}
@@ -150,9 +153,9 @@ export default function PredictionModal({
                   </div>
                 </button>
                 <button
-                  onClick={() => setChoice("no")}
+                  onClick={() => setChoice(PredictionChoiceEnum.NO)}
                   className={`p-4 rounded-lg border-2 transition-all ${
-                    choice === "no"
+                    choice === PredictionChoiceEnum.NO
                       ? "border-red-500 bg-red-50 text-red-700"
                       : "border-gray-200 hover:border-red-300"
                   }`}
