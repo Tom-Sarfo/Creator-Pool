@@ -16,6 +16,7 @@ import {
 import { faYoutube } from "@fortawesome/free-brands-svg-icons";
 import { useAppContext } from "../contexts/AppContext";
 import { POOL_QUESTIONS, PLEDGE_OPTIONS } from "../lib/constants";
+import { formatISODurationShort } from "../lib/utils";
 import { Label } from "@radix-ui/react-label";
 import TextInputField from "./TextInputField";
 
@@ -165,7 +166,7 @@ export default function EnablePoolModal({
 
                   {displayVideo.duration && (
                     <div className="absolute bottom-2 right-2 bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded">
-                      {displayVideo.duration}
+                      {formatISODurationShort(displayVideo.duration)}
                     </div>
                   )}
                 </div>
@@ -251,8 +252,8 @@ export default function EnablePoolModal({
                                 )}
                               </div>
                               <p className="text-xs text-gray-500 break-words">
-                                {unlistedVideo.duration} •{" "}
-                                {unlistedVideo.uploadDate}
+                                {formatISODurationShort(unlistedVideo.duration)}{" "}
+                                • {unlistedVideo.uploadDate}
                                 {unlistedVideo.isYouTubeVideo && (
                                   <span className="ml-2 text-red-500">
                                     • Real Video

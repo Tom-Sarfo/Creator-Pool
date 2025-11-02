@@ -1,6 +1,6 @@
 import type { Route } from "./+types/pool-detail";
-import { useState, useEffect } from "react";
-import { Link, useSearchParams  } from "react-router";
+import { useState, useEffect, useRef } from "react";
+import { Link, useSearchParams } from "react-router";
 import { useAuth } from "../contexts/AuthContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -28,10 +28,14 @@ import {
   calculatePotentialPayout,
   getPoolStatusColor,
   getPoolStatusLabel,
+  parseISODuration,
 } from "../lib/utils";
 import { useAppContext } from "../contexts/AppContext";
+import { poolService } from "../services/pool.service";
+import type { Pool } from "../lib/types";
 import PlayButtonOverlay from "../components/PlayButtonOverlay";
 import PredictionModal from "../components/PredictionModal";
+import { useLivePoolMetrics } from "../hooks/useLivePoolMetrics";
 
 export function meta({ params }: Route.MetaArgs) {
   return [
@@ -48,6 +52,10 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
   const [activeTab, setActiveTab] = useState("overview");
   const [showPredictionModal, setShowPredictionModal] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [poolData, setPoolData] = useState<Pool | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const previousStatusRef = useRef<string | null>(null);
 
   const { user } = useAuth();
   const {
@@ -57,11 +65,125 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
     addPrediction,
     addToast,
     calculatePoolOdds,
+    refreshPools,
   } = useAppContext();
 
-  const poolId = parseInt(params.id);
-  const poolData = getPoolById(poolId);
-  const videoData = poolData?.videoId ? getVideoById(poolData.videoId) : null;
+  const poolId = params.id;
+  const initialPoolData = getPoolById(poolId) || poolData;
+
+  // Use live metrics hook for real-time updates
+  const {
+    pool: livePool,
+    metrics: liveMetrics,
+    lastUpdated,
+  } = useLivePoolMetrics(poolId);
+
+  // Initial data fetch on mount - use context data if available, otherwise fetch from API
+  useEffect(() => {
+    // If we have context data, use it immediately and try to refresh from API in background
+    if (initialPoolData) {
+      setPoolData(initialPoolData);
+      previousStatusRef.current = initialPoolData.status;
+      setIsLoading(false);
+
+      // Still try to fetch fresh data in background (non-blocking)
+      const fetchFreshData = async () => {
+        try {
+          const response = await poolService.getPoolById(poolId);
+          // Handle both response formats: { pool: ... } or direct pool object
+          const pool = response?.pool || (response as any);
+          if (pool && pool.id && pool.status) {
+            setPoolData(pool);
+            previousStatusRef.current = pool.status;
+            refreshPools();
+          }
+        } catch (error: any) {
+          // Silently fail if we have context data - just log it
+          console.warn(
+            "Could not refresh pool data from API, using cached data:",
+            error?.message
+          );
+        }
+      };
+
+      fetchFreshData();
+      return;
+    }
+
+    // If no context data, try to fetch from API (blocking)
+    const fetchInitialPool = async () => {
+      setIsLoading(true);
+      setFetchError(null);
+      try {
+        const response = await poolService.getPoolById(poolId);
+
+        // Handle both response formats: { pool: ... } or direct pool object
+        const fetchedPool = response?.pool || (response as any);
+
+        // Check if we have a valid pool object
+        if (!fetchedPool || !fetchedPool.id || !fetchedPool.status) {
+          throw new Error("Invalid response from server");
+        }
+
+        setPoolData(fetchedPool);
+        previousStatusRef.current = fetchedPool.status;
+        setIsLoading(false);
+      } catch (error: any) {
+        console.error("Error fetching pool:", error);
+        setFetchError(error?.message || "Failed to load pool data");
+        setIsLoading(false);
+        // Only show error if we don't have context data
+        addToast({
+          type: "error",
+          title: "Failed to Load Pool",
+          message: "Could not load pool data from the server.",
+          duration: 5000,
+        });
+      }
+    };
+
+    fetchInitialPool();
+  }, [poolId, initialPoolData?.id, addToast, refreshPools]);
+
+  // Merge live pool data with local pool data
+  const mergedPoolData = livePool || poolData || initialPoolData;
+
+  // Show status change notifications when live pool status changes
+  useEffect(() => {
+    if (!livePool) return;
+
+    const previousStatus = previousStatusRef.current;
+
+    if (previousStatus && previousStatus !== livePool.status) {
+      const statusMessages: Record<string, Record<string, string>> = {
+        live_tracking: {
+          open: "Video is now public! Pool is live tracking.",
+          awaiting_release: "Video is now public! Pool is live tracking.",
+        },
+        awaiting_release: {
+          open: "Prediction window closed. Waiting for video release.",
+        },
+        closed: {
+          live_tracking: "Tracking period ended.",
+        },
+        settled: {
+          closed: "Pool has been settled! Check your results.",
+        },
+      };
+
+      const message = statusMessages[livePool.status]?.[previousStatus];
+      if (message) {
+        addToast({
+          type: "info",
+          title: "Pool Status Updated",
+          message,
+          duration: 5000,
+        });
+      }
+    }
+
+    previousStatusRef.current = livePool.status;
+  }, [livePool, addToast]);
 
   // Update current time every second for real-time timers
   useEffect(() => {
@@ -71,20 +193,38 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
     return () => clearInterval(interval);
   }, []);
 
-  // Show error if pool not found
-  if (!poolData) {
+  // Use current pool data or fallback
+  const currentPoolData = mergedPoolData;
+
+  // Show loading state while fetching
+  if (isLoading && !currentPoolData) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading pool data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error if pool not found (only after we've tried fetching)
+  if (!currentPoolData && !isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
             Pool Not Found
           </h2>
-          <p className="text-gray-600">
+          <p className="text-gray-600 mb-4">
             The pool you're looking for doesn't exist or has been removed.
           </p>
+          {fetchError && (
+            <p className="text-sm text-red-600 mb-4">Error: {fetchError}</p>
+          )}
           <Link
             to="/predictor/pools"
-            className="mt-4 inline-block bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
+            className="inline-block bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
           >
             Back to Pools
           </Link>
@@ -93,47 +233,101 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
     );
   }
 
+  // At this point, currentPoolData is guaranteed to be defined (we checked above)
+  if (!currentPoolData) return null;
+
+  // Get video data after we have pool data
+  const videoData = currentPoolData.videoId
+    ? getVideoById(currentPoolData.videoId)
+    : null;
+
   // Get all predictions for this pool
-  const allPredictions = getPredictionsByPoolId(poolId);
+  const allPredictions = getPredictionsByPoolId(currentPoolData.id);
 
   // Get user's prediction for this pool
   const userPrediction = allPredictions.find(
     (p) => p.predictorId === (user?.id || "anonymous")
   );
 
-  // Calculate pool metrics
+  // Calculate pool metrics using backend data
   const odds =
-    poolData.odds ||
-    calculateDynamicOdds(poolData.yesStake || 0, poolData.noStake || 0);
+    (currentPoolData as any).odds ||
+    calculateDynamicOdds(
+      currentPoolData.yesStake || 0,
+      currentPoolData.noStake || 0
+    );
   const yesPercentage =
-    poolData.yesStake && poolData.noStake
+    currentPoolData.yesStake && currentPoolData.noStake
       ? Math.round(
-          (poolData.yesStake / (poolData.yesStake + poolData.noStake)) * 100
+          (currentPoolData.yesStake /
+            (currentPoolData.yesStake + currentPoolData.noStake)) *
+            100
         )
       : 50;
   const noPercentage = 100 - yesPercentage;
 
+  // Use backend status - always trust the server
+  const poolStatus = currentPoolData.status || "open";
+
+  // Use live metrics for currentViews if available
+  const currentViews = liveMetrics
+    ? liveMetrics.viewCount
+    : currentPoolData.currentViews !== undefined &&
+        currentPoolData.currentViews !== null
+      ? currentPoolData.currentViews
+      : (videoData as any)?.viewCount || (videoData as any)?.views || 0;
+
   const pool = {
-    ...poolData,
-    title: poolData.title || poolData.videoTitle || "Untitled Pool",
-    creator: poolData.creator || videoData?.creator || "Unknown Creator",
+    ...currentPoolData,
+    status: poolStatus, // Always use backend status
+    title:
+      (currentPoolData as any).title ||
+      (currentPoolData as any).videoTitle ||
+      "Untitled Pool",
+    creator:
+      typeof currentPoolData.creator === "object" &&
+      currentPoolData.creator?.name
+        ? currentPoolData.creator.name
+        : typeof currentPoolData.creator === "string"
+          ? currentPoolData.creator
+          : typeof videoData?.creator === "object" && videoData.creator?.name
+            ? videoData.creator.name
+            : typeof videoData?.creator === "string"
+              ? videoData.creator
+              : "Unknown Creator",
     creatorVerified:
-      poolData.creatorVerified || videoData?.creatorVerified || false,
-    creatorSubs: poolData.creatorSubs || videoData?.creatorSubs || "0 subs",
-    thumbnail: poolData.thumbnail || videoData?.thumbnail || "",
-    category: poolData.category || videoData?.category || "general",
-    question: poolData.question || "Prediction question not available",
-    targetViews: poolData.targetViews || 0,
-    currentViews: poolData.currentViews || 0,
+      (currentPoolData as any).creatorVerified ||
+      (videoData as any)?.creatorVerified ||
+      false,
+    creatorSubs:
+      (currentPoolData as any).creatorSubs ||
+      (videoData as any)?.creatorSubs ||
+      "0 subs",
+    thumbnail:
+      (currentPoolData as any).thumbnail ||
+      (currentPoolData as any).video?.thumbnail ||
+      (videoData as any)?.thumbnail ||
+      "https://via.placeholder.com/300x200?text=No+Thumbnail",
+    category:
+      (currentPoolData as any).category ||
+      (videoData as any)?.category ||
+      "general",
+    question: currentPoolData.question || "Prediction question not available",
+    targetViews: currentPoolData.targetViews || 0,
+    currentViews,
+    totalStake: currentPoolData.totalStake || 0, // Use backend totalStake
+    participants: currentPoolData.participants || 0, // Use backend participants
     odds,
     yesPercentage,
     noPercentage,
-    releaseDate: poolData.createdAt
-      ? new Date(poolData.createdAt).toLocaleDateString()
+    releaseDate: currentPoolData.createdAt
+      ? new Date(currentPoolData.createdAt).toLocaleDateString()
       : "Unknown",
-    expectedDuration: videoData?.duration || "Unknown duration",
-    youtubeUrl: videoData?.id
-      ? `https://youtube.com/watch?v=video${videoData.id}`
+    expectedDuration: (videoData as any)?.duration
+      ? parseISODuration((videoData as any).duration)
+      : "Unknown duration",
+    youtubeUrl: (videoData as any)?.id
+      ? `https://youtube.com/watch?v=video${(videoData as any).id}`
       : "https://youtube.com/watch?v=example",
   };
 
@@ -141,16 +335,14 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
     choice: "yes" | "no";
     stake: number;
   }) => {
-    if (!poolData) return;
+    if (!currentPoolData) return;
 
     addPrediction({
-      poolId: poolData.id,
+      poolId: currentPoolData.id,
       predictorId: user?.id || "anonymous",
-      predictorName: user?.fullName || user?.firstName || "Anonymous User",
-      choice: prediction.choice,
+      choice: prediction.choice as any,
       stake: prediction.stake,
-      predictedAt: new Date().toISOString(),
-      result: "pending",
+      result: "pending" as any,
     });
 
     addToast({
@@ -420,6 +612,11 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                             </div>
                           )}
                         </div>
+                        {lastUpdated && (
+                          <div className="mt-2 text-xs text-gray-500">
+                            Last updated: {lastUpdated.toLocaleTimeString()}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -548,7 +745,12 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                             </div>
                             <div>
                               <p className="font-medium text-gray-900">
-                                {prediction.predictorName}
+                                {typeof prediction.predictor === "object" &&
+                                prediction.predictor?.name
+                                  ? prediction.predictor.name
+                                  : typeof prediction.predictor === "string"
+                                    ? prediction.predictor
+                                    : "Anonymous"}
                               </p>
                               <p className="text-sm text-gray-500">
                                 {new Date(
@@ -649,29 +851,29 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Total Pool Size</span>
-                  <span className="font-medium">
+                  <span className="font-medium text-gray-900">
                     ${pool.totalStake.toLocaleString()}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Total Predictors</span>
-                  <span className="font-medium">
+                  <span className="font-medium text-gray-900">
                     {pool.participants.toLocaleString()}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Time Remaining</span>
-                  <span className="font-medium">
+                  <span className="font-medium text-gray-900">
                     {calculateRemainingTime(pool, currentTime)}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Platform Fee</span>
-                  <span className="font-medium">5%</span>
+                  <span className="font-medium text-gray-900">5%</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Creator Royalty</span>
-                  <span className="font-medium">1%</span>
+                  <span className="font-medium text-gray-900">1%</span>
                 </div>
               </div>
             </div>

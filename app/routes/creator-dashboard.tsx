@@ -226,6 +226,8 @@ export default function CreatorDashboard() {
     }
   };
 
+  console.log("pools", pools);
+
   const allFilteredVideos = getFilteredVideos();
   const totalPages = Math.ceil(allFilteredVideos.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -326,7 +328,8 @@ export default function CreatorDashboard() {
       status: "open",
       createdAt: new Date().toISOString(),
       targetViews: targetViews,
-      currentViews: selectedVideoData?.views || 0,
+      currentViews:
+        selectedVideoData?.viewCount || selectedVideoData?.views || 0,
       duration: totalDays,
       predictionWindow: 10,
       ...(selectedVideoData && {
@@ -341,6 +344,7 @@ export default function CreatorDashboard() {
     addPool(newPool);
     handleCloseModal();
   };
+  // console.log("videos", videos);
 
   return (
     <div className="p-3 sm:p-4 lg:p-6 xl:p-8 bg-gray-50 min-h-screen w-full">

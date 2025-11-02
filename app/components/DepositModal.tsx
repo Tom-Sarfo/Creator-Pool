@@ -24,9 +24,9 @@ export default function DepositModal({
 }: DepositModalProps) {
   const { addToast, refreshWallet } = useAppContext();
   const [amount, setAmount] = useState("");
-//   const [paymentMethod, setPaymentMethod] = useState<"stripe" | "paypal">(
-//     "stripe"
-//   );
+  //   const [paymentMethod, setPaymentMethod] = useState<"stripe" | "paypal">(
+  //     "stripe"
+  //   );
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -37,7 +37,7 @@ export default function DepositModal({
     if (value) {
       const depositAmount = parseFloat(value);
       const validation = WalletService.validateDepositData({
-        amount: depositAmount
+        amount: depositAmount,
         // paymentMethod,
       });
 
@@ -50,7 +50,7 @@ export default function DepositModal({
   const handleQuickAmount = (value: number) => {
     const validation = WalletService.validateDepositData({
       amount: value,
-    //   paymentMethod,
+      //   paymentMethod,
     });
 
     if (validation.valid) {
@@ -84,7 +84,7 @@ export default function DepositModal({
     const depositAmount = parseFloat(amount);
     const validation = WalletService.validateDepositData({
       amount: depositAmount,
-    //   paymentMethod,
+      //   paymentMethod,
     });
 
     if (!validation.valid) {
@@ -154,7 +154,7 @@ export default function DepositModal({
   useEffect(() => {
     if (isOpen) {
       setAmount("");
-    //   setPaymentMethod("stripe");
+      //   setPaymentMethod("stripe");
       setError("");
       setIsSubmitting(false);
     }

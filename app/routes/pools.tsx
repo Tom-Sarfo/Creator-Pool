@@ -11,6 +11,7 @@ import {
   getPoolStatusColor,
   getPoolStatusLabel,
   calculateDynamicOdds,
+  getEffectivePoolStatus,
 } from "../lib/utils";
 import PlayButtonOverlay from "../components/PlayButtonOverlay";
 import Pagination from "../components/Pagination";
@@ -203,198 +204,207 @@ export default function PoolsPage() {
 
           {/* Pools Grid */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredPools.map((pool) => (
-              <div
-                key={pool.id}
-                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-              >
-                {/* Pool Image */}
-                <div className="relative group">
-                  <Link to={`/predictor/pool/${pool.id}`}>
-                    <img
-                      src={pool.thumbnail}
-                      alt={pool.title}
-                      className="w-full h-48 object-cover cursor-pointer"
-                      onError={(e) => {
-                        // Fallback if image fails to load
-                        e.currentTarget.src =
-                          "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&h=225&fit=crop";
-                      }}
-                    />
-                  </Link>
-                  {/* Play button overlay - only visible on hover */}
-                  <PlayButtonOverlay />
-                  <div className="absolute top-3 left-3">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(pool.status)}`}
-                    >
-                      {getStatusLabel(pool.status)}
-                    </span>
-                  </div>
-                  <div className="absolute top-3 right-3">
-                    <span
-                      className={`px-2 py-1 rounded text-xs flex items-center space-x-1 font-mono ${
-                        pool.status === "open" &&
-                        calculateRemainingTime(pool, currentTime) === "00:00"
-                          ? "bg-red-600 text-white animate-pulse"
-                          : pool.status === "open" &&
-                              isTimerUrgent(pool, currentTime)
-                            ? "bg-orange-500 text-white animate-pulse"
-                            : "bg-black bg-opacity-50 text-white"
-                      }`}
-                    >
-                      <FontAwesomeIcon icon="clock" className="w-3 h-3" />
-                      <span className="font-bold">
-                        {calculateRemainingTime(pool, currentTime)}
-                      </span>
-                    </span>
-                  </div>
-                </div>
+            {filteredPools.map((pool) => {
+              const effectiveStatus = getEffectivePoolStatus(pool, currentTime);
+              const isPoolOpen = effectiveStatus === "open";
+              const remainingTime = calculateRemainingTime(pool, currentTime);
+              const isExpired =
+                remainingTime === "00:00" ||
+                effectiveStatus === "awaiting_release";
 
-                {/* Pool Content */}
-                <div className="p-4">
-                  {/* Creator Info */}
-                  <div className="flex items-center space-x-2 mb-2">
-                    <div className="w-6 h-6 bg-gray-300 rounded-full"></div>
-                    <span className="text-sm font-medium text-gray-900">
-                      {pool.creator}
-                    </span>
-                    {pool.creatorVerified && (
-                      <FontAwesomeIcon
-                        icon="check-circle"
-                        className="w-4 h-4 text-cyan-500"
+              return (
+                <div
+                  key={pool.id}
+                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+                >
+                  {/* Pool Image */}
+                  <div className="relative group">
+                    <Link to={`/predictor/pool/${pool.id}`}>
+                      <img
+                        src={pool.thumbnail}
+                        alt={pool.title}
+                        className="w-full h-48 object-cover cursor-pointer"
+                        onError={(e) => {
+                          // Fallback if image fails to load
+                          e.currentTarget.src =
+                            "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&h=225&fit=crop";
+                        }}
                       />
+                    </Link>
+                    {/* Play button overlay - only visible on hover */}
+                    <PlayButtonOverlay />
+                    <div className="absolute top-3 left-3">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(effectiveStatus)}`}
+                      >
+                        {getStatusLabel(effectiveStatus)}
+                      </span>
+                    </div>
+                    <div className="absolute top-3 right-3">
+                      <span
+                        className={`px-2 py-1 rounded text-xs flex items-center space-x-1 font-mono ${
+                          isPoolOpen && isExpired
+                            ? "bg-red-600 text-white animate-pulse"
+                            : isPoolOpen && isTimerUrgent(pool, currentTime)
+                              ? "bg-orange-500 text-white animate-pulse"
+                              : "bg-black bg-opacity-50 text-white"
+                        }`}
+                      >
+                        <FontAwesomeIcon icon="clock" className="w-3 h-3" />
+                        <span className="font-bold">{remainingTime}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Pool Content */}
+                  <div className="p-4">
+                    {/* Creator Info */}
+                    <div className="flex items-center space-x-2 mb-2">
+                      <div className="w-6 h-6 bg-gray-300 rounded-full"></div>
+                      <span className="text-sm font-medium text-gray-900">
+                        {pool.creator}
+                      </span>
+                      {pool.creatorVerified && (
+                        <FontAwesomeIcon
+                          icon="check-circle"
+                          className="w-4 h-4 text-cyan-500"
+                        />
+                      )}
+                    </div>
+
+                    {/* Video Title */}
+                    <Link to={`/predictor/pool/${pool.id}`}>
+                      <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2 hover:text-orange-600 cursor-pointer transition-colors">
+                        {pool.title}
+                      </h3>
+                    </Link>
+
+                    {/* Prediction Question */}
+                    <p className="text-xs text-gray-600 mb-3">
+                      {pool.question}
+                    </p>
+
+                    {/* Pool Stats */}
+                    <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                      <span>
+                        Pool Size: ${pool.totalStake.toLocaleString()}
+                      </span>
+                      <span>{pool.participants} Predictors</span>
+                    </div>
+
+                    {/* Odds */}
+                    <div className="flex space-x-2 mb-4">
+                      {(() => {
+                        const derivedOdds = calculateDynamicOdds(
+                          Number(pool.yesStake || 0),
+                          Number(pool.noStake || 0)
+                        );
+                        const yesOdds = Number(derivedOdds?.yes ?? 2.0);
+                        const noOdds = Number(derivedOdds?.no ?? 2.0);
+                        return (
+                          <>
+                            <div
+                              className={`flex-1 rounded-lg p-2 text-center ${
+                                isPoolOpen
+                                  ? "bg-green-50 border border-green-200"
+                                  : "bg-gray-50 border border-gray-200 opacity-60"
+                              }`}
+                            >
+                              <div
+                                className={`text-xs font-medium ${
+                                  isPoolOpen
+                                    ? "text-green-600"
+                                    : "text-gray-500"
+                                }`}
+                              >
+                                YES
+                              </div>
+                              <div
+                                className={`text-sm font-bold ${
+                                  isPoolOpen
+                                    ? "text-green-700"
+                                    : "text-gray-600"
+                                }`}
+                              >
+                                {yesOdds.toFixed(2)}x
+                              </div>
+                              <div
+                                className={`text-xs ${
+                                  isPoolOpen
+                                    ? "text-green-600"
+                                    : "text-gray-500"
+                                }`}
+                              >
+                                {Math.round(
+                                  (yesOdds / (yesOdds + noOdds)) * 100
+                                ) || 0}
+                                % chance
+                              </div>
+                            </div>
+                            <div
+                              className={`flex-1 rounded-lg p-2 text-center ${
+                                isPoolOpen
+                                  ? "bg-red-50 border border-red-200"
+                                  : "bg-gray-50 border border-gray-200 opacity-60"
+                              }`}
+                            >
+                              <div
+                                className={`text-xs font-medium ${
+                                  isPoolOpen ? "text-red-600" : "text-gray-500"
+                                }`}
+                              >
+                                NO
+                              </div>
+                              <div
+                                className={`text-sm font-bold ${
+                                  isPoolOpen ? "text-red-700" : "text-gray-600"
+                                }`}
+                              >
+                                {noOdds.toFixed(2)}x
+                              </div>
+                              <div
+                                className={`text-xs ${
+                                  isPoolOpen ? "text-red-600" : "text-gray-500"
+                                }`}
+                              >
+                                {Math.round(
+                                  (noOdds / (yesOdds + noOdds)) * 100
+                                ) || 0}
+                                % chance
+                              </div>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+
+                    {/* Action Button */}
+                    {isAuthenticated ? (
+                      <button
+                        onClick={() =>
+                          isPoolOpen && navigate(`/predictor/pool/${pool.id}`)
+                        }
+                        disabled={!isPoolOpen}
+                        className={`w-full py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                          isPoolOpen
+                            ? "bg-orange-600 text-white hover:bg-orange-700 cursor-pointer"
+                            : "bg-gray-400 text-white cursor-not-allowed opacity-60"
+                        }`}
+                      >
+                        {isPoolOpen ? "Predict Now" : "Pool Closed"}
+                      </button>
+                    ) : (
+                      <Link
+                        to="/login"
+                        className="w-full bg-orange-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors flex items-center justify-center"
+                      >
+                        Sign In to Predict
+                      </Link>
                     )}
                   </div>
-
-                  {/* Video Title */}
-                  <Link to={`/predictor/pool/${pool.id}`}>
-                    <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2 hover:text-orange-600 cursor-pointer transition-colors">
-                      {pool.title}
-                    </h3>
-                  </Link>
-
-                  {/* Prediction Question */}
-                  <p className="text-xs text-gray-600 mb-3">{pool.question}</p>
-
-                  {/* Pool Stats */}
-                  <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
-                    <span>Pool Size: ${pool.totalStake.toLocaleString()}</span>
-                    <span>{pool.participants} Predictors</span>
-                  </div>
-
-                  {/* Odds */}
-                  <div className="flex space-x-2 mb-4">
-                    {(() => {
-                      const isPoolOpen = pool.status === "open";
-                      const derivedOdds = calculateDynamicOdds(
-                        Number(pool.yesStake || 0),
-                        Number(pool.noStake || 0)
-                      );
-                      const yesOdds = Number(derivedOdds?.yes ?? 2.0);
-                      const noOdds = Number(derivedOdds?.no ?? 2.0);
-                      return (
-                        <>
-                          <div
-                            className={`flex-1 rounded-lg p-2 text-center ${
-                              isPoolOpen
-                                ? "bg-green-50 border border-green-200"
-                                : "bg-gray-50 border border-gray-200 opacity-60"
-                            }`}
-                          >
-                            <div
-                              className={`text-xs font-medium ${
-                                isPoolOpen ? "text-green-600" : "text-gray-500"
-                              }`}
-                            >
-                              YES
-                            </div>
-                            <div
-                              className={`text-sm font-bold ${
-                                isPoolOpen ? "text-green-700" : "text-gray-600"
-                              }`}
-                            >
-                              {yesOdds.toFixed(2)}x
-                            </div>
-                            <div
-                              className={`text-xs ${
-                                isPoolOpen ? "text-green-600" : "text-gray-500"
-                              }`}
-                            >
-                              {Math.round(
-                                (yesOdds / (yesOdds + noOdds)) * 100
-                              ) || 0}
-                              % chance
-                            </div>
-                          </div>
-                          <div
-                            className={`flex-1 rounded-lg p-2 text-center ${
-                              isPoolOpen
-                                ? "bg-red-50 border border-red-200"
-                                : "bg-gray-50 border border-gray-200 opacity-60"
-                            }`}
-                          >
-                            <div
-                              className={`text-xs font-medium ${
-                                isPoolOpen ? "text-red-600" : "text-gray-500"
-                              }`}
-                            >
-                              NO
-                            </div>
-                            <div
-                              className={`text-sm font-bold ${
-                                isPoolOpen ? "text-red-700" : "text-gray-600"
-                              }`}
-                            >
-                              {noOdds.toFixed(2)}x
-                            </div>
-                            <div
-                              className={`text-xs ${
-                                isPoolOpen ? "text-red-600" : "text-gray-500"
-                              }`}
-                            >
-                              {Math.round(
-                                (noOdds / (yesOdds + noOdds)) * 100
-                              ) || 0}
-                              % chance
-                            </div>
-                          </div>
-                        </>
-                      );
-                    })()}
-                  </div>
-
-                  {/* Action Button */}
-                  {isAuthenticated ? (
-                    (() => {
-                      const isPoolOpen = pool.status === "open";
-                      return (
-                        <button
-                          onClick={() =>
-                            isPoolOpen && navigate(`/predictor/pool/${pool.id}`)
-                          }
-                          disabled={!isPoolOpen}
-                          className={`w-full py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                            isPoolOpen
-                              ? "bg-orange-600 text-white hover:bg-orange-700 cursor-pointer"
-                              : "bg-gray-400 text-white cursor-not-allowed opacity-60"
-                          }`}
-                        >
-                          {isPoolOpen ? "Predict Now" : "Pool Closed"}
-                        </button>
-                      );
-                    })()
-                  ) : (
-                    <Link
-                      to="/login"
-                      className="w-full bg-orange-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors flex items-center justify-center"
-                    >
-                      Sign In to Predict
-                    </Link>
-                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Pagination */}

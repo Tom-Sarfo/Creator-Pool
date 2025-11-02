@@ -9,6 +9,7 @@ export { authService, AuthService } from "./auth.service";
 export { youtubeService, YouTubeService } from "./youtube.service";
 export { poolService, PoolService } from "./pool.service";
 export { predictionService, PredictionService } from "./prediction.service";
+export { videoService, VideoService } from "./video.service";
 export { walletService, WalletService } from "./wallet.service";
 export { analyticsService, AnalyticsService } from "./analytics.service";
 export {

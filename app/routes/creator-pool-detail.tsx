@@ -1,5 +1,5 @@
 import type { Route } from "./+types/creator-pool-detail";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router";
 import { useAuth } from "../contexts/AuthContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -35,9 +35,13 @@ import {
 import {
   calculatePoolMetrics,
   transformPredictionsToDisplay,
+  parseISODuration,
 } from "../lib/utils";
 import { useAppContext } from "../contexts/AppContext";
+import { poolService } from "../services/pool.service";
+import type { Pool } from "../lib/types";
 import Stepper from "../components/Stepper";
+import { useLivePoolMetrics } from "../hooks/useLivePoolMetrics";
 
 const getStatusColor = (status: PoolStatus) =>
   STATUS_COLORS[status] || "bg-gray-100 text-gray-800";
@@ -57,11 +61,17 @@ export function meta({ params }: Route.MetaArgs) {
 export default function CreatorPoolDetailPage({
   params,
 }: Route.ComponentProps) {
-  const poolId = parseInt(params.id);
+  // Keep poolId as string - pool IDs are strings in the system
+  const poolId = params.id;
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("overview");
   const [showPledgeModal, setShowPledgeModal] = useState(false);
   const [predictionFilter, setPredictionFilter] = useState("all");
+  const [poolData, setPoolData] = useState<Pool | null>(null);
+  const [isDepositing, setIsDepositing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const previousStatusRef = useRef<string | null>(null);
 
   const {
     getPoolById,
@@ -69,99 +79,364 @@ export default function CreatorPoolDetailPage({
     getVideoById,
     getPredictionsByPoolId,
     transitionPoolToNextStage,
+    addToast,
+    refreshPools,
+    refreshWallet,
   } = useAppContext();
   const { user } = useAuth();
   const statusParam = searchParams.get("status") || "active";
 
-  const poolData = getPoolById(poolId) ||
-    pools[0] || {
-      id: poolId,
-      title: "Pool not found",
-      question: "Pool data not available",
-      participants: 0,
-      totalStake: 0,
-      timeRemaining: "N/A",
-      status: "unknown",
+  // Use live metrics hook for real-time updates
+  const {
+    pool: livePool,
+    metrics: liveMetrics,
+    lastUpdated,
+  } = useLivePoolMetrics(poolId);
+
+  // Find pool in context - try both exact match and string comparison
+  const initialPoolData =
+    getPoolById(poolId) ||
+    pools.find((p) => p.id === poolId || p.id?.toString() === poolId);
+
+  // Debug: Log pool lookup if not found
+  useEffect(() => {
+    if (!initialPoolData && pools.length > 0) {
+      console.debug(
+        `Pool ${poolId} not found in context. Available pool IDs:`,
+        pools.map((p) => p.id).slice(0, 5)
+      );
+    }
+  }, [poolId, initialPoolData, pools.length]);
+
+  // Initial data fetch on mount - use context data if available, otherwise fetch from API
+  useEffect(() => {
+    // If we have context data, use it immediately and try to refresh from API in background
+    if (initialPoolData) {
+      setPoolData(initialPoolData);
+      previousStatusRef.current = initialPoolData.status;
+      setIsLoading(false);
+
+      // Still try to fetch fresh data in background (non-blocking)
+      const fetchFreshData = async () => {
+        try {
+          const response = await poolService.getPoolById(poolId);
+          // Handle both response formats: { pool: ... } or direct pool object
+          const pool = response?.pool || (response as any);
+          if (pool && pool.id && pool.status) {
+            setPoolData(pool);
+            previousStatusRef.current = pool.status;
+            refreshPools();
+          }
+        } catch (error: any) {
+          // Silently fail if we have context data - just log it
+          console.warn(
+            "Could not refresh pool data from API, using cached data:",
+            error?.message
+          );
+        }
+      };
+
+      fetchFreshData();
+      return;
+    }
+
+    // If no context data, try to fetch from API (blocking)
+    const fetchInitialPool = async () => {
+      setIsLoading(true);
+      setFetchError(null);
+      try {
+        const response = await poolService.getPoolById(poolId);
+
+        // Handle both response formats: { pool: ... } or direct pool object
+        const fetchedPool = response?.pool || (response as any);
+
+        // Check if we have a valid pool object
+        if (!fetchedPool || !fetchedPool.id || !fetchedPool.status) {
+          throw new Error("Invalid response from server");
+        }
+
+        setPoolData(fetchedPool);
+        previousStatusRef.current = fetchedPool.status;
+        setIsLoading(false);
+      } catch (error: any) {
+        console.error("Error fetching pool:", error);
+        setFetchError(error?.message || "Failed to load pool data");
+        setIsLoading(false);
+        // Only show error if we don't have context data
+        addToast({
+          type: "error",
+          title: "Failed to Load Pool",
+          message: "Could not load pool data from the server.",
+          duration: 5000,
+        });
+      }
     };
 
-  const videoData = poolData.videoId ? getVideoById(poolData.videoId) : null;
+    fetchInitialPool();
+  }, [poolId, initialPoolData?.id, addToast, refreshPools]);
+
+  // Merge live pool data with local pool data
+  const currentPoolData = livePool || poolData || initialPoolData;
+
+  // Show status change notifications when live pool status changes
+  useEffect(() => {
+    if (!livePool) return;
+
+    const previousStatus = previousStatusRef.current;
+
+    if (previousStatus && previousStatus !== livePool.status) {
+      const statusMessages: Record<string, Record<string, string>> = {
+        live_tracking: {
+          open: "Video is now public! Pool is live tracking.",
+          awaiting_release: "Video is now public! Pool is live tracking.",
+        },
+        awaiting_release: {
+          open: "Prediction window closed. Waiting for video release.",
+        },
+        closed: {
+          live_tracking: "Tracking period ended.",
+        },
+        settled: {
+          closed: "Pool has been settled! Check your results.",
+        },
+      };
+
+      const message = statusMessages[livePool.status]?.[previousStatus];
+      if (message) {
+        addToast({
+          type: "info",
+          title: "Pool Status Updated",
+          message,
+          duration: 5000,
+        });
+      }
+    }
+
+    previousStatusRef.current = livePool.status;
+  }, [livePool, addToast]);
+
+  // Show loading state while fetching
+  if (isLoading && !currentPoolData) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading pool data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Early return if pool not found (only after we've tried fetching)
+  if (!currentPoolData && !isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Pool Not Found
+          </h2>
+          <p className="text-gray-600 mb-4">
+            The pool you're looking for doesn't exist or has been removed.
+          </p>
+          {fetchError && (
+            <p className="text-sm text-red-600 mb-4">Error: {fetchError}</p>
+          )}
+          <Link
+            to="/creator/pools"
+            className="inline-block bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
+          >
+            Back to My Pools
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // At this point, currentPoolData is guaranteed to be defined (we checked above)
+  if (!currentPoolData) return null;
+
+  // Get video data after we have pool data
+  const videoData = currentPoolData.videoId
+    ? getVideoById(currentPoolData.videoId)
+    : null;
+
+  // Use backend status - always trust the server
+  const poolStatus = currentPoolData.status || "open";
   const statusData =
-    STATUS_TIMELINE[poolData.status as keyof typeof STATUS_TIMELINE] ||
+    STATUS_TIMELINE[poolStatus as keyof typeof STATUS_TIMELINE] ||
     STATUS_TIMELINE.open;
 
-  const metrics = calculatePoolMetrics(poolData, videoData);
+  // Use live metrics if available, otherwise use calculated metrics
+  const baseMetrics = calculatePoolMetrics(currentPoolData, videoData);
+  const metrics = liveMetrics
+    ? {
+        ...baseMetrics,
+        currentViews: liveMetrics.viewCount,
+        progress:
+          currentPoolData.targetViews > 0
+            ? Math.min(
+                (liveMetrics.viewCount / currentPoolData.targetViews) * 100,
+                100
+              )
+            : 0,
+      }
+    : baseMetrics;
 
   const pool = {
     ...metrics,
-    id: poolData.id,
-    title: poolData.title || poolData.videoTitle || "Untitled Pool",
-    creator: poolData.creator || videoData?.creator || "Unknown Creator",
+    id: currentPoolData.id,
+    title:
+      currentPoolData.title || currentPoolData.videoTitle || "Untitled Pool",
+    creator:
+      typeof currentPoolData.creator === "object" &&
+      currentPoolData.creator?.name
+        ? currentPoolData.creator.name
+        : typeof currentPoolData.creator === "string"
+          ? currentPoolData.creator
+          : typeof videoData?.creator === "object" && videoData.creator?.name
+            ? videoData.creator.name
+            : typeof videoData?.creator === "string"
+              ? videoData.creator
+              : "Unknown Creator",
     creatorVerified:
-      poolData.creatorVerified || videoData?.creatorVerified || false,
-    creatorSubs: poolData.creatorSubs || videoData?.creatorSubs || "0 subs",
-    thumbnail: poolData.thumbnail || videoData?.thumbnail || "",
-    category: poolData.category || videoData?.category || "general",
-    status: poolData.status || "open",
-    timeRemaining: poolData.timeRemaining || statusData.timeRemaining,
+      currentPoolData.creatorVerified || videoData?.creatorVerified || false,
+    creatorSubs:
+      currentPoolData.creatorSubs || videoData?.creatorSubs || "0 subs",
+    thumbnail:
+      (currentPoolData as any).thumbnail ||
+      (currentPoolData as any).video?.thumbnail ||
+      videoData?.thumbnail ||
+      "https://via.placeholder.com/300x200?text=No+Thumbnail",
+    category: currentPoolData.category || videoData?.category || "general",
+    status: poolStatus, // Always use backend status
+    timeRemaining: currentPoolData.timeRemaining || statusData.timeRemaining,
     totalStake: metrics.totalPoolAmount || 0, // Use the calculated total pool amount
-    participants: poolData.participants || 0,
-    odds: poolData.odds,
-    question: poolData.question || "Prediction question not available",
-    targetViews: poolData.targetViews || 0,
-    targetTimeframe: poolData.trackingDurationDays
-      ? `${poolData.trackingDurationDays} days`
+    participants: currentPoolData.participants || 0,
+    odds: currentPoolData.odds,
+    question: currentPoolData.question || "Prediction question not available",
+    targetViews: currentPoolData.targetViews || 0,
+    targetTimeframe: currentPoolData.trackingDurationDays
+      ? `${currentPoolData.trackingDurationDays} days`
       : "7 days",
-    description: poolData.title || poolData.videoTitle || "Pool description",
+    description:
+      currentPoolData.title || currentPoolData.videoTitle || "Pool description",
     youtubeUrl: videoData?.id
       ? `https://youtube.com/watch?v=video${videoData.id}`
       : "https://youtube.com/watch?v=example",
-    youtubeId: `video${videoData?.id || poolData.videoId || "unknown"}`,
-    releaseDate: poolData.createdAt
-      ? new Date(poolData.createdAt).toLocaleDateString()
+    youtubeId: `video${videoData?.id || currentPoolData.videoId || "unknown"}`,
+    releaseDate: currentPoolData.createdAt
+      ? new Date(currentPoolData.createdAt).toLocaleDateString()
       : "Unknown",
-    expectedDuration: videoData?.duration || "Unknown duration",
-    poolDuration: poolData.trackingDurationDays
-      ? `${poolData.trackingDurationDays} days`
+    expectedDuration: videoData?.duration
+      ? parseISODuration(videoData.duration)
+      : "Unknown duration",
+    poolDuration: currentPoolData.trackingDurationDays
+      ? `${currentPoolData.trackingDurationDays} days`
       : "7 days",
-    createdAt: poolData.createdAt || new Date().toISOString(),
-    closesAt: poolData.createdAt
+    createdAt: currentPoolData.createdAt || new Date().toISOString(),
+    closesAt: currentPoolData.createdAt
       ? new Date(
-          new Date(poolData.createdAt).getTime() +
-            (poolData.trackingDurationDays || 7) * 24 * 60 * 60 * 1000
+          new Date(currentPoolData.createdAt).getTime() +
+            (currentPoolData.trackingDurationDays || 7) * 24 * 60 * 60 * 1000
         ).toISOString()
       : new Date().toISOString(),
     publishedAt: videoData?.uploadDate || new Date().toISOString(),
     pledgeStatus: statusData.pledgeStatus,
     pledgeDeposited: statusData.pledgeDeposited,
     creatorWalletBalance: 5000,
-    currentLikes: videoData?.likes || 0,
-    currentComments: Math.round((videoData?.likes || 0) * 0.06),
-    likeRatio: videoData?.likes
-      ? `${Math.round((videoData.likes / Math.max(videoData.views, 1)) * 100)}%`
-      : "0%",
-    timeline: generateTimelineForStatus(poolData.status || "open", poolData),
+    currentLikes: videoData?.likeCount || videoData?.likes || 0,
+    currentComments: Math.round(
+      (videoData?.commentCount || videoData?.likes || 0) * 0.06
+    ),
+    likeRatio: (() => {
+      const likes = videoData?.likeCount || videoData?.likes || 0;
+      const views = videoData?.viewCount || videoData?.views || 0;
+      if (likes > 0 && views > 0) {
+        return `${Math.round((likes / views) * 100)}%`;
+      }
+      return "0%";
+    })(),
+    timeline: generateTimelineForStatus(
+      currentPoolData.status || "open",
+      currentPoolData
+    ),
     dailyStats: [
       {
         date: "Dec 16",
-        views: Math.round((poolData.currentViews || 0) * 0.25),
-        predictions: Math.round((poolData.participants || 0) * 0.17),
+        views: Math.round((metrics.currentViews || 0) * 0.25),
+        predictions: Math.round((currentPoolData.participants || 0) * 0.17),
       },
       {
         date: "Dec 17",
-        views: Math.round((poolData.currentViews || 0) * 0.38),
-        predictions: Math.round((poolData.participants || 0) * 0.22),
+        views: Math.round((metrics.currentViews || 0) * 0.38),
+        predictions: Math.round((currentPoolData.participants || 0) * 0.22),
       },
       {
         date: "Dec 18",
-        views: Math.round((poolData.currentViews || 0) * 0.49),
-        predictions: Math.round((poolData.participants || 0) * 0.24),
+        views: Math.round((metrics.currentViews || 0) * 0.49),
+        predictions: Math.round((currentPoolData.participants || 0) * 0.24),
       },
       {
         date: "Dec 19",
-        views: poolData.currentViews || 0,
-        predictions: poolData.participants || 0,
+        views: metrics.currentViews || 0,
+        predictions: currentPoolData.participants || 0,
       },
     ],
+  };
+
+  // Handle deposit pledge
+  const handleDepositPledge = async () => {
+    if (!currentPoolData || isDepositing) return;
+
+    setIsDepositing(true);
+    try {
+      const updatedPool = await poolService.depositPledge(
+        currentPoolData.id,
+        pool.creatorPledge
+      );
+
+      setPoolData(updatedPool);
+      previousStatusRef.current = updatedPool.status;
+
+      // Check if pool status changed from CLOSED to SETTLED
+      if (
+        currentPoolData.status === "closed" &&
+        updatedPool.status === "settled"
+      ) {
+        addToast({
+          type: "success",
+          title: "Pool Settled!",
+          message:
+            "Your pledge has been deposited and the pool has been settled.",
+          duration: 5000,
+        });
+      } else {
+        addToast({
+          type: "success",
+          title: "Pledge Deposited",
+          message: `Your pledge of $${pool.creatorPledge.toLocaleString()} has been deposited successfully.`,
+          duration: 4000,
+        });
+      }
+
+      await refreshPools();
+      await refreshWallet();
+      setShowPledgeModal(false);
+    } catch (error: any) {
+      const errorMessage =
+        error?.data?.message ||
+        error?.message ||
+        "Failed to deposit pledge. Please try again.";
+
+      addToast({
+        type: "error",
+        title: "Deposit Failed",
+        message: errorMessage,
+        duration: 4000,
+      });
+    } finally {
+      setIsDepositing(false);
+    }
   };
 
   const poolPredictions = getPredictionsByPoolId(poolId);
@@ -172,6 +447,7 @@ export default function CreatorPoolDetailPage({
     ...tab,
     count: tab.id === "predictions" ? allPredictions.length : null,
   }));
+  console.log("pool", pool);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -432,6 +708,11 @@ export default function CreatorPoolDetailPage({
                           </div>
                         )}
                       </div>
+                      {lastUpdated && (
+                        <div className="mt-2 text-xs text-gray-500">
+                          Last updated: {lastUpdated.toLocaleTimeString()}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -942,15 +1223,24 @@ export default function CreatorPoolDetailPage({
                   Cancel
                 </button>
                 <button
+                  onClick={handleDepositPledge}
                   className={`flex-1 px-4 py-2 rounded-lg transition-colors flex items-center justify-center space-x-2 ${
-                    pool.creatorWalletBalance >= pool.creatorPledge
+                    pool.creatorWalletBalance >= pool.creatorPledge &&
+                    !isDepositing
                       ? "bg-orange-600 text-white hover:bg-orange-700"
                       : "bg-gray-400 text-white cursor-not-allowed"
                   }`}
-                  disabled={pool.creatorWalletBalance < pool.creatorPledge}
+                  disabled={
+                    pool.creatorWalletBalance < pool.creatorPledge ||
+                    isDepositing
+                  }
                 >
                   <FontAwesomeIcon icon={faCoins} className="w-4 h-4" />
-                  <span>Deposit ${pool.creatorPledge.toLocaleString()}</span>
+                  <span>
+                    {isDepositing
+                      ? "Depositing..."
+                      : `Deposit $${pool.creatorPledge.toLocaleString()}`}
+                  </span>
                 </button>
               </div>
 

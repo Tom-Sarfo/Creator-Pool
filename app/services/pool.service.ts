@@ -122,26 +122,32 @@ export class PoolService {
     );
   }
 
-  // Get pool statistics
+  // Get pool statistics from API
   async getPoolStats(poolId: string): Promise<{
     totalPredictions: number;
+    yesPredictions: number;
+    noPredictions: number;
     totalStake: number;
     yesStake: number;
     noStake: number;
-    yesCount: number;
-    noCount: number;
     participants: number;
-  }> {
-    const pool = await this.getPoolById(poolId);
-    return {
-      totalPredictions: pool.predictions.length,
-      totalStake: pool.pool.totalStake,
-      yesStake: pool.pool.yesStake,
-      noStake: pool.pool.noStake,
-      yesCount: pool.pool.yesCount,
-      noCount: pool.pool.noCount,
-      participants: pool.pool.participants,
+    currentOdds: {
+      yes: number;
+      no: number;
     };
+    timeRemaining: number;
+  }> {
+    return apiClient.get(
+      API_ENDPOINTS.POOLS.STATS(poolId)
+    );
+  }
+
+  // Deposit creator pledge
+  async depositPledge(poolId: string, amount: number): Promise<Pool> {
+    return apiClient.post<Pool>(
+      API_ENDPOINTS.POOLS.DEPOSIT_PLEDGE(poolId),
+      { amount }
+    );
   }
 
   // Get recent pools (last 7 days)

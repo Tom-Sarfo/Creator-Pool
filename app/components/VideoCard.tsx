@@ -10,6 +10,8 @@ import {
   faBullseye,
 } from "@fortawesome/free-solid-svg-icons";
 import { faYoutube } from "@fortawesome/free-brands-svg-icons";
+import { useAppContext } from "../contexts/AppContext";
+import { getThumbnail, formatISODurationShort } from "../lib/utils";
 
 interface VideoCardProps {
   video?: any;
@@ -30,9 +32,14 @@ export default function VideoCard({
   formatNumber,
   showPoolBadge = true,
 }: VideoCardProps) {
+  const { getVideoById } = useAppContext();
+
   // Determine if this is a pool card or video card
   const isPoolCard = !!pool;
   const data = isPoolCard ? pool : video;
+
+  // Get thumbnail with fallback for pools
+  const thumbnail = getThumbnail(data, getVideoById, isPoolCard);
 
   // Default utility functions if not provided
   const defaultFormatNumber = (num: number) => {
@@ -81,14 +88,19 @@ export default function VideoCard({
         <div className="flex-shrink-0 relative">
           <div className="w-14 h-10 sm:w-16 sm:h-12 lg:w-20 lg:h-14 bg-gray-200 rounded-md overflow-hidden relative">
             <img
-              src={data.thumbnail}
-              alt={data.title}
+              src={thumbnail}
+              alt={data.title || "Pool thumbnail"}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                // Fallback if image fails to load
+                e.currentTarget.src =
+                  "https://via.placeholder.com/300x200?text=No+Thumbnail";
+              }}
             />
             {!isPoolCard && (
               <>
                 <div className="absolute bottom-0 right-0 bg-black bg-opacity-75 text-white text-xs px-1 rounded-tl">
-                  {data.duration}
+                  {formatISODurationShort(data.duration)}
                 </div>
                 {data.isYouTubeVideo && (
                   <div className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1 rounded-bl flex items-center space-x-1">

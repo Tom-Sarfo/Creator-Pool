@@ -168,8 +168,45 @@ export function AppProvider({ children }: { children: ReactNode }) {
       refreshPools();
     };
 
-    const handlePoolStatusChange = () => {
+    const handlePoolStatusChange = (data?: {
+      poolId?: string;
+      oldStatus?: string;
+      newStatus?: string;
+    }) => {
       refreshPools();
+
+      // Show notification if status change data is provided
+      if (
+        data?.oldStatus &&
+        data?.newStatus &&
+        data.oldStatus !== data.newStatus
+      ) {
+        const statusMessages: Record<string, Record<string, string>> = {
+          live_tracking: {
+            open: "Video is now public! Pool is live tracking.",
+            awaiting_release: "Video is now public! Pool is live tracking.",
+          },
+          awaiting_release: {
+            open: "Prediction window closed. Waiting for video release.",
+          },
+          closed: {
+            live_tracking: "Tracking period ended.",
+          },
+          settled: {
+            closed: "Pool has been settled! Check your results.",
+          },
+        };
+
+        const message = statusMessages[data.newStatus]?.[data.oldStatus];
+        if (message) {
+          addToast({
+            type: "info",
+            title: "Pool Status Updated",
+            message,
+            duration: 5000,
+          });
+        }
+      }
     };
 
     wsOn("poolUpdate", handlePoolUpdate);

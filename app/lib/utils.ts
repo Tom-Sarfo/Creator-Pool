@@ -71,7 +71,7 @@ function formatMinutesSeconds(totalMinutes: number, seconds: number): string {
   return `${totalMinutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 }
 
-// Format longer durations to "Xd Yh Zm"
+// Format longer durations to readable format like "29 days", "12 hours", "30 minutes"
 function formatLongDuration(totalMinutes: number, seconds: number): string {
   const days = Math.floor(totalMinutes / (24 * 60));
   const remainingMinutes = totalMinutes % (24 * 60);
@@ -79,15 +79,33 @@ function formatLongDuration(totalMinutes: number, seconds: number): string {
   const minutes = remainingMinutes % 60;
 
   const parts: string[] = [];
-  if (days > 0) parts.push(`${days}d`);
-  if (hours > 0) parts.push(`${hours}h`);
-  if (minutes > 0 && days === 0) parts.push(`${minutes}m`);
 
-  return parts.length > 0
-    ? parts.join(" ")
-    : seconds > 0
-      ? `${seconds}s`
-      : "00:00";
+  // Format days
+  if (days > 0) {
+    parts.push(days === 1 ? "1 day" : `${days} days`);
+  }
+
+  // Format hours (show if less than 7 days to keep it readable)
+  if (hours > 0 && days < 7) {
+    parts.push(hours === 1 ? "1 hour" : `${hours} hours`);
+  }
+
+  // Format minutes (only show if no days to avoid clutter)
+  if (minutes > 0 && days === 0) {
+    parts.push(minutes === 1 ? "1 minute" : `${minutes} minutes`);
+  }
+
+  // If we have parts, join them
+  if (parts.length > 0) {
+    return parts.join(" ");
+  }
+
+  // For very short durations, show seconds
+  if (seconds > 0 && totalMinutes < 1) {
+    return seconds === 1 ? "1 second" : `${seconds} seconds`;
+  }
+
+  return "00:00";
 }
 
 // Format time remaining from backend (format: "42113:45" = minutes:seconds)
@@ -110,27 +128,87 @@ export function formatTimeRemaining(
 
 // Calculate remaining time for open pools with precise formatting
 export function calculateRemainingTime(pool: Pool, currentTime: Date): string {
-  // timeRemaining is a computed property, calculate it instead
-  // Pool type doesn't have timeRemaining, so always calculate
+  // Check if pool has timeRemaining from backend (may not be in type definition)
+  const poolWithTimeRemaining = pool as Pool & { timeRemaining?: string };
 
-  // Fallback to calculation if backend value is not available
-  if (pool.status !== "open" || !pool.createdAt) return "N/A";
+  // Use backend timeRemaining if available and format it nicely
+  if (poolWithTimeRemaining.timeRemaining) {
+    const formatted = formatTimeRemaining(poolWithTimeRemaining.timeRemaining);
+    // If backend returned "N/A", try to calculate
+    if (formatted !== "N/A") {
+      return formatted;
+    }
+  }
 
-  const deadline = new Date(
-    new Date(
-      typeof pool.createdAt === "string"
-        ? pool.createdAt
-        : pool.createdAt.toISOString()
-    ).getTime() +
-      (pool.predictionWindowMinutes || 43200) * 60 * 1000
-  );
-  const remaining = deadline.getTime() - currentTime.getTime();
+  // Handle different pool statuses
+  if (pool.status === "settled") {
+    return "Settled";
+  }
 
-  if (remaining <= 0) return "00:00";
+  if (pool.status === "closed") {
+    return "Closed";
+  }
 
-  const minutes = Math.floor(remaining / (1000 * 60));
-  const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
-  return formatMinutesSeconds(minutes, seconds);
+  if (pool.status === "awaiting_release") {
+    return "Awaiting Release";
+  }
+
+  if (pool.status === "live_tracking") {
+    // Calculate time remaining in tracking period if we have trackingStartedAt
+    const poolWithTracking = pool as Pool & {
+      trackingStartedAt?: string | Date;
+    };
+    if (poolWithTracking.trackingStartedAt && pool.trackingDurationDays) {
+      const trackingStart = new Date(
+        typeof poolWithTracking.trackingStartedAt === "string"
+          ? poolWithTracking.trackingStartedAt
+          : poolWithTracking.trackingStartedAt.toISOString()
+      );
+      const trackingEnd = new Date(
+        trackingStart.getTime() +
+          pool.trackingDurationDays * 24 * 60 * 60 * 1000
+      );
+      const remaining = trackingEnd.getTime() - currentTime.getTime();
+
+      if (remaining > 0) {
+        const minutes = Math.floor(remaining / (1000 * 60));
+        const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+        const timeStr = `${minutes}:${seconds}`;
+        return formatTimeRemaining(timeStr);
+      }
+      return "Tracking Ended";
+    }
+    return "Tracking";
+  }
+
+  // For open pools, calculate based on createdAt and predictionWindowMinutes
+  if (pool.status === "open") {
+    if (!pool.createdAt) {
+      return "Open";
+    }
+
+    const deadline = new Date(
+      new Date(
+        typeof pool.createdAt === "string"
+          ? pool.createdAt
+          : pool.createdAt.toISOString()
+      ).getTime() +
+        (pool.predictionWindowMinutes || 43200) * 60 * 1000
+    );
+    const remaining = deadline.getTime() - currentTime.getTime();
+
+    if (remaining <= 0) return "00:00";
+
+    const minutes = Math.floor(remaining / (1000 * 60));
+    const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+
+    // Format the calculated time using formatTimeRemaining logic
+    const timeStr = `${minutes}:${seconds}`;
+    return formatTimeRemaining(timeStr);
+  }
+
+  // Fallback for unknown statuses
+  return "—";
 }
 
 // Check if timer is in final 30 seconds (for visual urgency)
@@ -245,6 +323,56 @@ export function getPoolStatusLabel(poolStatus: string) {
   );
 }
 
+// Get effective pool status - prioritizes backend status, uses client-side calculation only as fallback
+export function getEffectivePoolStatus(pool: Pool, currentTime: Date): string {
+  // Always prioritize backend status - trust the server's state
+  // Only use client-side calculation for edge cases (e.g., when status is "open" but window has expired)
+
+  // If pool status is already set by backend (not "open"), trust it
+  if (pool.status !== "open") {
+    return pool.status;
+  }
+
+  // For "open" pools, check if prediction window has expired (client-side validation for UI)
+  // This is only a visual indication - actual status transitions are handled by backend
+  const poolWithTimeRemaining = pool as Pool & { timeRemaining?: string };
+
+  // Check if timeRemaining exists and is expired
+  if (poolWithTimeRemaining.timeRemaining) {
+    const parsed = parseTimeRemaining(poolWithTimeRemaining.timeRemaining);
+    if (parsed) {
+      const totalMinutes = parsed.minutes;
+      // If time remaining is 0 or negative, it's expired
+      // Note: Backend should handle this, but we show "awaiting_release" for UI purposes
+      if (totalMinutes <= 0) {
+        return "awaiting_release";
+      }
+    }
+  }
+
+  // Fallback: calculate if expired based on createdAt and predictionWindowMinutes
+  if (pool.createdAt) {
+    const deadline = new Date(
+      new Date(
+        typeof pool.createdAt === "string"
+          ? pool.createdAt
+          : pool.createdAt.toISOString()
+      ).getTime() +
+        (pool.predictionWindowMinutes || 43200) * 60 * 1000
+    );
+    const remaining = deadline.getTime() - currentTime.getTime();
+
+    // If remaining time is 0 or negative, prediction window has expired
+    // Note: Backend should handle this, but we show "awaiting_release" for UI purposes
+    if (remaining <= 0) {
+      return "awaiting_release";
+    }
+  }
+
+  // Pool is still open and within prediction window (backend will handle transitions)
+  return pool.status; // Always use backend status
+}
+
 export function formatNumber(num: number | undefined | null) {
   if (num === undefined || num === null || isNaN(num)) {
     return "0";
@@ -328,7 +456,7 @@ export function calculatePoolMetrics(poolData: any, videoData: any) {
   const currentViews =
     poolData.currentViews !== undefined
       ? poolData.currentViews
-      : videoData?.views || 0;
+      : videoData?.viewCount || videoData?.views || 0;
   const targetViews = poolData.targetViews || 0;
   const progress =
     targetViews > 0 ? Math.min((currentViews / targetViews) * 100, 100) : 0;
@@ -428,4 +556,116 @@ export function filterAndSortPredictions(
         );
     }
   });
+}
+
+// Get thumbnail for pool or video with fallback logic
+export function getThumbnail(
+  data: any,
+  getVideoById?: (id: string) => any,
+  isPool: boolean = false
+): string {
+  // For videos, just return thumbnail or placeholder
+  if (!isPool) {
+    return (
+      data?.thumbnail || "https://via.placeholder.com/300x200?text=No+Thumbnail"
+    );
+  }
+
+  // For pools, check multiple sources
+  const poolThumbnail = data?.thumbnail || data?.video?.thumbnail;
+
+  if (poolThumbnail) {
+    return poolThumbnail;
+  }
+
+  // Try to get video from context if getVideoById is provided
+  if (data?.videoId && getVideoById) {
+    const videoData = getVideoById(data.videoId);
+    if (videoData?.thumbnail) {
+      return videoData.thumbnail;
+    }
+  }
+
+  // Fallback placeholder
+  return "https://via.placeholder.com/300x200?text=No+Thumbnail";
+}
+
+// Parse ISO 8601 duration format (e.g., "PT3S", "PT1M30S", "PT1H30M45S") to readable format
+export function parseISODuration(
+  isoDuration: string | null | undefined
+): string {
+  if (!isoDuration || typeof isoDuration !== "string") {
+    return "Unknown duration";
+  }
+
+  // Remove PT prefix (Period Time)
+  const durationStr = isoDuration.replace(/^PT/i, "");
+
+  if (!durationStr) {
+    return "0 seconds";
+  }
+
+  // Extract hours, minutes, and seconds using regex
+  const hoursMatch = durationStr.match(/(\d+)H/i);
+  const minutesMatch = durationStr.match(/(\d+)M/i);
+  const secondsMatch = durationStr.match(/(\d+)S/i);
+
+  const hours = hoursMatch ? parseInt(hoursMatch[1], 10) : 0;
+  const minutes = minutesMatch ? parseInt(minutesMatch[1], 10) : 0;
+  const seconds = secondsMatch ? parseInt(secondsMatch[1], 10) : 0;
+
+  // Build readable duration string
+  const parts: string[] = [];
+
+  if (hours > 0) {
+    parts.push(hours === 1 ? "1 hour" : `${hours} hours`);
+  }
+
+  if (minutes > 0) {
+    parts.push(minutes === 1 ? "1 minute" : `${minutes} minutes`);
+  }
+
+  if (seconds > 0 || parts.length === 0) {
+    // Always show seconds if there are no other parts
+    parts.push(seconds === 1 ? "1 second" : `${seconds} seconds`);
+  }
+
+  // Join parts with space
+  return parts.join(" ");
+}
+
+// Format ISO 8601 duration to short format (e.g., "1:23", "1h 23m", "3s")
+export function formatISODurationShort(
+  isoDuration: string | null | undefined
+): string {
+  if (!isoDuration || typeof isoDuration !== "string") {
+    return "—";
+  }
+
+  // Remove PT prefix
+  const durationStr = isoDuration.replace(/^PT/i, "");
+
+  if (!durationStr) {
+    return "0s";
+  }
+
+  // Extract components
+  const hoursMatch = durationStr.match(/(\d+)H/i);
+  const minutesMatch = durationStr.match(/(\d+)M/i);
+  const secondsMatch = durationStr.match(/(\d+)S/i);
+
+  const hours = hoursMatch ? parseInt(hoursMatch[1], 10) : 0;
+  const minutes = minutesMatch ? parseInt(minutesMatch[1], 10) : 0;
+  const seconds = secondsMatch ? parseInt(secondsMatch[1], 10) : 0;
+
+  // Format based on duration length
+  if (hours > 0) {
+    return `${hours}h ${minutes > 0 ? `${minutes}m` : ""}`.trim();
+  }
+
+  if (minutes > 0) {
+    return `${minutes}m ${seconds > 0 ? `${seconds}s` : ""}`.trim();
+  }
+
+  return `${seconds}s`;
 }

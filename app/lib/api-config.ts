@@ -52,7 +52,6 @@ export const API_ENDPOINTS = {
     TRANSACTIONS: "/api/transactions",
   },
 
-
   // YouTube
   YOUTUBE: {
     AUTH_URL: "/api/youtube/auth-url",
@@ -72,6 +71,8 @@ export const API_ENDPOINTS = {
     GET_BY_ID: (id: string) => `/api/pools/${id}`,
     UPDATE_STATUS: (id: string) => `/api/pools/${id}/status`,
     SETTLE: (id: string) => `/api/pools/${id}/settle`,
+    STATS: (id: string) => `/api/pools/${id}/stats`,
+    DEPOSIT_PLEDGE: (id: string) => `/api/pools/${id}/deposit-pledge`,
   },
 
   // Predictions
@@ -81,7 +82,13 @@ export const API_ENDPOINTS = {
     GET_BY_ID: (id: string) => `/api/predictions/${id}`,
   },
 
-  
+  // Videos
+  VIDEOS: {
+    GET_BY_ID: (id: string) => `/api/videos/${id}`,
+    METRICS: (id: string) => `/api/videos/${id}/metrics`,
+    SYNC_METRICS: (id: string) => `/api/videos/${id}/sync-metrics`,
+  },
+
   // Analytics
   ANALYTICS: {
     CREATOR: (id: string) => `/api/analytics/creator/${id}`,

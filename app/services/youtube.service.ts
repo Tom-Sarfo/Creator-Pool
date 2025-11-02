@@ -1,5 +1,6 @@
 import { apiClient, buildQueryString, TokenManager } from "./api-client";
 import { API_CONFIG, API_ENDPOINTS } from "../lib/api-config";
+import { formatISODurationShort } from "../lib/utils";
 import type {
   YouTubeAuthUrlResponse,
   YouTubeChannelResponse,
@@ -269,18 +270,8 @@ export class YouTubeService {
 
   // Format duration (ISO 8601 to readable format)
   static formatDuration(duration: string): string {
-    const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-    if (!match) return duration;
-
-    const hours = parseInt(match[1] || "0");
-    const minutes = parseInt(match[2] || "0");
-    const seconds = parseInt(match[3] || "0");
-
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-    } else {
-      return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-    }
+    // Use the utility function from utils.ts
+    return formatISODurationShort(duration) || duration;
   }
 
   // Check if video is eligible for pool creation
