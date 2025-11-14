@@ -14,7 +14,12 @@ import EmptyState from "../components/EmptyState";
 import { extractDurationAndTimeRemaining } from "../lib/utils";
 import { EMPTY_STATE_MESSAGES } from "../lib/constants";
 import { useAppContext } from "../contexts/AppContext";
-import type { Pool } from "../contexts/AppContext";
+import { useAuth } from "../contexts/AuthContext";
+import type { Pool, PoolStatus, PoolResult } from "../lib/types";
+import {
+  PoolStatus as PoolStatusEnum,
+  PoolResult as PoolResultEnum,
+} from "../lib/types";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -31,6 +36,7 @@ export default function CreatorPools() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { pools, addPool, filteredPools, videos } = useAppContext();
+  const { user } = useAuth();
 
   const currentPools = filteredPools(
     activeTab as "active" | "settled" | "expired" | "all"
@@ -67,36 +73,40 @@ export default function CreatorPools() {
     const videoTitle =
       selectedVideo?.title || `Pool for Video ${poolData.videoId}`;
     const questionText =
-      poolData.question?.text || "Will this video reach target views?";
-    const targetMatch = questionText.match(/([\d,]+)\s*views?/i);
-    const targetViews = targetMatch
-      ? parseInt(targetMatch[1].replace(/,/g, ""))
-      : 50000;
+      poolData.question || "Will this video reach target views?";
+    const targetViews =
+      poolData.targetViews ||
+      (() => {
+        const targetMatch = questionText.match(/([\d,]+)\s*views?/i);
+        return targetMatch ? parseInt(targetMatch[1].replace(/,/g, "")) : 50000;
+      })();
     const { duration, timeRemaining, totalDays } =
       extractDurationAndTimeRemaining(questionText);
     const isUnlistedVideo =
       selectedVideo && selectedVideo.status === "unlisted";
     const creatorPledgeAmount = poolData.pledgeAmount || 0;
 
-    const newPool: Omit<Pool, "id"> = {
-      title: videoTitle,
-      videoTitle: videoTitle,
+    const newPool: Omit<Pool, "id" | "createdAt" | "updatedAt"> = {
       videoId: poolData.videoId,
+      creatorId: user?.id || "",
       question: questionText,
       participants: 0,
       totalStake: creatorPledgeAmount,
       creatorPledge: creatorPledgeAmount,
       predictorStakes: 0,
-      timeRemaining: "10m",
-      status: "open",
-      createdAt: new Date().toISOString(),
+      status: PoolStatusEnum.OPEN,
       targetViews: targetViews,
       currentViews: 0,
-      duration: totalDays,
-      predictionWindow: 10,
-      ...(selectedVideo && {
-        thumbnail: selectedVideo.thumbnail,
-      }),
+      trackingDurationDays: poolData.trackingDurationDays || totalDays,
+      predictionWindowMinutes: 10,
+      yesStake: 0,
+      noStake: 0,
+      yesCount: 0,
+      noCount: 0,
+      probabilityYes: 0.5,
+      probabilityNo: 0.5,
+      creatorEarnings: 0,
+      result: PoolResultEnum.PENDING,
     };
 
     addPool(newPool);

@@ -1,12 +1,13 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { UserButton } from "@clerk/react-router";
 import {
   faBars,
   faBell,
   faWallet,
   faSync,
   faSearch,
+  faUser,
 } from "@fortawesome/free-solid-svg-icons";
+import { useAuth } from "../contexts/AuthContext";
 
 interface HeaderProps {
   title: string;
@@ -25,6 +26,7 @@ export default function Header({
   showSyncButton = false,
   showSearchBar = false,
 }: HeaderProps) {
+  const { user, logout } = useAuth();
   return (
     <div className="sticky top-0 z-40 flex h-16 items-center justify-between bg-white border-b border-gray-200 px-4 lg:px-6 w-full">
       <div className="flex items-center min-w-0 flex-1">
@@ -74,7 +76,20 @@ export default function Header({
         </button>
 
         {/* User menu */}
-        <UserButton afterSignOutUrl="/" />
+        <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 text-gray-600">
+            <FontAwesomeIcon icon={faUser} className="h-5 w-5" />
+            <span className="text-sm font-medium">
+              {user?.name || user?.email || "User"}
+            </span>
+          </div>
+          <button
+            onClick={logout}
+            className="text-gray-600 hover:text-gray-800 text-sm font-medium"
+          >
+            Sign Out
+          </button>
+        </div>
       </div>
     </div>
   );

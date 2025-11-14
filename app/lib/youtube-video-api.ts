@@ -24,6 +24,8 @@ export interface YouTubeChannel {
   videoCount: number;
 }
 
+import { formatISODurationShort } from "./utils";
+
 export class YouTubeVideoAPI {
   private accessToken: string;
 
@@ -177,18 +179,8 @@ export class YouTubeVideoAPI {
 
   // Parse YouTube duration format (PT4M13S) to readable format
   private parseDuration(duration: string): string {
-    const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-    if (!match) return "0:00";
-
-    const hours = parseInt(match[1] || "0");
-    const minutes = parseInt(match[2] || "0");
-    const seconds = parseInt(match[3] || "0");
-
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-    } else {
-      return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-    }
+    // Use the utility function from utils.ts
+    return formatISODurationShort(duration) || "0s";
   }
 
   // Convert YouTube video to app's video format

@@ -1,6 +1,6 @@
 import { Link } from "react-router";
+import { useAuth } from "../contexts/AuthContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useUser } from "@clerk/react-router";
 import { useState, useEffect } from "react";
 import {
   faBullseye,
@@ -30,7 +30,7 @@ import StatsCard from "../components/StatsCard";
 
 export default function PredictorDashboard() {
   const { pools, predictions } = useAppContext();
-  const { user } = useUser();
+  const { user } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -168,8 +168,8 @@ export default function PredictorDashboard() {
                           className="flex-shrink-0"
                         >
                           <img
-                            src={pool.thumbnail}
-                            alt={pool.title}
+                            src={pool.video?.thumbnail || ""}
+                            alt={pool.video?.title || pool.question}
                             className="w-16 h-12 sm:w-20 sm:h-14 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
                           />
                         </Link>
@@ -178,7 +178,7 @@ export default function PredictorDashboard() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center space-x-2 mb-1">
                                 <span className="text-xs sm:text-sm font-medium text-gray-900 truncate">
-                                  {pool.creator}
+                                  {pool.creator?.name || "Unknown"}
                                 </span>
                                 <span
                                   className={`text-xs px-2 py-1 rounded-full font-medium flex-shrink-0 ${getPoolStatusColor(pool.status)}`}
@@ -188,7 +188,7 @@ export default function PredictorDashboard() {
                               </div>
                               <Link to={`/predictor/pool/${pool.id}`}>
                                 <p className="text-sm sm:text-base font-medium text-gray-900 line-clamp-2 hover:text-orange-600 cursor-pointer transition-colors">
-                                  {pool.title}
+                                  {pool.video?.title || pool.question}
                                 </p>
                               </Link>
                             </div>
@@ -248,14 +248,20 @@ export default function PredictorDashboard() {
                         ) : (
                           <div className="flex items-center justify-between">
                             <div className="text-sm text-gray-600">
-                              Current Odds:
+                              Current Probability:
                             </div>
                             <div className="flex space-x-3">
                               <span className="text-green-600 font-medium text-sm">
-                                YES {(pool.odds?.yes || 2.0).toFixed(1)}x
+                                YES{" "}
+                                {((pool.probabilityYes || 0.5) * 100).toFixed(
+                                  1
+                                )}
+                                %
                               </span>
                               <span className="text-red-600 font-medium text-sm">
-                                NO {(pool.odds?.no || 2.0).toFixed(1)}x
+                                NO{" "}
+                                {((pool.probabilityNo || 0.5) * 100).toFixed(1)}
+                                %
                               </span>
                             </div>
                           </div>

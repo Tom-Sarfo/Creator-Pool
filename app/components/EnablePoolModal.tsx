@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faTimes,
@@ -12,10 +12,15 @@ import {
   faShieldAlt,
   faChevronDown,
   faDollarSign,
+  faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
 import { faYoutube } from "@fortawesome/free-brands-svg-icons";
 import { useAppContext } from "../contexts/AppContext";
+import { useAuth } from "../contexts/AuthContext";
 import { POOL_QUESTIONS, PLEDGE_OPTIONS } from "../lib/constants";
+import { formatISODurationShort } from "../lib/utils";
+import { poolService } from "../services/pool.service";
+import type { Suggestion } from "../lib/types";
 import { Label } from "@radix-ui/react-label";
 import TextInputField from "./TextInputField";
 
@@ -43,21 +48,90 @@ export default function EnablePoolModal({
   onEnablePool,
 }: EnablePoolModalProps) {
   const { videos } = useAppContext();
+  const { user, isAuthenticated } = useAuth();
   const [pledgeType, setPledgeType] = useState("fixed");
   const [customAmount, setCustomAmount] = useState("200");
-  const [selectedQuestion, setSelectedQuestion] = useState(0);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(
     video?.id ? video.id.toString() : null
   );
   const [showVideoSelector, setShowVideoSelector] = useState(false);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [suggestionsError, setSuggestionsError] = useState<string | null>(null);
+  const [suggestionsFetched, setSuggestionsFetched] = useState(false);
 
-  const questions = POOL_QUESTIONS;
+  const questions = suggestions.length > 0 ? suggestions : POOL_QUESTIONS;
 
   const pledgeOptions = PLEDGE_OPTIONS.map((option) => ({
     ...option,
     amount: option.type === "fixed" ? `$${customAmount}` : option.amount,
   }));
+
+  useEffect(() => {
+    if (isOpen && isAuthenticated && user && !suggestionsFetched) {
+      fetchSuggestions();
+    }
+
+    if (!isOpen) {
+      setSuggestionsFetched(false);
+      setSuggestionsError(null);
+      setSelectedSuggestionIndex(0);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, isAuthenticated, user]);
+
+  const fetchSuggestions = async () => {
+    if (!user || !isAuthenticated) return;
+
+    setLoadingSuggestions(true);
+    setSuggestionsError(null);
+
+    try {
+      const videoId = selectedVideoId || video?.id?.toString();
+      const response = await poolService.getSuggestions(user.id, videoId);
+      setSuggestions(response.suggestions);
+      setSuggestionsFetched(true);
+      if (response.suggestions.length > 0) {
+        setSelectedSuggestionIndex(0);
+      }
+    } catch (error: any) {
+      console.error("Error fetching suggestions:", error);
+      setSuggestionsError(
+        error?.data?.message || error?.message || "Failed to load suggestions"
+      );
+      setSuggestions([]);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
+
+  const handleRegenerate = async () => {
+    if (!user || !isAuthenticated) return;
+
+    setSuggestionsFetched(false);
+    setLoadingSuggestions(true);
+    setSuggestionsError(null);
+
+    try {
+      const videoId = selectedVideoId || video?.id?.toString();
+      const response = await poolService.getSuggestions(user.id, videoId);
+      setSuggestions(response.suggestions);
+      setSuggestionsFetched(true);
+      if (response.suggestions.length > 0) {
+        setSelectedSuggestionIndex(0);
+      }
+    } catch (error: any) {
+      console.error("Error fetching suggestions:", error);
+      setSuggestionsError(
+        error?.data?.message || error?.message || "Failed to load suggestions"
+      );
+      setSuggestions([]);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -89,22 +163,58 @@ export default function EnablePoolModal({
       uploadDate: "Not selected",
     };
 
-  const handleVideoSelect = (videoId: string) => {
+  const handleVideoSelect = async (videoId: string) => {
     setSelectedVideoId(videoId);
     setShowVideoSelector(false);
+    if (isAuthenticated && user) {
+      setSuggestionsFetched(false);
+      setLoadingSuggestions(true);
+      setSuggestionsError(null);
+
+      try {
+        const response = await poolService.getSuggestions(user.id, videoId);
+        setSuggestions(response.suggestions);
+        setSuggestionsFetched(true);
+        if (response.suggestions.length > 0) {
+          setSelectedSuggestionIndex(0);
+        }
+      } catch (error: any) {
+        console.error("Error fetching suggestions:", error);
+        setSuggestionsError(
+          error?.data?.message || error?.message || "Failed to load suggestions"
+        );
+        setSuggestions([]);
+      } finally {
+        setLoadingSuggestions(false);
+      }
+    }
   };
 
   const handleEnablePool = () => {
     if (!termsAccepted) return;
     if (needsVideoSelection && !selectedVideoId) return;
 
+    const selectedQuestion = questions[selectedSuggestionIndex];
+    const isSuggestion =
+      suggestions.length > 0 && selectedSuggestionIndex < suggestions.length;
+
     const poolData = {
       videoId: selectedVideoId ? parseInt(selectedVideoId) : displayVideo.id,
-      question: questions[selectedQuestion].text,
+      question: isSuggestion
+        ? (selectedQuestion as Suggestion).question
+        : (selectedQuestion as (typeof POOL_QUESTIONS)[0]).text,
+      targetViews: isSuggestion
+        ? (selectedQuestion as Suggestion).targetViews
+        : undefined,
+      trackingDurationDays: isSuggestion
+        ? (selectedQuestion as Suggestion).trackingDurationDays
+        : undefined,
       pledgeType,
       pledgeAmount: pledgeType === "fixed" ? parseFloat(customAmount) : 0,
       pledgePercentage: pledgeType === "percentage" ? 15 : 0,
     };
+
+    console.log("poolData", poolData);
 
     onEnablePool?.(poolData);
     onClose();
@@ -165,7 +275,7 @@ export default function EnablePoolModal({
 
                   {displayVideo.duration && (
                     <div className="absolute bottom-2 right-2 bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded">
-                      {displayVideo.duration}
+                      {formatISODurationShort(displayVideo.duration)}
                     </div>
                   )}
                 </div>
@@ -251,8 +361,8 @@ export default function EnablePoolModal({
                                 )}
                               </div>
                               <p className="text-xs text-gray-500 break-words">
-                                {unlistedVideo.duration} •{" "}
-                                {unlistedVideo.uploadDate}
+                                {formatISODurationShort(unlistedVideo.duration)}{" "}
+                                • {unlistedVideo.uploadDate}
                                 {unlistedVideo.isYouTubeVideo && (
                                   <span className="ml-2 text-red-500">
                                     • Real Video
@@ -360,53 +470,146 @@ export default function EnablePoolModal({
                 <h3 className="text-base sm:text-lg font-medium text-gray-900">
                   Prediction Question
                 </h3>
-                <button className="flex items-center space-x-2 text-sm text-orange-600 hover:text-orange-700 transition-colors">
-                  <FontAwesomeIcon icon={faRefresh} className="w-4 h-4" />
-                  <span>Regenerate</span>
-                </button>
+                {isAuthenticated && (
+                  <button
+                    onClick={handleRegenerate}
+                    disabled={loadingSuggestions}
+                    className="flex items-center space-x-2 text-sm text-orange-600 hover:text-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <FontAwesomeIcon
+                      icon={loadingSuggestions ? faSpinner : faRefresh}
+                      className={`w-4 h-4 ${loadingSuggestions ? "animate-spin" : ""}`}
+                    />
+                    <span>Regenerate</span>
+                  </button>
+                )}
               </div>
 
-              <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
-                <div className="flex items-center space-x-2 mb-2">
-                  <FontAwesomeIcon
-                    icon={faQuestionCircle}
-                    className="w-4 h-4 text-cyan-600"
-                  />
-                  <span className="text-xs sm:text-sm text-cyan-600">
-                    AI Generated
-                  </span>
+              {loadingSuggestions && suggestions.length === 0 ? (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
+                  <div className="flex items-center justify-center space-x-2">
+                    <FontAwesomeIcon
+                      icon={faSpinner}
+                      className="w-4 h-4 text-gray-400 animate-spin"
+                    />
+                    <span className="text-xs sm:text-sm text-gray-500">
+                      Loading suggestions...
+                    </span>
+                  </div>
                 </div>
-                <p className="text-gray-900 font-medium mb-2 text-sm sm:text-base break-words">
-                  {questions[selectedQuestion].text}
-                </p>
-                <div className="flex items-center space-x-2 text-xs sm:text-sm text-cyan-600">
-                  <FontAwesomeIcon icon={faLightbulb} className="w-4 h-4" />
-                  <span>{questions[selectedQuestion].performance}</span>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3">
-                  Or choose from these alternatives:
-                </p>
-                <div className="space-y-1 sm:space-y-2">
-                  {questions.slice(1).map((question, index) => (
+              ) : suggestionsError && suggestions.length === 0 ? (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <FontAwesomeIcon
+                        icon={faQuestionCircle}
+                        className="w-4 h-4 text-red-600"
+                      />
+                      <span className="text-xs sm:text-sm text-red-600">
+                        {suggestionsError}
+                      </span>
+                    </div>
                     <button
-                      key={question.id}
-                      onClick={() => setSelectedQuestion(question.id)}
-                      className={`w-full p-2 sm:p-3 text-left border rounded-lg transition-colors ${
-                        selectedQuestion === question.id
-                          ? "border-orange-500 bg-orange-50"
-                          : "border-gray-200 hover:border-gray-300"
-                      }`}
+                      onClick={fetchSuggestions}
+                      className="text-xs text-red-600 hover:text-red-700 underline"
                     >
-                      <p className="text-xs sm:text-sm text-gray-900 break-words">
-                        {question.text}
-                      </p>
+                      Retry
                     </button>
-                  ))}
+                  </div>
                 </div>
-              </div>
+              ) : questions.length > 0 ? (
+                <>
+                  <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <FontAwesomeIcon
+                        icon={faQuestionCircle}
+                        className="w-4 h-4 text-cyan-600"
+                      />
+                      <span className="text-xs sm:text-sm text-cyan-600">
+                        {suggestions.length > 0 &&
+                        selectedSuggestionIndex < suggestions.length
+                          ? suggestions[selectedSuggestionIndex].type ===
+                            "average"
+                            ? "Based on your average performance"
+                            : "Based on your recent videos"
+                          : "AI Generated"}
+                      </span>
+                    </div>
+                    <p className="text-gray-900 font-medium mb-2 text-sm sm:text-base break-words">
+                      {suggestions.length > 0 &&
+                      selectedSuggestionIndex < suggestions.length
+                        ? suggestions[selectedSuggestionIndex].question
+                        : (
+                            questions[
+                              selectedSuggestionIndex
+                            ] as (typeof POOL_QUESTIONS)[0]
+                          ).text}
+                    </p>
+                    <div className="flex items-center space-x-2 text-xs sm:text-sm text-cyan-600">
+                      <FontAwesomeIcon icon={faLightbulb} className="w-4 h-4" />
+                      <span>
+                        {suggestions.length > 0 &&
+                        selectedSuggestionIndex < suggestions.length
+                          ? suggestions[selectedSuggestionIndex].description
+                          : (
+                              questions[
+                                selectedSuggestionIndex
+                              ] as (typeof POOL_QUESTIONS)[0]
+                            ).performance}
+                      </span>
+                    </div>
+                  </div>
+
+                  {questions.length > 1 && (
+                    <div>
+                      <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3">
+                        Or choose from these alternatives:
+                      </p>
+                      <div className="space-y-1 sm:space-y-2">
+                        {questions.slice(1).map((question, index) => {
+                          const actualIndex = index + 1;
+                          const isSuggestion =
+                            suggestions.length > 0 &&
+                            actualIndex < suggestions.length;
+                          const questionText = isSuggestion
+                            ? (question as Suggestion).question
+                            : (question as (typeof POOL_QUESTIONS)[0]).text;
+
+                          return (
+                            <button
+                              key={actualIndex}
+                              onClick={() =>
+                                setSelectedSuggestionIndex(actualIndex)
+                              }
+                              className={`w-full p-2 sm:p-3 text-left border rounded-lg transition-colors ${
+                                selectedSuggestionIndex === actualIndex
+                                  ? "border-orange-500 bg-orange-50"
+                                  : "border-gray-200 hover:border-gray-300"
+                              }`}
+                            >
+                              <p className="text-xs sm:text-sm text-gray-900 break-words">
+                                {questionText}
+                              </p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
+                  <div className="flex items-center space-x-2">
+                    <FontAwesomeIcon
+                      icon={faQuestionCircle}
+                      className="w-4 h-4 text-gray-400"
+                    />
+                    <span className="text-xs sm:text-sm text-gray-500">
+                      No suggestions available. Please create a pool manually.
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center space-x-2 text-xs sm:text-sm text-green-600 bg-green-50 p-2 sm:p-3 rounded-lg">

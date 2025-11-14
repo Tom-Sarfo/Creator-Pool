@@ -13,6 +13,7 @@ export default [
   route("api/youtube/tokens", "routes/api/youtube/tokens.ts"),
   route("creator", "routes/creator-layout.tsx", [
     index("routes/creator-dashboard.tsx"),
+    route("dashboard", "routes/creator-dashboard-redirect.tsx"),
     route("pools", "routes/creator-pools.tsx"),
     route("pool/:id", "routes/creator-pool-detail.tsx"),
     route("analytics", "routes/creator-analytics.tsx"),

@@ -1,19 +1,21 @@
 import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimes, faDollarSign } from "@fortawesome/free-solid-svg-icons";
-import type { Pool } from "../contexts/AppContext";
+import type { Pool, PredictionChoice } from "../lib/types";
+import { PredictionChoice as PredictionChoiceEnum } from "../lib/types";
 import {
-  calculateDynamicOdds,
-  calculatePotentialPayout,
   validateStake,
+  formatPoolQuestion,
+  formatProbabilityAsPercentage,
+  estimatePotentialPayout,
 } from "../lib/utils";
 
 interface PredictionModalProps {
   isOpen: boolean;
   onClose: () => void;
   pool: Pool;
-  preselectedChoice?: "yes" | "no";
-  onSubmit: (prediction: { choice: "yes" | "no"; stake: number }) => void;
+  preselectedChoice?: PredictionChoice;
+  onSubmit: (prediction: { choice: PredictionChoice; stake: number }) => void;
 }
 
 const QUICK_STAKES = [10, 25, 50, 100];
@@ -25,17 +27,23 @@ export default function PredictionModal({
   preselectedChoice,
   onSubmit,
 }: PredictionModalProps) {
-  const [choice, setChoice] = useState<"yes" | "no">(
-    preselectedChoice || "yes"
+  const [choice, setChoice] = useState<PredictionChoice>(
+    preselectedChoice || PredictionChoiceEnum.YES
   );
   const [stake, setStake] = useState("");
   const [error, setError] = useState("");
 
-  // Calculate current odds
-  const odds = calculateDynamicOdds(pool.yesStake || 0, pool.noStake || 0);
-  const currentOdds = choice === "yes" ? odds.yes : odds.no;
-  const potentialPayout = stake
-    ? calculatePotentialPayout(parseFloat(stake), currentOdds)
+  // Calculate estimated potential payout
+  const totalStakeOnUserSide =
+    choice === PredictionChoiceEnum.YES
+      ? pool.yesStake || 0
+      : pool.noStake || 0;
+  const estimatedPayout = stake
+    ? estimatePotentialPayout(
+        parseFloat(stake),
+        totalStakeOnUserSide,
+        pool.totalStake || 0
+      )
     : 0;
 
   const handleStakeInput = (value: string) => {
@@ -79,7 +87,7 @@ export default function PredictionModal({
   // Reset form when modal opens/closes
   useEffect(() => {
     if (isOpen) {
-      setChoice(preselectedChoice || "yes");
+      setChoice(preselectedChoice || PredictionChoiceEnum.YES);
       setStake("");
       setError("");
     }
@@ -116,18 +124,26 @@ export default function PredictionModal({
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="flex items-center space-x-3 mb-2">
                 <img
-                  src={pool.thumbnail}
-                  alt={pool.title}
+                  src={pool.video?.thumbnail || ""}
+                  alt={pool.video?.title || pool.question}
                   className="w-12 h-8 object-cover rounded"
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">
-                    {pool.title}
+                    {pool.video?.title || pool.question}
                   </p>
-                  <p className="text-xs text-gray-500">{pool.creator}</p>
+                  <p className="text-xs text-gray-500">
+                    {pool.creator?.name || "Unknown"}
+                  </p>
                 </div>
               </div>
-              <p className="text-sm text-gray-600">{pool.question}</p>
+              <p className="text-sm text-gray-600">
+                {formatPoolQuestion(
+                  pool.question || "",
+                  pool.targetViews || 0,
+                  pool.trackingDurationDays
+                )}
+              </p>
             </div>
 
             {/* Choice Selection */}
@@ -137,29 +153,35 @@ export default function PredictionModal({
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <button
-                  onClick={() => setChoice("yes")}
+                  onClick={() => setChoice(PredictionChoiceEnum.YES)}
                   className={`p-4 rounded-lg border-2 transition-all ${
-                    choice === "yes"
+                    choice === PredictionChoiceEnum.YES
                       ? "border-green-500 bg-green-50 text-green-700"
                       : "border-gray-200 hover:border-green-300"
                   }`}
                 >
                   <div className="text-center">
                     <div className="text-lg font-bold">YES</div>
-                    <div className="text-sm">{odds.yes.toFixed(2)}x odds</div>
+                    <div className="text-sm">
+                      {formatProbabilityAsPercentage(
+                        pool.probabilityYes || 0.5
+                      )}
+                    </div>
                   </div>
                 </button>
                 <button
-                  onClick={() => setChoice("no")}
+                  onClick={() => setChoice(PredictionChoiceEnum.NO)}
                   className={`p-4 rounded-lg border-2 transition-all ${
-                    choice === "no"
+                    choice === PredictionChoiceEnum.NO
                       ? "border-red-500 bg-red-50 text-red-700"
                       : "border-gray-200 hover:border-red-300"
                   }`}
                 >
                   <div className="text-center">
                     <div className="text-lg font-bold">NO</div>
-                    <div className="text-sm">{odds.no.toFixed(2)}x odds</div>
+                    <div className="text-sm">
+                      {formatProbabilityAsPercentage(pool.probabilityNo || 0.5)}
+                    </div>
                   </div>
                 </button>
               </div>
@@ -221,14 +243,14 @@ export default function PredictionModal({
               <div className="bg-orange-50 rounded-lg p-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-orange-700">
-                    Potential Payout:
+                    Estimated Payout:
                   </span>
                   <span className="text-lg font-bold text-orange-900">
-                    ${potentialPayout.toFixed(2)}
+                    ${estimatedPayout.toFixed(2)}
                   </span>
                 </div>
                 <div className="text-xs text-orange-600 mt-1">
-                  Based on current odds of {currentOdds.toFixed(2)}x
+                  Estimate based on current pool state
                 </div>
               </div>
             )}

@@ -10,6 +10,9 @@ import {
   faBullseye,
 } from "@fortawesome/free-solid-svg-icons";
 import { faYoutube } from "@fortawesome/free-brands-svg-icons";
+import { useAppContext } from "../contexts/AppContext";
+import { getThumbnail, formatISODurationShort } from "../lib/utils";
+import { useLivePoolMetrics } from "../hooks/useLivePoolMetrics";
 
 interface VideoCardProps {
   video?: any;
@@ -19,6 +22,7 @@ interface VideoCardProps {
   getPoolStatusLabel?: (status: string) => string;
   formatNumber?: (num: number) => string;
   showPoolBadge?: boolean;
+  enableLiveMetrics?: boolean; // Disable live metrics in list views to prevent too many requests
 }
 
 export default function VideoCard({
@@ -29,10 +33,41 @@ export default function VideoCard({
   getPoolStatusLabel,
   formatNumber,
   showPoolBadge = true,
+  enableLiveMetrics = false, // Default to false - only enable on detail pages
 }: VideoCardProps) {
+  const { getVideoById } = useAppContext();
+
   // Determine if this is a pool card or video card
   const isPoolCard = !!pool;
   const data = isPoolCard ? pool : video;
+
+  // Only use live metrics if explicitly enabled AND pool is in active status
+  // This prevents too many API calls in list views
+  const shouldUseLiveMetrics =
+    enableLiveMetrics &&
+    isPoolCard &&
+    data?.id &&
+    data?.status &&
+    ["open", "awaiting_release", "live_tracking"].includes(data.status);
+
+  const poolId = shouldUseLiveMetrics ? String(data.id) : "";
+  const { metrics: liveMetrics } = useLivePoolMetrics(poolId);
+
+  // Use live metrics for currentViews if available (for pool cards)
+  const currentViews =
+    shouldUseLiveMetrics && liveMetrics
+      ? liveMetrics.viewCount
+      : data?.currentViews !== undefined && data?.currentViews !== null
+        ? data.currentViews
+        : (data as any)?.viewCount || (data as any)?.views || 0;
+
+  // Calculate progress similar to pool-detail.tsx
+  const targetViews = data?.targetViews || 0;
+  const progress =
+    targetViews > 0 ? Math.min((currentViews / targetViews) * 100, 100) : 0;
+
+  // Get thumbnail with fallback for pools
+  const thumbnail = getThumbnail(data, getVideoById, isPoolCard);
 
   // Default utility functions if not provided
   const defaultFormatNumber = (num: number) => {
@@ -81,14 +116,19 @@ export default function VideoCard({
         <div className="flex-shrink-0 relative">
           <div className="w-14 h-10 sm:w-16 sm:h-12 lg:w-20 lg:h-14 bg-gray-200 rounded-md overflow-hidden relative">
             <img
-              src={data.thumbnail}
-              alt={data.title}
+              src={thumbnail}
+              alt={data.title || "Pool thumbnail"}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                // Fallback if image fails to load
+                e.currentTarget.src =
+                  "https://via.placeholder.com/300x200?text=No+Thumbnail";
+              }}
             />
             {!isPoolCard && (
               <>
                 <div className="absolute bottom-0 right-0 bg-black bg-opacity-75 text-white text-xs px-1 rounded-tl">
-                  {data.duration}
+                  {formatISODurationShort(data.duration)}
                 </div>
                 {data.isYouTubeVideo && (
                   <div className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1 rounded-bl flex items-center space-x-1">
@@ -282,21 +322,18 @@ export default function VideoCard({
               ))) && (
             <div className="mt-2 sm:mt-3">
               <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-                <span className="truncate">
-                  Progress to {formatNum(data.targetViews)} views
-                </span>
+                <span className="truncate">{formatNum(targetViews)} views</span>
                 <span className="flex-shrink-0 ml-2">
-                  {Math.round(
-                    ((data.currentViews || 0) / (data.targetViews || 1)) * 100
-                  )}
-                  %
+                  {progress.toFixed(2)}%
                 </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-1.5 sm:h-2">
                 <div
-                  className="bg-orange-600 h-1.5 sm:h-2 rounded-full"
+                  className={`h-1.5 sm:h-2 rounded-full ${
+                    progress > 100 ? "bg-green-500" : "bg-orange-600"
+                  }`}
                   style={{
-                    width: `${Math.min(((data.currentViews || 0) / (data.targetViews || 1)) * 100, 100)}%`,
+                    width: `${Math.min(progress, 100)}%`,
                   }}
                 ></div>
               </div>
