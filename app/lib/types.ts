@@ -50,7 +50,6 @@ export enum VideoVisibility {
   PUBLIC = "public",
 }
 
-
 export interface LoginRequest {
   email: string;
   password: string;
@@ -95,6 +94,30 @@ export interface PoolFilters {
   videoId?: string;
   page?: number;
   limit?: number;
+}
+
+export interface Suggestion {
+  question: string;
+  targetViews: number;
+  trackingDurationDays: number;
+  description: string;
+  type: "comparison" | "average";
+}
+
+export interface SuggestionResponse {
+  suggestions: Suggestion[];
+  analytics: {
+    avg24hViews: number | null;
+    avg48hViews: number | null;
+    avg7dViews: number | null;
+    avg30dViews: number | null;
+    sampleSize: number;
+    hasEnoughData: boolean;
+  };
+  creatorStats: {
+    totalVideos: number;
+    videosWithMilestones: number;
+  };
 }
 
 export interface CreatePredictionRequest {
@@ -169,7 +192,11 @@ export interface Pool {
   noCount: number;
   participants: number;
   currentViews: number;
+  probabilityYes: number;
+  probabilityNo: number;
+  /** @deprecated Use probabilityYes instead */
   yesOdds?: number | null;
+  /** @deprecated Use probabilityNo instead */
   noOdds?: number | null;
   result: PoolResult;
   creatorEarnings: number;
@@ -301,9 +328,10 @@ export interface SettlePoolResponse {
 
 export interface CreatePredictionResponse {
   prediction: Prediction;
-  updatedOdds: {
-    yes: number;
-    no: number;
+  potentialPayout: number;
+  updatedProbabilities: {
+    probabilityYes: number;
+    probabilityNo: number;
   };
 }
 
@@ -324,7 +352,7 @@ export interface WalletBalanceResponse {
 
 export interface DepositRequest {
   amount: number;
-//   paymentMethod: "stripe" | "paypal";
+  //   paymentMethod: "stripe" | "paypal";
 }
 
 export interface DepositResponse {
@@ -449,10 +477,10 @@ export interface WebSocketEvents {
     poolId: string;
     prediction: Prediction;
   };
-  oddsUpdate: {
+  probabilityUpdate: {
     poolId: string;
-    yesOdds: number;
-    noOdds: number;
+    probabilityYes: number;
+    probabilityNo: number;
   };
   poolStatusChange: {
     poolId: string;

@@ -1,32 +1,31 @@
 // Import types
 import type { Pool } from "./types";
 
-// Prediction and odds calculation utilities
-export function calculateDynamicOdds(yesStake: number, noStake: number) {
-  const totalStake = yesStake + noStake;
-
-  if (totalStake === 0) {
-    return { yes: 2.0, no: 2.0 }; // Even odds when no stakes - using 2.0 as even odds
-  }
-
-  // Calculate odds based on stake ratio
-  // Lower stake side gets higher odds (more attractive)
-  const yesOdds = totalStake / Math.max(yesStake, 1);
-  const noOdds = totalStake / Math.max(noStake, 1);
-
-  // Apply house edge (6% total: 5% platform + 1% creator)
-  const houseEdge = 0.94;
-
-  return {
-    yes: Math.max(2.0, Number((yesOdds * houseEdge).toFixed(2))),
-    no: Math.max(2.0, Number((noOdds * houseEdge).toFixed(2))),
-  };
+// Probability utility functions
+export function formatProbabilityAsPercentage(probability: number): string {
+  // Formats probability (0-1 range) as percentage string
+  return `${(probability * 100).toFixed(1)}%`;
 }
 
-export function calculatePotentialPayout(stake: number, odds: number): number {
-  // In parimutuel system, odds represent net return ratio
-  // 2.0 odds means you get back stake + (stake * 2.0) = stake * 3.0
-  return Number((stake * (1 + odds)).toFixed(2));
+export function getProbabilityColor(probability: number): string {
+  // Returns color classes based on probability value
+  if (probability >= 0.7) return "text-green-600";
+  if (probability >= 0.5) return "text-blue-600";
+  if (probability >= 0.3) return "text-yellow-600";
+  return "text-red-600";
+}
+
+export function estimatePotentialPayout(
+  userStake: number,
+  totalStakeOnUserSide: number,
+  totalPool: number
+): number {
+  // Estimates potential payout: (userStake / totalStakeOnUserSide) * totalPool
+  // This is only used for preview before submission
+  if (totalStakeOnUserSide === 0) return 0;
+  const estimated = (userStake / totalStakeOnUserSide) * totalPool;
+  const cap = totalPool * 0.94 * 0.8; // 80% of net pool after 6% house edge
+  return Number(Math.min(estimated, cap).toFixed(2));
 }
 
 export function validateStake(
@@ -452,29 +451,42 @@ export function mapQuickActionsToIcons(actions: any[]) {
   }));
 }
 
+const toNumber = (value: unknown) => {
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  if (typeof value === "string") {
+    const parsed = parseFloat(value.replace(/,/g, ""));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  if (typeof value === "bigint") return Number(value);
+  return 0;
+};
+
 export function calculatePoolMetrics(poolData: any, videoData: any) {
   const currentViews =
     poolData.currentViews !== undefined
-      ? poolData.currentViews
-      : videoData?.viewCount || videoData?.views || 0;
-  const targetViews = poolData.targetViews || 0;
+      ? toNumber(poolData.currentViews)
+      : toNumber(videoData?.viewCount ?? videoData?.views);
+  const targetViews = toNumber(poolData.targetViews);
   const progress =
     targetViews > 0 ? Math.min((currentViews / targetViews) * 100, 100) : 0;
 
-  const totalPoolAmount = poolData.totalStake || 0;
-  const creatorPledge = poolData.creatorPledge || 0;
+  const totalPoolAmount = toNumber(poolData.totalStake);
+  const creatorPledge = toNumber(poolData.creatorPledge);
 
-  const yesStake = poolData.yesStake || 0;
-  const noStake = poolData.noStake || 0;
+  const yesStake = toNumber(poolData.yesStake);
+  const noStake = toNumber(poolData.noStake);
   const predictorStakes = yesStake + noStake;
 
-  const yesPercentage =
-    predictorStakes > 0 ? Math.round((yesStake / predictorStakes) * 100) : 0;
-  const noPercentage = 100 - yesPercentage;
+  let yesPercentage = 0;
+  let noPercentage = 0;
+  if (predictorStakes > 0) {
+    yesPercentage = Math.round((yesStake / predictorStakes) * 100);
+    noPercentage = 100 - yesPercentage;
+  }
 
-  const totalParticipants = poolData.participants || 0;
-  const yesStakers = poolData.yesCount || 0;
-  const noStakers = poolData.noCount || 0;
+  const totalParticipants = toNumber(poolData.participants);
+  const yesStakers = toNumber(poolData.yesCount);
+  const noStakers = toNumber(poolData.noCount);
 
   const viewGrowthRate = (() => {
     if (targetViews === 0 || currentViews === 0) return "+0.0%";
@@ -668,4 +680,60 @@ export function formatISODurationShort(
   }
 
   return `${seconds}s`;
+}
+
+export function formatPoolQuestion(
+  question: string,
+  targetViews: number,
+  trackingDurationDays?: number
+): string {
+  if (!question || !targetViews) {
+    return question || "";
+  }
+
+  const formattedViews = targetViews.toLocaleString();
+
+  let formatted = question
+    // Replace "{targetViews}" or "targetViews" with formatted number
+    .replace(/\{targetViews\}/gi, formattedViews)
+    .replace(/\btargetViews\b/gi, formattedViews)
+    // Replace "target views" (case insensitive) with "{formattedViews} views"
+    .replace(/\btarget\s+views\b/gi, `${formattedViews} views`)
+    // Replace standalone "target" when followed by "views" context
+    .replace(/\btarget\b(?=\s*views?)/gi, formattedViews);
+
+  // Replace tracking duration day patterns if provided
+  if (trackingDurationDays && trackingDurationDays > 0) {
+    const daysText =
+      trackingDurationDays === 1 ? "1 day" : `${trackingDurationDays} days`;
+
+    // Check if question already has a tracking duration placeholder (before replacement)
+    const hasTrackingDurationPlaceholder = /\{?trackingDurationDays?\}?/gi.test(
+      formatted
+    );
+
+    formatted = formatted
+      // Replace "{trackingDurationDay}" or "{trackingDurationDays}" with "{days} days"
+      .replace(/\{trackingDurationDays?\}/gi, daysText)
+      // Replace "trackingDurationDay" or "trackingDurationDays" with "{days} days"
+      .replace(/\btrackingDurationDays?\b/gi, daysText)
+      // Replace standalone "tracking duration" when followed by "day/days" context
+      .replace(/\btracking\s+duration\s+days?\b/gi, daysText);
+
+    // Check if question already mentions days/timeframe (after replacement)
+    // This catches both original timeframe mentions and replaced placeholders
+    const hasTimeframeMention =
+      /\b(within|in|after|during|over)\s+[\d\s,]*\s*(day|days|week|weeks|month|months|hour|hours|minute|minutes)\b/gi.test(
+        formatted
+      );
+
+    // If no placeholder existed and no timeframe is mentioned, append "in X days" to the end
+    if (!hasTrackingDurationPlaceholder && !hasTimeframeMention) {
+      // Remove trailing punctuation and whitespace before appending
+      formatted = formatted.trim().replace(/[.?!]*$/, "");
+      formatted = `${formatted} in ${daysText}`;
+    }
+  }
+
+  return formatted;
 }

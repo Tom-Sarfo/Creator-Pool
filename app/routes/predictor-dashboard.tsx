@@ -248,14 +248,20 @@ export default function PredictorDashboard() {
                         ) : (
                           <div className="flex items-center justify-between">
                             <div className="text-sm text-gray-600">
-                              Current Odds:
+                              Current Probability:
                             </div>
                             <div className="flex space-x-3">
                               <span className="text-green-600 font-medium text-sm">
-                                YES {(pool.odds?.yes || 2.0).toFixed(1)}x
+                                YES{" "}
+                                {((pool.probabilityYes || 0.5) * 100).toFixed(
+                                  1
+                                )}
+                                %
                               </span>
                               <span className="text-red-600 font-medium text-sm">
-                                NO {(pool.odds?.no || 2.0).toFixed(1)}x
+                                NO{" "}
+                                {((pool.probabilityNo || 0.5) * 100).toFixed(1)}
+                                %
                               </span>
                             </div>
                           </div>

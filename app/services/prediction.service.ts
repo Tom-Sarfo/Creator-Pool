@@ -10,6 +10,7 @@ import type {
   PredictionChoice,
   PredictionResult,
 } from "../lib/types";
+import { PredictionResult as PredictionResultEnum } from "../lib/types";
 
 // Prediction service class
 export class PredictionService {
@@ -51,17 +52,17 @@ export class PredictionService {
 
   // Get active predictions (pending)
   async getActivePredictions(): Promise<Prediction[]> {
-    return this.getPredictionsByResult("pending");
+    return this.getPredictionsByResult(PredictionResultEnum.PENDING);
   }
 
   // Get won predictions
   async getWonPredictions(): Promise<Prediction[]> {
-    return this.getPredictionsByResult("won");
+    return this.getPredictionsByResult(PredictionResultEnum.WON);
   }
 
   // Get lost predictions
   async getLostPredictions(): Promise<Prediction[]> {
-    return this.getPredictionsByResult("lost");
+    return this.getPredictionsByResult(PredictionResultEnum.LOST);
   }
 
   // Get prediction by ID with full details
@@ -112,11 +113,13 @@ export class PredictionService {
 
     const totalPredictions = predictions.length;
     const activePredictions = predictions.filter(
-      (p) => p.result === "pending"
+      (p) => p.result === PredictionResultEnum.PENDING
     ).length;
-    const wonPredictions = predictions.filter((p) => p.result === "won").length;
+    const wonPredictions = predictions.filter(
+      (p) => p.result === PredictionResultEnum.WON
+    ).length;
     const lostPredictions = predictions.filter(
-      (p) => p.result === "lost"
+      (p) => p.result === PredictionResultEnum.LOST
     ).length;
 
     const winRate =
@@ -124,7 +127,7 @@ export class PredictionService {
         ? (wonPredictions / (wonPredictions + lostPredictions)) * 100
         : 0;
     const totalEarnings = predictions
-      .filter((p) => p.result === "won")
+      .filter((p) => p.result === PredictionResultEnum.WON)
       .reduce((sum, p) => sum + (p.actualPayout || 0), 0);
     const totalStaked = predictions.reduce((sum, p) => sum + p.stake, 0);
 
@@ -216,11 +219,6 @@ export class PredictionService {
       valid: errors.length === 0,
       errors,
     };
-  }
-
-  // Calculate potential payout
-  static calculatePotentialPayout(stake: number, odds: number): number {
-    return Number((stake * (1 + odds)).toFixed(2));
   }
 
   // Format prediction choice for display

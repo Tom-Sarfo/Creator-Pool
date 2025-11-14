@@ -36,11 +36,13 @@ import {
   calculatePoolMetrics,
   transformPredictionsToDisplay,
   parseISODuration,
+  formatPoolQuestion,
 } from "../lib/utils";
 import { useAppContext } from "../contexts/AppContext";
 import { poolService } from "../services/pool.service";
 import type { Pool } from "../lib/types";
 import Stepper from "../components/Stepper";
+import PoolDistribution from "../components/PoolDistribution";
 import { useLivePoolMetrics } from "../hooks/useLivePoolMetrics";
 
 const getStatusColor = (status: PoolStatus) =>
@@ -179,12 +181,17 @@ export default function CreatorPoolDetailPage({
   const currentPoolData = livePool || poolData || initialPoolData;
 
   // Show status change notifications when live pool status changes
+  // Also refresh context to ensure other pages (pools list, dashboard) reflect status changes
   useEffect(() => {
     if (!livePool) return;
 
     const previousStatus = previousStatusRef.current;
 
     if (previousStatus && previousStatus !== livePool.status) {
+      // Refresh context pools list to reflect status changes immediately
+      // This ensures pools list and dashboard show updated status without manual refresh
+      refreshPools();
+
       const statusMessages: Record<string, Record<string, string>> = {
         live_tracking: {
           open: "Video is now public! Pool is live tracking.",
@@ -213,7 +220,7 @@ export default function CreatorPoolDetailPage({
     }
 
     previousStatusRef.current = livePool.status;
-  }, [livePool, addToast]);
+  }, [livePool, addToast, refreshPools]);
 
   // Show loading state while fetching
   if (isLoading && !currentPoolData) {
@@ -282,9 +289,31 @@ export default function CreatorPoolDetailPage({
       }
     : baseMetrics;
 
+  console.log("currentPoolData distribution:", {
+    yesStake: currentPoolData.yesStake,
+    noStake: currentPoolData.noStake,
+    yesCount: currentPoolData.yesCount,
+    noCount: currentPoolData.noCount,
+  });
+  console.log("metrics distribution:", {
+    yesPercentage: metrics.yesPercentage,
+    noPercentage: metrics.noPercentage,
+    yesPool: metrics.yesPool,
+    noPool: metrics.noPool,
+    yesStakers: metrics.yesStakers,
+    noStakers: metrics.noStakers,
+  });
+
   const pool = {
     ...metrics,
     id: currentPoolData.id,
+    // Explicitly set distribution values from metrics to ensure they're correct
+    yesPercentage: metrics.yesPercentage || 0,
+    noPercentage: metrics.noPercentage || 0,
+    yesPool: metrics.yesPool || 0,
+    noPool: metrics.noPool || 0,
+    yesStakers: metrics.yesStakers || 0,
+    noStakers: metrics.noStakers || 0,
     title:
       currentPoolData.title || currentPoolData.videoTitle || "Untitled Pool",
     creator:
@@ -438,6 +467,8 @@ export default function CreatorPoolDetailPage({
       setIsDepositing(false);
     }
   };
+
+  // console.log("currentPoolData", currentPoolData);
 
   const poolPredictions = getPredictionsByPoolId(poolId);
   const allPredictions = transformPredictionsToDisplay(poolPredictions);
@@ -679,7 +710,13 @@ export default function CreatorPoolDetailPage({
                         Prediction Question
                       </h4>
                     </div>
-                    <p className="text-gray-700 mb-4">{pool.question}</p>
+                    <p className="text-gray-700 mb-4">
+                      {formatPoolQuestion(
+                        pool.question || "",
+                        pool.targetViews || 0,
+                        currentPoolData.trackingDurationDays
+                      )}
+                    </p>
 
                     {/* Progress */}
                     <div className="mb-2">
@@ -903,7 +940,11 @@ export default function CreatorPoolDetailPage({
                       <textarea
                         className="w-full border border-gray-300 rounded-lg px-3 py-2"
                         rows={3}
-                        defaultValue={pool.question}
+                        defaultValue={formatPoolQuestion(
+                          pool.question || "",
+                          pool.targetViews || 0,
+                          currentPoolData.trackingDurationDays
+                        )}
                       />
                     </div>
 
@@ -1070,68 +1111,14 @@ export default function CreatorPoolDetailPage({
               </div>
 
               {/* Pool Distribution */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium text-gray-900">
-                    Prediction Distribution
-                  </h4>
-                  <span className="text-xs text-gray-500">
-                    Based on predictor stakes only
-                  </span>
-                </div>
-                {pool.predictorStakes > 0 ? (
-                  <>
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-green-600">
-                          YES ({pool.yesPercentage}%)
-                        </span>
-                        <span className="text-green-600">
-                          ${pool.yesPool.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-green-500 h-2 rounded-full"
-                          style={{ width: `${pool.yesPercentage}%` }}
-                        ></div>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {pool.yesStakers} stakers
-                      </p>
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-red-600">
-                          NO ({pool.noPercentage}%)
-                        </span>
-                        <span className="text-red-600">
-                          ${pool.noPool.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-red-500 h-2 rounded-full"
-                          style={{ width: `${pool.noPercentage}%` }}
-                        ></div>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {pool.noStakers} stakers
-                      </p>
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-center py-4 bg-gray-50 rounded-lg">
-                    <p className="text-sm text-gray-500 mb-2">
-                      No predictions yet
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      Prediction distribution will appear once predictors start
-                      making stakes
-                    </p>
-                  </div>
-                )}
-              </div>
+              <PoolDistribution
+                yesPercentage={metrics.yesPercentage || 0}
+                noPercentage={metrics.noPercentage || 0}
+                yesPool={metrics.yesPool || 0}
+                noPool={metrics.noPool || 0}
+                yesStakers={metrics.yesStakers || 0}
+                noStakers={metrics.noStakers || 0}
+              />
             </div>
           </div>
         </div>

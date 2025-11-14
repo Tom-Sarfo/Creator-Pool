@@ -10,6 +10,7 @@ import type {
   SettlePoolResponse,
   Pool,
   PoolStatus,
+  SuggestionResponse,
 } from "../lib/types";
 import { PoolStatus as PoolStatusEnum } from "../lib/types";
 
@@ -137,16 +138,24 @@ export class PoolService {
     };
     timeRemaining: number;
   }> {
-    return apiClient.get(
-      API_ENDPOINTS.POOLS.STATS(poolId)
-    );
+    return apiClient.get(API_ENDPOINTS.POOLS.STATS(poolId));
   }
 
   // Deposit creator pledge
   async depositPledge(poolId: string, amount: number): Promise<Pool> {
-    return apiClient.post<Pool>(
-      API_ENDPOINTS.POOLS.DEPOSIT_PLEDGE(poolId),
-      { amount }
+    return apiClient.post<Pool>(API_ENDPOINTS.POOLS.DEPOSIT_PLEDGE(poolId), {
+      amount,
+    });
+  }
+
+  // Get question suggestions for a creator
+  async getSuggestions(
+    creatorId: string,
+    videoId?: string
+  ): Promise<SuggestionResponse> {
+    const queryString = videoId ? buildQueryString({ videoId }) : "";
+    return apiClient.get<SuggestionResponse>(
+      `${API_ENDPOINTS.POOLS.SUGGESTIONS(creatorId)}${queryString}`
     );
   }
 
@@ -216,36 +225,6 @@ export class PoolService {
       valid: errors.length === 0,
       errors,
     };
-  }
-
-  // Calculate pool odds
-  static calculateOdds(
-    yesStake: number,
-    noStake: number
-  ): { yes: number; no: number } {
-    const totalStake = yesStake + noStake;
-
-    if (totalStake === 0) {
-      return { yes: 0.5, no: 0.5 };
-    }
-
-    // Apply house edge (6% total: 5% platform + 1% creator)
-    const houseEdge = 0.94;
-    const netPool = totalStake * houseEdge;
-
-    // Calculate proper parimutuel odds
-    const yesOdds = yesStake > 0 ? netPool / yesStake - 1 : 0;
-    const noOdds = noStake > 0 ? netPool / noStake - 1 : 0;
-
-    return {
-      yes: Math.max(0.1, Number(yesOdds.toFixed(2))),
-      no: Math.max(0.1, Number(noOdds.toFixed(2))),
-    };
-  }
-
-  // Calculate potential payout
-  static calculatePotentialPayout(stake: number, odds: number): number {
-    return Number((stake * (1 + odds)).toFixed(2));
   }
 
   // Check if pool is accepting predictions

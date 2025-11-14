@@ -15,6 +15,7 @@ import {
 import { DASHBOARD_NAVIGATION, CATEGORIES } from "../lib/constants";
 import { useAppContext } from "../contexts/AppContext";
 import { useAuth } from "../contexts/AuthContext";
+import { formatPoolQuestion } from "../lib/utils";
 import PlayButtonOverlay from "../components/PlayButtonOverlay";
 
 export function meta({}: Route.MetaArgs) {
@@ -237,7 +238,11 @@ export default function DashboardPage() {
 
                     {/* Prediction Question */}
                     <p className="text-xs text-gray-600 mb-3">
-                      {pool.question}
+                      {formatPoolQuestion(
+                        pool.question || "",
+                        pool.targetViews || 0,
+                        (pool as any).trackingDurationDays
+                      )}
                     </p>
 
                     {/* Pool Stats */}
@@ -248,17 +253,14 @@ export default function DashboardPage() {
                       <span>{pool.participants} Predictors</span>
                     </div>
 
-                    {/* Odds */}
+                    {/* Probability */}
                     <div className="flex space-x-2 mb-4">
                       <div className="flex-1 bg-green-50 border border-green-200 rounded-lg p-2 text-center">
                         <div className="text-xs text-green-600 font-medium">
                           YES
                         </div>
                         <div className="text-sm font-bold text-green-700">
-                          {pool.odds?.yes || 0}
-                        </div>
-                        <div className="text-xs text-green-600">
-                          {Math.round((pool.odds?.yes || 0) * 100)}% chance
+                          {((pool.probabilityYes || 0.5) * 100).toFixed(1)}%
                         </div>
                       </div>
                       <div className="flex-1 bg-red-50 border border-red-200 rounded-lg p-2 text-center">
@@ -266,10 +268,7 @@ export default function DashboardPage() {
                           NO
                         </div>
                         <div className="text-sm font-bold text-red-700">
-                          {pool.odds?.no || 0}
-                        </div>
-                        <div className="text-xs text-red-600">
-                          {Math.round((pool.odds?.no || 0) * 100)}% chance
+                          {((pool.probabilityNo || 0.5) * 100).toFixed(1)}%
                         </div>
                       </div>
                     </div>

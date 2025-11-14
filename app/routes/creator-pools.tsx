@@ -73,11 +73,13 @@ export default function CreatorPools() {
     const videoTitle =
       selectedVideo?.title || `Pool for Video ${poolData.videoId}`;
     const questionText =
-      poolData.question?.text || "Will this video reach target views?";
-    const targetMatch = questionText.match(/([\d,]+)\s*views?/i);
-    const targetViews = targetMatch
-      ? parseInt(targetMatch[1].replace(/,/g, ""))
-      : 50000;
+      poolData.question || "Will this video reach target views?";
+    const targetViews =
+      poolData.targetViews ||
+      (() => {
+        const targetMatch = questionText.match(/([\d,]+)\s*views?/i);
+        return targetMatch ? parseInt(targetMatch[1].replace(/,/g, "")) : 50000;
+      })();
     const { duration, timeRemaining, totalDays } =
       extractDurationAndTimeRemaining(questionText);
     const isUnlistedVideo =
@@ -95,12 +97,14 @@ export default function CreatorPools() {
       status: PoolStatusEnum.OPEN,
       targetViews: targetViews,
       currentViews: 0,
-      trackingDurationDays: totalDays,
+      trackingDurationDays: poolData.trackingDurationDays || totalDays,
       predictionWindowMinutes: 10,
       yesStake: 0,
       noStake: 0,
       yesCount: 0,
       noCount: 0,
+      probabilityYes: 0.5,
+      probabilityNo: 0.5,
       creatorEarnings: 0,
       result: PoolResultEnum.PENDING,
     };

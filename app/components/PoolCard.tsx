@@ -4,12 +4,13 @@ import type { Pool, PredictionChoice } from "../lib/types";
 import { PredictionChoice as PredictionChoiceEnum } from "../lib/types";
 import PlayButtonOverlay from "./PlayButtonOverlay";
 import {
-  calculateDynamicOdds,
   calculateRemainingTime,
   isTimerUrgent,
   getPoolStatusColor,
   getPoolStatusLabel,
   getEffectivePoolStatus,
+  formatPoolQuestion,
+  formatProbabilityAsPercentage,
 } from "../lib/utils";
 
 interface PoolCardProps {
@@ -23,11 +24,6 @@ export default function PoolCard({
   currentTime,
   onPredictClick,
 }: PoolCardProps) {
-  const odds =
-    pool.yesOdds && pool.noOdds
-      ? { yes: pool.yesOdds, no: pool.noOdds }
-      : calculateDynamicOdds(pool.yesStake || 0, pool.noStake || 0);
-
   const effectiveStatus = getEffectivePoolStatus(pool, currentTime);
   const isPoolOpen = effectiveStatus === "open";
   const remainingTime = calculateRemainingTime(pool, currentTime);
@@ -91,7 +87,57 @@ export default function PoolCard({
           </h3>
         </Link>
 
-        <p className="text-xs text-gray-600 mb-3">{pool.question}</p>
+        <p className="text-xs text-gray-600 mb-3">
+          {formatPoolQuestion(
+            pool.question || "",
+            pool.targetViews || 0,
+            pool.trackingDurationDays
+          )}
+        </p>
+
+        {/* Progress bar for pools in tracking status */}
+        {pool.targetViews > 0 &&
+          ["open", "awaiting_release", "live_tracking", "closed"].includes(
+            pool.status
+          ) && (
+            <div className="mb-3">
+              <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                <span>
+                  {pool.currentViews?.toLocaleString() || 0} /{" "}
+                  {pool.targetViews.toLocaleString()} views
+                </span>
+                <span>
+                  {pool.targetViews > 0
+                    ? Math.round(
+                        ((pool.currentViews || 0) / pool.targetViews) * 100
+                      )
+                    : 0}
+                  %
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-1.5">
+                <div
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    pool.currentViews && pool.targetViews > 0
+                      ? (pool.currentViews / pool.targetViews) * 100 > 100
+                        ? "bg-green-500"
+                        : "bg-orange-600"
+                      : "bg-gray-300"
+                  }`}
+                  style={{
+                    width: `${
+                      pool.targetViews > 0
+                        ? Math.min(
+                            ((pool.currentViews || 0) / pool.targetViews) * 100,
+                            100
+                          )
+                        : 0
+                    }%`,
+                  }}
+                ></div>
+              </div>
+            </div>
+          )}
 
         <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
           <span>
@@ -132,7 +178,7 @@ export default function PoolCard({
                 isPoolOpen ? "text-green-700" : "text-gray-600"
               }`}
             >
-              {odds.yes.toFixed(2)}x
+              {formatProbabilityAsPercentage(pool.probabilityYes || 0.5)}
             </div>
           </button>
           <button
@@ -158,7 +204,7 @@ export default function PoolCard({
                 isPoolOpen ? "text-red-700" : "text-gray-600"
               }`}
             >
-              {odds.no.toFixed(2)}x
+              {formatProbabilityAsPercentage(pool.probabilityNo || 0.5)}
             </div>
           </button>
         </div>

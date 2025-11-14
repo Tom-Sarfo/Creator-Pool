@@ -78,7 +78,6 @@ interface AppState {
   updatePrediction: (id: string, updates: Partial<Prediction>) => Promise<void>;
   getPredictionsByPoolId: (poolId: string) => Prediction[];
   getPredictionsByPredictor: (predictorId: string) => Prediction[];
-  calculatePoolOdds: (poolId: string) => { yes: number; no: number };
 
   // Pool Lifecycle Management
   updatePoolStatus: (poolId: string, newStatus: PoolStatus) => Promise<void>;
@@ -164,7 +163,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       refreshPools();
     };
 
-    const handleOddsUpdate = () => {
+    const handleProbabilityUpdate = () => {
       refreshPools();
     };
 
@@ -211,13 +210,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     wsOn("poolUpdate", handlePoolUpdate);
     wsOn("newPrediction", handleNewPrediction);
-    wsOn("oddsUpdate", handleOddsUpdate);
+    wsOn("probabilityUpdate", handleProbabilityUpdate);
     wsOn("poolStatusChange", handlePoolStatusChange);
 
     return () => {
       wsOff("poolUpdate", handlePoolUpdate);
       wsOff("newPrediction", handleNewPrediction);
-      wsOff("oddsUpdate", handleOddsUpdate);
+      wsOff("probabilityUpdate", handleProbabilityUpdate);
       wsOff("poolStatusChange", handlePoolStatusChange);
       wsClient.leaveUser(user.id);
     };
@@ -256,11 +255,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Data refresh functions
   const refreshVideos = useCallback(async () => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !user) return;
 
     try {
       const apiVideos = await youtubeService.getAllVideos();
-      setVideos(apiVideos);
+      // Filter videos by creatorId to ensure data isolation
+      // Only show videos that belong to the current user
+      const filteredVideos = apiVideos.filter(
+        (video) => video.creatorId === user.id
+      );
+      setVideos(filteredVideos);
+
+      // Log a warning if we filtered out videos (indicates backend issue)
+      if (apiVideos.length > filteredVideos.length) {
+        console.warn(
+          `AppContext: Filtered out ${apiVideos.length - filteredVideos.length} videos that don't belong to current user. Backend should filter by creatorId.`
+        );
+      }
     } catch (error) {
       console.error("AppContext: Error refreshing videos:", error);
       console.error("AppContext: Error details:", {
@@ -269,16 +280,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
         status: (error as any)?.status,
       });
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
 
   const refreshPools = useCallback(async () => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !user) return;
 
     setIsPoolsLoading(true);
     try {
       const apiPools = await poolService.getAllPools();
+      // Filter pools by creatorId to ensure data isolation
+      // Only show pools that belong to the current user (for creators)
+      // For predictors, show all pools (they can predict on any pool)
+      const filteredPools =
+        user.role === UserRoleEnum.CREATOR
+          ? apiPools.filter((pool) => pool.creatorId === user.id)
+          : apiPools;
+
       // Ensure numeric fields are numbers (avoid NaN in UI)
-      const pools: Pool[] = apiPools.map((pool) => ({
+      const pools: Pool[] = filteredPools.map((pool) => ({
         ...pool,
         totalStake: Number(pool.totalStake ?? 0),
         creatorPledge: Number(pool.creatorPledge ?? 0),
@@ -291,12 +310,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
         creatorEarnings: Number(pool.creatorEarnings ?? 0),
       }));
       setPools(pools);
+
+      // Log a warning if we filtered out pools (indicates backend issue)
+      if (
+        user.role === UserRoleEnum.CREATOR &&
+        apiPools.length > filteredPools.length
+      ) {
+        console.warn(
+          `AppContext: Filtered out ${apiPools.length - filteredPools.length} pools that don't belong to current creator. Backend should filter by creatorId.`
+        );
+      }
     } catch (error) {
       console.error("Error refreshing pools:", error);
     } finally {
       setIsPoolsLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
 
   const refreshPredictions = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -575,16 +604,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [predictions]
   );
 
-  const calculatePoolOdds = useCallback(
-    (poolId: string): { yes: number; no: number } => {
-      const pool = getPoolById(poolId);
-      if (!pool) return { yes: 0.5, no: 0.5 };
-
-      return PoolService.calculateOdds(pool.yesStake || 0, pool.noStake || 0);
-    },
-    [getPoolById]
-  );
-
   // Pool lifecycle management
   const updatePoolStatus = useCallback(
     async (poolId: string, newStatus: PoolStatus) => {
@@ -675,7 +694,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     updatePrediction,
     getPredictionsByPoolId,
     getPredictionsByPredictor,
-    calculatePoolOdds,
 
     // Pool Lifecycle Management
     updatePoolStatus,

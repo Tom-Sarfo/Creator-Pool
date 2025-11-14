@@ -10,8 +10,9 @@ import {
   isTimerUrgent,
   getPoolStatusColor,
   getPoolStatusLabel,
-  calculateDynamicOdds,
   getEffectivePoolStatus,
+  formatPoolQuestion,
+  formatProbabilityAsPercentage,
 } from "../lib/utils";
 import PlayButtonOverlay from "../components/PlayButtonOverlay";
 import Pagination from "../components/Pagination";
@@ -281,7 +282,11 @@ export default function PoolsPage() {
 
                     {/* Prediction Question */}
                     <p className="text-xs text-gray-600 mb-3">
-                      {pool.question}
+                      {formatPoolQuestion(
+                        pool.question || "",
+                        pool.targetViews || 0,
+                        (pool as any).trackingDurationDays
+                      )}
                     </p>
 
                     {/* Pool Stats */}
@@ -292,90 +297,56 @@ export default function PoolsPage() {
                       <span>{pool.participants} Predictors</span>
                     </div>
 
-                    {/* Odds */}
+                    {/* Probability */}
                     <div className="flex space-x-2 mb-4">
-                      {(() => {
-                        const derivedOdds = calculateDynamicOdds(
-                          Number(pool.yesStake || 0),
-                          Number(pool.noStake || 0)
-                        );
-                        const yesOdds = Number(derivedOdds?.yes ?? 2.0);
-                        const noOdds = Number(derivedOdds?.no ?? 2.0);
-                        return (
-                          <>
-                            <div
-                              className={`flex-1 rounded-lg p-2 text-center ${
-                                isPoolOpen
-                                  ? "bg-green-50 border border-green-200"
-                                  : "bg-gray-50 border border-gray-200 opacity-60"
-                              }`}
-                            >
-                              <div
-                                className={`text-xs font-medium ${
-                                  isPoolOpen
-                                    ? "text-green-600"
-                                    : "text-gray-500"
-                                }`}
-                              >
-                                YES
-                              </div>
-                              <div
-                                className={`text-sm font-bold ${
-                                  isPoolOpen
-                                    ? "text-green-700"
-                                    : "text-gray-600"
-                                }`}
-                              >
-                                {yesOdds.toFixed(2)}x
-                              </div>
-                              <div
-                                className={`text-xs ${
-                                  isPoolOpen
-                                    ? "text-green-600"
-                                    : "text-gray-500"
-                                }`}
-                              >
-                                {Math.round(
-                                  (yesOdds / (yesOdds + noOdds)) * 100
-                                ) || 0}
-                                % chance
-                              </div>
-                            </div>
-                            <div
-                              className={`flex-1 rounded-lg p-2 text-center ${
-                                isPoolOpen
-                                  ? "bg-red-50 border border-red-200"
-                                  : "bg-gray-50 border border-gray-200 opacity-60"
-                              }`}
-                            >
-                              <div
-                                className={`text-xs font-medium ${
-                                  isPoolOpen ? "text-red-600" : "text-gray-500"
-                                }`}
-                              >
-                                NO
-                              </div>
-                              <div
-                                className={`text-sm font-bold ${
-                                  isPoolOpen ? "text-red-700" : "text-gray-600"
-                                }`}
-                              >
-                                {noOdds.toFixed(2)}x
-                              </div>
-                              <div
-                                className={`text-xs ${
-                                  isPoolOpen ? "text-red-600" : "text-gray-500"
-                                }`}
-                              >
-                                {Math.round(
-                                  (noOdds / (yesOdds + noOdds)) * 100
-                                ) || 0}
-                                % chance
-                              </div>
-                            </div>
-                          </>
-                        );
-                      })()}
+                      <div
+                        className={`flex-1 rounded-lg p-2 text-center ${
+                          isPoolOpen
+                            ? "bg-green-50 border border-green-200"
+                            : "bg-gray-50 border border-gray-200 opacity-60"
+                        }`}
+                      >
+                        <div
+                          className={`text-xs font-medium ${
+                            isPoolOpen ? "text-green-600" : "text-gray-500"
+                          }`}
+                        >
+                          YES
+                        </div>
+                        <div
+                          className={`text-sm font-bold ${
+                            isPoolOpen ? "text-green-700" : "text-gray-600"
+                          }`}
+                        >
+                          {formatProbabilityAsPercentage(
+                            pool.probabilityYes || 0.5
+                          )}
+                        </div>
+                      </div>
+                      <div
+                        className={`flex-1 rounded-lg p-2 text-center ${
+                          isPoolOpen
+                            ? "bg-red-50 border border-red-200"
+                            : "bg-gray-50 border border-gray-200 opacity-60"
+                        }`}
+                      >
+                        <div
+                          className={`text-xs font-medium ${
+                            isPoolOpen ? "text-red-600" : "text-gray-500"
+                          }`}
+                        >
+                          NO
+                        </div>
+                        <div
+                          className={`text-sm font-bold ${
+                            isPoolOpen ? "text-red-700" : "text-gray-600"
+                          }`}
+                        >
+                          {formatProbabilityAsPercentage(
+                            pool.probabilityNo || 0.5
+                          )}
+                        </div>
+                      </div>
                     </div>
 
                     {/* Action Button */}

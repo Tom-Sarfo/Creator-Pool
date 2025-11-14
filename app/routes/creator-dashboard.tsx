@@ -226,8 +226,7 @@ export default function CreatorDashboard() {
     }
   };
 
-  console.log("pools", pools);
-
+  console.log("AnyPool ", pools);
   const allFilteredVideos = getFilteredVideos();
   const totalPages = Math.ceil(allFilteredVideos.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -303,17 +302,21 @@ export default function CreatorDashboard() {
         : `Pool for Video ${poolData.videoId}`);
 
     const questionText =
-      poolData.question?.text || "Will this video reach target views?";
-    const targetMatch = questionText.match(/([\d,]+)\s*views?/i);
-    const targetViews = targetMatch
-      ? parseInt(targetMatch[1].replace(/,/g, ""))
-      : 50000;
+      poolData.question || "Will this video reach target views?";
+    const targetViews =
+      poolData.targetViews ||
+      (() => {
+        const targetMatch = questionText.match(/([\d,]+)\s*views?/i);
+        return targetMatch ? parseInt(targetMatch[1].replace(/,/g, "")) : 50000;
+      })();
 
     const { duration, timeRemaining, totalDays } =
       extractDurationAndTimeRemaining(questionText);
 
     const isUnlistedVideo =
       selectedVideoData && selectedVideoData.status === "unlisted";
+
+    console.log("questionText", questionText);
 
     const newPool = {
       title: videoTitle,
@@ -328,9 +331,10 @@ export default function CreatorDashboard() {
       status: "open",
       createdAt: new Date().toISOString(),
       targetViews: targetViews,
+      trackingDurationDays: poolData.trackingDurationDays || totalDays,
       currentViews:
         selectedVideoData?.viewCount || selectedVideoData?.views || 0,
-      duration: totalDays,
+      duration: poolData.trackingDurationDays || totalDays,
       predictionWindow: 10,
       ...(selectedVideoData && {
         thumbnail: selectedVideoData.thumbnail,
@@ -340,6 +344,7 @@ export default function CreatorDashboard() {
         category: selectedVideoData.category,
       }),
     };
+    console.log("newPool", newPool);
 
     addPool(newPool);
     handleCloseModal();

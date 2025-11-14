@@ -300,7 +300,7 @@ export default function PredictorPredictions() {
                               pool.targetViews && (
                                 <div className="mb-3">
                                   <div className="flex items-center justify-between text-sm text-gray-500 mb-1">
-                                    <span>Progress to target</span>
+                                    <span> target</span>
                                     <span>
                                       {Math.round(
                                         (pool.currentViews / pool.targetViews) *

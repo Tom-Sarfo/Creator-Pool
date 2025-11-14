@@ -24,17 +24,18 @@ import { POOL_DETAIL_TABS, HOW_IT_WORKS_STEPS } from "../lib/constants";
 import {
   calculateRemainingTime,
   isTimerUrgent,
-  calculateDynamicOdds,
-  calculatePotentialPayout,
   getPoolStatusColor,
   getPoolStatusLabel,
   parseISODuration,
+  formatPoolQuestion,
+  formatProbabilityAsPercentage,
 } from "../lib/utils";
 import { useAppContext } from "../contexts/AppContext";
 import { poolService } from "../services/pool.service";
 import type { Pool } from "../lib/types";
 import PlayButtonOverlay from "../components/PlayButtonOverlay";
 import PredictionModal from "../components/PredictionModal";
+import PoolDistribution from "../components/PoolDistribution";
 import { useLivePoolMetrics } from "../hooks/useLivePoolMetrics";
 
 export function meta({ params }: Route.MetaArgs) {
@@ -64,7 +65,6 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
     getPredictionsByPoolId,
     addPrediction,
     addToast,
-    calculatePoolOdds,
     refreshPools,
   } = useAppContext();
 
@@ -149,12 +149,17 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
   const mergedPoolData = livePool || poolData || initialPoolData;
 
   // Show status change notifications when live pool status changes
+  // Also refresh context to ensure other pages (pools list, dashboard) reflect status changes
   useEffect(() => {
     if (!livePool) return;
 
     const previousStatus = previousStatusRef.current;
 
     if (previousStatus && previousStatus !== livePool.status) {
+      // Refresh context pools list to reflect status changes immediately
+      // This ensures pools list and dashboard show updated status without manual refresh
+      refreshPools();
+
       const statusMessages: Record<string, Record<string, string>> = {
         live_tracking: {
           open: "Video is now public! Pool is live tracking.",
@@ -183,7 +188,7 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
     }
 
     previousStatusRef.current = livePool.status;
-  }, [livePool, addToast]);
+  }, [livePool, addToast, refreshPools]);
 
   // Update current time every second for real-time timers
   useEffect(() => {
@@ -249,33 +254,47 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
     (p) => p.predictorId === (user?.id || "anonymous")
   );
 
-  // Calculate pool metrics using backend data
-  const odds =
-    (currentPoolData as any).odds ||
-    calculateDynamicOdds(
-      currentPoolData.yesStake || 0,
-      currentPoolData.noStake || 0
-    );
-  const yesPercentage =
-    currentPoolData.yesStake && currentPoolData.noStake
-      ? Math.round(
-          (currentPoolData.yesStake /
-            (currentPoolData.yesStake + currentPoolData.noStake)) *
-            100
-        )
-      : 50;
-  const noPercentage = 100 - yesPercentage;
-
   // Use backend status - always trust the server
   const poolStatus = currentPoolData.status || "open";
+
+  // Normalize numeric inputs that may arrive as strings
+  const toNumber = (value: unknown) => {
+    if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+    if (typeof value === "string") {
+      const parsed = parseFloat(value.replace(/,/g, ""));
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+    if (typeof value === "bigint") return Number(value);
+    return 0;
+  };
 
   // Use live metrics for currentViews if available
   const currentViews = liveMetrics
     ? liveMetrics.viewCount
     : currentPoolData.currentViews !== undefined &&
         currentPoolData.currentViews !== null
-      ? currentPoolData.currentViews
-      : (videoData as any)?.viewCount || (videoData as any)?.views || 0;
+      ? toNumber(currentPoolData.currentViews)
+      : toNumber((videoData as any)?.viewCount ?? (videoData as any)?.views);
+
+  // Calculate progress similar to creator-pool-detail.tsx
+  const targetViews = toNumber(currentPoolData.targetViews);
+  const progress =
+    targetViews > 0 ? Math.min((currentViews / targetViews) * 100, 100) : 0;
+
+  // Calculate distribution metrics from actual stakes
+  const yesStake = toNumber(currentPoolData.yesStake);
+  const noStake = toNumber(currentPoolData.noStake);
+  const predictorStakes = yesStake + noStake;
+  const yesStakers = toNumber(currentPoolData.yesCount);
+  const noStakers = toNumber(currentPoolData.noCount);
+
+  // Calculate distribution percentages from stake amounts, not probabilities
+  let yesPercentage = 0;
+  let noPercentage = 0;
+  if (predictorStakes > 0) {
+    yesPercentage = Math.round((yesStake / predictorStakes) * 100);
+    noPercentage = 100 - yesPercentage;
+  }
 
   const pool = {
     ...currentPoolData,
@@ -313,13 +332,17 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
       (videoData as any)?.category ||
       "general",
     question: currentPoolData.question || "Prediction question not available",
-    targetViews: currentPoolData.targetViews || 0,
+    targetViews,
     currentViews,
+    progress, // Add progress calculation
     totalStake: currentPoolData.totalStake || 0, // Use backend totalStake
     participants: currentPoolData.participants || 0, // Use backend participants
-    odds,
     yesPercentage,
     noPercentage,
+    yesPool: yesStake,
+    noPool: noStake,
+    yesStakers,
+    noStakers,
     releaseDate: currentPoolData.createdAt
       ? new Date(currentPoolData.createdAt).toLocaleDateString()
       : "Unknown",
@@ -356,6 +379,22 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
   };
 
   const tabs = POOL_DETAIL_TABS;
+  console.log("pool progress", pool);
+
+  const predictionResult = userPrediction?.result;
+  const showResultCard =
+    pool.status === "settled" &&
+    userPrediction &&
+    predictionResult &&
+    predictionResult !== "pending";
+  const resultStake = showResultCard ? toNumber(userPrediction!.stake) : 0;
+  const resultPayout =
+    showResultCard && typeof userPrediction!.actualPayout !== "undefined"
+      ? toNumber(userPrediction!.actualPayout)
+      : null;
+  const resultChoice = showResultCard ? userPrediction!.choice : null;
+  const resultSettledAt = showResultCard ? userPrediction!.settledAt : null;
+  const didWin = showResultCard && predictionResult === "won";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -574,7 +613,13 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                         Prediction Question
                       </h4>
                     </div>
-                    <p className="text-gray-700 mb-4">{pool.question}</p>
+                    <p className="text-gray-700 mb-4">
+                      {formatPoolQuestion(
+                        pool.question || "",
+                        pool.targetViews || 0,
+                        (currentPoolData as any).trackingDurationDays
+                      )}
+                    </p>
 
                     {/* Progress */}
                     {pool.targetViews > 0 && (
@@ -582,12 +627,9 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                         {/* Mobile: Stack stats vertically, Desktop: Side by side */}
                         <div className="flex flex-col sm:flex-row sm:justify-between space-y-1 sm:space-y-0 text-xs sm:text-sm text-gray-600 mb-2">
                           <span>
-                            Current Progress:{" "}
-                            {Math.round(
-                              (pool.currentViews / pool.targetViews) * 100
-                            )}
-                            %
+                            Current Progress: {pool.progress.toFixed(2)}%
                           </span>
+
                           <span className="break-all sm:break-normal">
                             {pool.currentViews.toLocaleString()} /{" "}
                             {pool.targetViews.toLocaleString()} views
@@ -596,15 +638,15 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                         <div className="w-full bg-gray-200 rounded-full h-3 relative overflow-hidden">
                           <div
                             className={`h-3 rounded-full transition-all duration-300 ${
-                              pool.currentViews / pool.targetViews > 1
+                              pool.progress > 100
                                 ? "bg-green-500"
                                 : "bg-orange-600"
                             }`}
                             style={{
-                              width: `${Math.min((pool.currentViews / pool.targetViews) * 100, 100)}%`,
+                              width: `${Math.min(pool.progress, 100)}%`,
                             }}
                           ></div>
-                          {pool.currentViews / pool.targetViews > 1 && (
+                          {pool.progress > 100 && (
                             <div className="absolute inset-0 flex items-center justify-center">
                               <span className="text-xs font-medium text-gray-700 bg-white px-2 py-1 rounded shadow-sm">
                                 Target Exceeded!
@@ -622,34 +664,101 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                   </div>
                 </div>
 
-                {/* How It Works */}
-                <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">
-                    How It Works
-                  </h3>
-                  <div className="space-y-4">
-                    {HOW_IT_WORKS_STEPS.map((step) => (
+                {/* How It Works / Winner Card */}
+                {showResultCard ? (
+                  <div
+                    className={`bg-white rounded-lg border p-4 sm:p-6 ${
+                      didWin ? "border-green-200" : "border-gray-200"
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3 mb-4">
                       <div
-                        key={step.step}
-                        className="flex items-start space-x-3"
+                        className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          didWin
+                            ? "bg-green-100 text-green-700"
+                            : "bg-gray-100 text-gray-600"
+                        }`}
                       >
-                        <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <span className="text-xs font-bold text-orange-600">
-                            {step.step}
+                        <FontAwesomeIcon
+                          icon={didWin ? faTrophy : faInfoCircle}
+                          className="w-5 h-5"
+                        />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {didWin ? "You won this pool!" : "Pool settled"}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          {didWin
+                            ? `Great call on your ${resultChoice?.toUpperCase()} prediction.`
+                            : `Your ${resultChoice?.toUpperCase()} prediction didn't win this time.`}
+                        </p>
+                      </div>
+                    </div>
+                    <div
+                      className={`rounded-lg p-4 space-y-3 ${
+                        didWin
+                          ? "bg-green-50 border border-green-200"
+                          : "bg-gray-50 border border-gray-200"
+                      }`}
+                    >
+                      <div className="flex justify-between text-sm text-gray-700">
+                        <span>Your stake</span>
+                        <span className="font-medium text-gray-900">
+                          ${resultStake.toLocaleString()}
+                        </span>
+                      </div>
+                      {resultPayout !== null && resultPayout >= 0 && (
+                        <div className="flex justify-between text-sm text-gray-700">
+                          <span>
+                            {didWin ? "Payout received" : "Returned amount"}
+                          </span>
+                          <span
+                            className={`font-medium ${
+                              didWin ? "text-green-700" : "text-gray-800"
+                            }`}
+                          >
+                            ${resultPayout.toLocaleString()}
                           </span>
                         </div>
-                        <div>
-                          <h4 className="font-medium text-gray-900">
-                            {step.title}
-                          </h4>
-                          <p className="text-sm text-gray-600">
-                            {step.description}
-                          </p>
-                        </div>
+                      )}
+                      <div className="text-xs text-gray-500">
+                        Settled on{" "}
+                        {resultSettledAt
+                          ? new Date(resultSettledAt).toLocaleString()
+                          : "recently"}
                       </div>
-                    ))}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">
+                      How It Works
+                    </h3>
+                    <div className="space-y-4">
+                      {HOW_IT_WORKS_STEPS.map((step) => (
+                        <div
+                          key={step.step}
+                          className="flex items-start space-x-3"
+                        >
+                          <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <span className="text-xs font-bold text-orange-600">
+                              {step.step}
+                            </span>
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-gray-900">
+                              {step.title}
+                            </h4>
+                            <p className="text-sm text-gray-600">
+                              {step.description}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </>
             )}
 
@@ -876,6 +985,19 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                   <span className="font-medium text-gray-900">1%</span>
                 </div>
               </div>
+
+              {pool.status !== "open" && (
+                <div className="border-t pt-4">
+                  <PoolDistribution
+                    yesPercentage={pool.yesPercentage || 0}
+                    noPercentage={pool.noPercentage || 0}
+                    yesPool={pool.yesPool || 0}
+                    noPool={pool.noPool || 0}
+                    yesStakers={pool.yesStakers || 0}
+                    noStakers={pool.noStakers || 0}
+                  />
+                </div>
+              )}
             </div>
 
             {/*  */}

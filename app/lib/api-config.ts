@@ -73,6 +73,8 @@ export const API_ENDPOINTS = {
     SETTLE: (id: string) => `/api/pools/${id}/settle`,
     STATS: (id: string) => `/api/pools/${id}/stats`,
     DEPOSIT_PLEDGE: (id: string) => `/api/pools/${id}/deposit-pledge`,
+    SUGGESTIONS: (creatorId: string) =>
+      `/api/pools/creators/${creatorId}/suggestions`,
   },
 
   // Predictions

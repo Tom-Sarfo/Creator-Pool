@@ -132,8 +132,8 @@ export class WebSocketClient {
       case "newPrediction":
         this.emit("newPrediction", data.data);
         break;
-      case "oddsUpdate":
-        this.emit("oddsUpdate", data.data);
+      case "probabilityUpdate":
+        this.emit("probabilityUpdate", data.data);
         break;
       case "poolStatusChange":
         this.emit("poolStatusChange", data.data);
@@ -289,8 +289,8 @@ export const WebSocketUtils = {
       totalStake: data.pool.totalStake,
       yesStake: data.pool.yesStake,
       noStake: data.pool.noStake,
-      yesOdds: data.pool.yesOdds,
-      noOdds: data.pool.noOdds,
+      probabilityYes: data.pool.probabilityYes,
+      probabilityNo: data.pool.probabilityNo,
       status: data.pool.status,
     };
   },
@@ -307,12 +307,12 @@ export const WebSocketUtils = {
     };
   },
 
-  // Format odds update for display
-  formatOddsUpdate: (data: WebSocketEvents["oddsUpdate"]) => {
+  // Format probability update for display
+  formatProbabilityUpdate: (data: WebSocketEvents["probabilityUpdate"]) => {
     return {
       poolId: data.poolId,
-      yesOdds: data.yesOdds,
-      noOdds: data.noOdds,
+      probabilityYes: data.probabilityYes,
+      probabilityNo: data.probabilityNo,
       timestamp: new Date().toISOString(),
     };
   },

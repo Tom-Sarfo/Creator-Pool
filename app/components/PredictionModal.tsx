@@ -4,9 +4,10 @@ import { faTimes, faDollarSign } from "@fortawesome/free-solid-svg-icons";
 import type { Pool, PredictionChoice } from "../lib/types";
 import { PredictionChoice as PredictionChoiceEnum } from "../lib/types";
 import {
-  calculateDynamicOdds,
-  calculatePotentialPayout,
   validateStake,
+  formatPoolQuestion,
+  formatProbabilityAsPercentage,
+  estimatePotentialPayout,
 } from "../lib/utils";
 
 interface PredictionModalProps {
@@ -32,11 +33,17 @@ export default function PredictionModal({
   const [stake, setStake] = useState("");
   const [error, setError] = useState("");
 
-  // Calculate current odds
-  const odds = calculateDynamicOdds(pool.yesStake || 0, pool.noStake || 0);
-  const currentOdds = choice === PredictionChoiceEnum.YES ? odds.yes : odds.no;
-  const potentialPayout = stake
-    ? calculatePotentialPayout(parseFloat(stake), currentOdds)
+  // Calculate estimated potential payout
+  const totalStakeOnUserSide =
+    choice === PredictionChoiceEnum.YES
+      ? pool.yesStake || 0
+      : pool.noStake || 0;
+  const estimatedPayout = stake
+    ? estimatePotentialPayout(
+        parseFloat(stake),
+        totalStakeOnUserSide,
+        pool.totalStake || 0
+      )
     : 0;
 
   const handleStakeInput = (value: string) => {
@@ -130,7 +137,13 @@ export default function PredictionModal({
                   </p>
                 </div>
               </div>
-              <p className="text-sm text-gray-600">{pool.question}</p>
+              <p className="text-sm text-gray-600">
+                {formatPoolQuestion(
+                  pool.question || "",
+                  pool.targetViews || 0,
+                  pool.trackingDurationDays
+                )}
+              </p>
             </div>
 
             {/* Choice Selection */}
@@ -149,7 +162,11 @@ export default function PredictionModal({
                 >
                   <div className="text-center">
                     <div className="text-lg font-bold">YES</div>
-                    <div className="text-sm">{odds.yes.toFixed(2)}x odds</div>
+                    <div className="text-sm">
+                      {formatProbabilityAsPercentage(
+                        pool.probabilityYes || 0.5
+                      )}
+                    </div>
                   </div>
                 </button>
                 <button
@@ -162,7 +179,9 @@ export default function PredictionModal({
                 >
                   <div className="text-center">
                     <div className="text-lg font-bold">NO</div>
-                    <div className="text-sm">{odds.no.toFixed(2)}x odds</div>
+                    <div className="text-sm">
+                      {formatProbabilityAsPercentage(pool.probabilityNo || 0.5)}
+                    </div>
                   </div>
                 </button>
               </div>
@@ -224,14 +243,14 @@ export default function PredictionModal({
               <div className="bg-orange-50 rounded-lg p-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-orange-700">
-                    Potential Payout:
+                    Estimated Payout:
                   </span>
                   <span className="text-lg font-bold text-orange-900">
-                    ${potentialPayout.toFixed(2)}
+                    ${estimatedPayout.toFixed(2)}
                   </span>
                 </div>
                 <div className="text-xs text-orange-600 mt-1">
-                  Based on current odds of {currentOdds.toFixed(2)}x
+                  Estimate based on current pool state
                 </div>
               </div>
             )}
