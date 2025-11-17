@@ -41,13 +41,6 @@ export function validateStake(
   if (stake > 500) {
     return { valid: false, error: "Maximum stake is $500" };
   }
-  const maxAllowed = poolTotalStake * 0.1;
-  if (stake > maxAllowed && poolTotalStake > 0) {
-    return {
-      valid: false,
-      error: `Cannot exceed 10% of pool size ($${maxAllowed.toFixed(2)})`,
-    };
-  }
   return { valid: true };
 }
 
