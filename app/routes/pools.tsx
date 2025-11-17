@@ -23,6 +23,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
+import { poolService } from "../services/pool.service";
+import type { Pool } from "../lib/types";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -42,9 +44,14 @@ export default function PoolsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
-  const { pools: allPools } = useAppContext();
+  const { pools: contextPools } = useAppContext();
+  const [guestPools, setGuestPools] = useState<Pool[]>([]);
+  const [isLoadingPools, setIsLoadingPools] = useState(false);
   const categories = CATEGORIES;
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Use context pools if authenticated, otherwise use guest pools
+  const allPools = isAuthenticated ? contextPools : guestPools;
 
   // Update current time every second for real-time timers
   useEffect(() => {
@@ -53,6 +60,40 @@ export default function PoolsPage() {
     }, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Load pools for guest users
+  useEffect(() => {
+    if (!isAuthenticated) {
+      loadGuestPools();
+    }
+  }, [isAuthenticated]);
+
+  const loadGuestPools = async () => {
+    setIsLoadingPools(true);
+    try {
+      const response = await poolService.getPools({ limit: 10 });
+      const pools = response.pools || [];
+      // Ensure numeric fields are numbers
+      const formattedPools: Pool[] = pools.map((pool) => ({
+        ...pool,
+        totalStake: Number(pool.totalStake ?? 0),
+        creatorPledge: Number(pool.creatorPledge ?? 0),
+        predictorStakes: Number(pool.predictorStakes ?? 0),
+        yesStake: Number(pool.yesStake ?? 0),
+        noStake: Number(pool.noStake ?? 0),
+        yesCount: Number(pool.yesCount ?? 0),
+        noCount: Number(pool.noCount ?? 0),
+        participants: Number(pool.participants ?? 0),
+        creatorEarnings: Number(pool.creatorEarnings ?? 0),
+      }));
+      setGuestPools(formattedPools);
+    } catch (error) {
+      console.error("Error loading guest pools:", error);
+      setGuestPools([]);
+    } finally {
+      setIsLoadingPools(false);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -89,20 +130,27 @@ export default function PoolsPage() {
   };
 
   const allFilteredPools = allPools.filter((pool) => {
-    const matchesCategory =
-      selectedCategory === "all" || pool.category === selectedCategory;
+    // Note: category filter removed as Pool type doesn't have category property
     const matchesSearch =
       searchQuery === "" ||
-      pool.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      pool.creator?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      pool.video?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      pool.creator?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      pool.creator?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       pool.question?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+    return matchesSearch;
   });
 
-  const totalPages = Math.ceil(allFilteredPools.length / itemsPerPage);
+  // For guest users, limit to first 10 pools only
+  const poolsForDisplay = isAuthenticated
+    ? allFilteredPools
+    : allFilteredPools.slice(0, 10);
+
+  const totalPages = Math.ceil(poolsForDisplay.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const filteredPools = allFilteredPools.slice(startIndex, endIndex);
+  const filteredPools = isAuthenticated
+    ? poolsForDisplay.slice(startIndex, endIndex)
+    : poolsForDisplay; // Guest users see all 10 without pagination
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -127,7 +175,11 @@ export default function PoolsPage() {
                   </div>
                   <div className="flex items-center space-x-2">
                     <span className="text-sm text-gray-600">
-                      {user?.name || user?.email || "User"}
+                      {typeof user?.name === "string"
+                        ? user.name
+                        : typeof user?.email === "string"
+                          ? user.email
+                          : "User"}
                     </span>
                     <button
                       onClick={logout}
@@ -204,186 +256,224 @@ export default function PoolsPage() {
           </div>
 
           {/* Pools Grid */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredPools.map((pool) => {
-              const effectiveStatus = getEffectivePoolStatus(pool, currentTime);
-              const isPoolOpen = effectiveStatus === "open";
-              const remainingTime = calculateRemainingTime(pool, currentTime);
-              const isExpired =
-                remainingTime === "00:00" ||
-                effectiveStatus === "awaiting_release";
+          {isLoadingPools && !isAuthenticated ? (
+            <div className="text-center py-12">
+              <p className="text-gray-600">Loading pools...</p>
+            </div>
+          ) : filteredPools.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-600">No pools found.</p>
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {filteredPools.map((pool) => {
+                const effectiveStatus = getEffectivePoolStatus(
+                  pool,
+                  currentTime
+                );
+                const isPoolOpen = effectiveStatus === "open";
+                const remainingTime = calculateRemainingTime(pool, currentTime);
+                const isExpired =
+                  remainingTime === "00:00" ||
+                  effectiveStatus === "awaiting_release";
 
-              return (
-                <div
-                  key={pool.id}
-                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-                >
-                  {/* Pool Image */}
-                  <div className="relative group">
-                    <Link to={`/predictor/pool/${pool.id}`}>
-                      <img
-                        src={pool.thumbnail}
-                        alt={pool.title}
-                        className="w-full h-48 object-cover cursor-pointer"
-                        onError={(e) => {
-                          // Fallback if image fails to load
-                          e.currentTarget.src =
-                            "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&h=225&fit=crop";
-                        }}
-                      />
-                    </Link>
-                    {/* Play button overlay - only visible on hover */}
-                    <PlayButtonOverlay />
-                    <div className="absolute top-3 left-3">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(effectiveStatus)}`}
-                      >
-                        {getStatusLabel(effectiveStatus)}
-                      </span>
-                    </div>
-                    <div className="absolute top-3 right-3">
-                      <span
-                        className={`px-2 py-1 rounded text-xs flex items-center space-x-1 font-mono ${
-                          isPoolOpen && isExpired
-                            ? "bg-red-600 text-white animate-pulse"
-                            : isPoolOpen && isTimerUrgent(pool, currentTime)
-                              ? "bg-orange-500 text-white animate-pulse"
-                              : "bg-black bg-opacity-50 text-white"
-                        }`}
-                      >
-                        <FontAwesomeIcon icon="clock" className="w-3 h-3" />
-                        <span className="font-bold">{remainingTime}</span>
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Pool Content */}
-                  <div className="p-4">
-                    {/* Creator Info */}
-                    <div className="flex items-center space-x-2 mb-2">
-                      <div className="w-6 h-6 bg-gray-300 rounded-full"></div>
-                      <span className="text-sm font-medium text-gray-900">
-                        {pool.creator}
-                      </span>
-                      {pool.creatorVerified && (
-                        <FontAwesomeIcon
-                          icon="check-circle"
-                          className="w-4 h-4 text-cyan-500"
-                        />
-                      )}
-                    </div>
-
-                    {/* Video Title */}
-                    <Link to={`/predictor/pool/${pool.id}`}>
-                      <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2 hover:text-orange-600 cursor-pointer transition-colors">
-                        {pool.title}
-                      </h3>
-                    </Link>
-
-                    {/* Prediction Question */}
-                    <p className="text-xs text-gray-600 mb-3">
-                      {formatPoolQuestion(
-                        pool.question || "",
-                        pool.targetViews || 0,
-                        (pool as any).trackingDurationDays
-                      )}
-                    </p>
-
-                    {/* Pool Stats */}
-                    <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
-                      <span>
-                        Pool Size: ${pool.totalStake.toLocaleString()}
-                      </span>
-                      <span>{pool.participants} Predictors</span>
-                    </div>
-
-                    {/* Probability */}
-                    <div className="flex space-x-2 mb-4">
-                      <div
-                        className={`flex-1 rounded-lg p-2 text-center ${
-                          isPoolOpen
-                            ? "bg-green-50 border border-green-200"
-                            : "bg-gray-50 border border-gray-200 opacity-60"
-                        }`}
-                      >
-                        <div
-                          className={`text-xs font-medium ${
-                            isPoolOpen ? "text-green-600" : "text-gray-500"
-                          }`}
-                        >
-                          YES
+                return (
+                  <div
+                    key={pool.id}
+                    className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+                  >
+                    {/* Pool Image */}
+                    <div className="relative group">
+                      {isAuthenticated ? (
+                        <Link to={`/predictor/pool/${pool.id}`}>
+                          <img
+                            src={pool.video?.thumbnail || ""}
+                            alt={pool.video?.title || pool.question}
+                            className="w-full h-48 object-cover cursor-pointer"
+                            onError={(e) => {
+                              // Fallback if image fails to load
+                              e.currentTarget.src =
+                                "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&h=225&fit=crop";
+                            }}
+                          />
+                        </Link>
+                      ) : (
+                        <div className="relative">
+                          <img
+                            src={pool.video?.thumbnail || ""}
+                            alt={pool.video?.title || pool.question}
+                            className="w-full h-48 object-cover"
+                            onError={(e) => {
+                              // Fallback if image fails to load
+                              e.currentTarget.src =
+                                "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&h=225&fit=crop";
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+                            <Link
+                              to="/login"
+                              className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors text-sm font-medium"
+                            >
+                              Sign In to View Details
+                            </Link>
+                          </div>
                         </div>
-                        <div
-                          className={`text-sm font-bold ${
-                            isPoolOpen ? "text-green-700" : "text-gray-600"
-                          }`}
+                      )}
+                      {/* Play button overlay - only visible on hover for authenticated users */}
+                      {isAuthenticated && <PlayButtonOverlay />}
+                      <div className="absolute top-3 left-3">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(effectiveStatus)}`}
                         >
-                          {formatProbabilityAsPercentage(
-                            pool.probabilityYes || 0.5
-                          )}
-                        </div>
+                          {getStatusLabel(effectiveStatus)}
+                        </span>
                       </div>
-                      <div
-                        className={`flex-1 rounded-lg p-2 text-center ${
-                          isPoolOpen
-                            ? "bg-red-50 border border-red-200"
-                            : "bg-gray-50 border border-gray-200 opacity-60"
-                        }`}
-                      >
-                        <div
-                          className={`text-xs font-medium ${
-                            isPoolOpen ? "text-red-600" : "text-gray-500"
+                      <div className="absolute top-3 right-3">
+                        <span
+                          className={`px-2 py-1 rounded text-xs flex items-center space-x-1 font-mono ${
+                            isPoolOpen && isExpired
+                              ? "bg-red-600 text-white animate-pulse"
+                              : isPoolOpen && isTimerUrgent(pool, currentTime)
+                                ? "bg-orange-500 text-white animate-pulse"
+                                : "bg-black bg-opacity-50 text-white"
                           }`}
                         >
-                          NO
-                        </div>
-                        <div
-                          className={`text-sm font-bold ${
-                            isPoolOpen ? "text-red-700" : "text-gray-600"
-                          }`}
-                        >
-                          {formatProbabilityAsPercentage(
-                            pool.probabilityNo || 0.5
-                          )}
-                        </div>
+                          <FontAwesomeIcon icon="clock" className="w-3 h-3" />
+                          <span className="font-bold">{remainingTime}</span>
+                        </span>
                       </div>
                     </div>
 
-                    {/* Action Button */}
-                    {isAuthenticated ? (
-                      <button
-                        onClick={() =>
-                          isPoolOpen && navigate(`/predictor/pool/${pool.id}`)
-                        }
-                        disabled={!isPoolOpen}
-                        className={`w-full py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                          isPoolOpen
-                            ? "bg-orange-600 text-white hover:bg-orange-700 cursor-pointer"
-                            : "bg-gray-400 text-white cursor-not-allowed opacity-60"
-                        }`}
-                      >
-                        {isPoolOpen ? "Predict Now" : "Pool Closed"}
-                      </button>
-                    ) : (
-                      <Link
-                        to="/login"
-                        className="w-full bg-orange-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors flex items-center justify-center"
-                      >
-                        Sign In to Predict
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                    {/* Pool Content */}
+                    <div className="p-4">
+                      {/* Creator Info */}
+                      <div className="flex items-center space-x-2 mb-2">
+                        <div className="w-6 h-6 bg-gray-300 rounded-full"></div>
+                        <span className="text-sm font-medium text-gray-900">
+                          {pool.creator?.name ||
+                            pool.creator?.email ||
+                            "Unknown"}
+                        </span>
+                      </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
+                      {/* Video Title */}
+                      {isAuthenticated ? (
+                        <Link to={`/predictor/pool/${pool.id}`}>
+                          <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2 hover:text-orange-600 cursor-pointer transition-colors">
+                            {pool.video?.title || pool.question}
+                          </h3>
+                        </Link>
+                      ) : (
+                        <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2">
+                          {pool.video?.title || pool.question}
+                        </h3>
+                      )}
+
+                      {/* Prediction Question */}
+                      <p className="text-xs text-gray-600 mb-3">
+                        {formatPoolQuestion(
+                          pool.question || "",
+                          pool.targetViews || 0,
+                          (pool as any).trackingDurationDays
+                        )}
+                      </p>
+
+                      {/* Pool Stats */}
+                      <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                        <span>
+                          Pool Size: ${pool.totalStake.toLocaleString()}
+                        </span>
+                        <span>{pool.participants} Predictors</span>
+                      </div>
+
+                      {/* Probability */}
+                      <div className="flex space-x-2 mb-4">
+                        <div
+                          className={`flex-1 rounded-lg p-2 text-center ${
+                            isPoolOpen
+                              ? "bg-green-50 border border-green-200"
+                              : "bg-gray-50 border border-gray-200 opacity-60"
+                          }`}
+                        >
+                          <div
+                            className={`text-xs font-medium ${
+                              isPoolOpen ? "text-green-600" : "text-gray-500"
+                            }`}
+                          >
+                            YES
+                          </div>
+                          <div
+                            className={`text-sm font-bold ${
+                              isPoolOpen ? "text-green-700" : "text-gray-600"
+                            }`}
+                          >
+                            {formatProbabilityAsPercentage(
+                              pool.probabilityYes || 0.5
+                            )}
+                          </div>
+                        </div>
+                        <div
+                          className={`flex-1 rounded-lg p-2 text-center ${
+                            isPoolOpen
+                              ? "bg-red-50 border border-red-200"
+                              : "bg-gray-50 border border-gray-200 opacity-60"
+                          }`}
+                        >
+                          <div
+                            className={`text-xs font-medium ${
+                              isPoolOpen ? "text-red-600" : "text-gray-500"
+                            }`}
+                          >
+                            NO
+                          </div>
+                          <div
+                            className={`text-sm font-bold ${
+                              isPoolOpen ? "text-red-700" : "text-gray-600"
+                            }`}
+                          >
+                            {formatProbabilityAsPercentage(
+                              pool.probabilityNo || 0.5
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action Button */}
+                      {isAuthenticated ? (
+                        <button
+                          onClick={() =>
+                            isPoolOpen && navigate(`/predictor/pool/${pool.id}`)
+                          }
+                          disabled={!isPoolOpen}
+                          className={`w-full py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                            isPoolOpen
+                              ? "bg-orange-600 text-white hover:bg-orange-700 cursor-pointer"
+                              : "bg-gray-400 text-white cursor-not-allowed opacity-60"
+                          }`}
+                        >
+                          {isPoolOpen ? "Predict Now" : "Pool Closed"}
+                        </button>
+                      ) : (
+                        <Link
+                          to="/login"
+                          className="w-full bg-orange-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors flex items-center justify-center"
+                        >
+                          Sign In to Predict
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Pagination - Only show for authenticated users */}
+          {isAuthenticated && totalPages > 1 && (
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
-              totalItems={allFilteredPools.length}
+              totalItems={poolsForDisplay.length}
               itemsPerPage={itemsPerPage}
               onPageChange={setCurrentPage}
             />

@@ -462,13 +462,16 @@ const toNumber = (value: unknown) => {
 };
 
 export function calculatePoolMetrics(poolData: any, videoData: any) {
-  const currentViews =
+  const currentViews = Math.round(
     poolData.currentViews !== undefined
       ? toNumber(poolData.currentViews)
-      : toNumber(videoData?.viewCount ?? videoData?.views);
-  const targetViews = toNumber(poolData.targetViews);
+      : toNumber(videoData?.viewCount ?? videoData?.views)
+  );
+  const targetViews = Math.round(toNumber(poolData.targetViews));
   const progress =
-    targetViews > 0 ? Math.min((currentViews / targetViews) * 100, 100) : 0;
+    targetViews > 0
+      ? Math.round(Math.min((currentViews / targetViews) * 100, 100) * 10) / 10
+      : 0;
 
   const totalPoolAmount = toNumber(poolData.totalStake);
   const creatorPledge = toNumber(poolData.creatorPledge);
@@ -691,7 +694,7 @@ export function formatPoolQuestion(
     return question || "";
   }
 
-  const formattedViews = targetViews.toLocaleString();
+  const formattedViews = Math.round(targetViews).toLocaleString();
 
   let formatted = question
     // Replace "{targetViews}" or "targetViews" with formatted number

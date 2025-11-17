@@ -309,10 +309,14 @@ export default function PredictorPredictions() {
                                   <div className="flex items-center justify-between text-sm text-gray-500 mb-1">
                                     <span> target</span>
                                     <span>
-                                      {Math.round(
-                                        (pool.currentViews / pool.targetViews) *
-                                          100
-                                      )}
+                                      {(
+                                        Math.round(
+                                          Math.min(
+                                            (pool.currentViews / pool.targetViews) * 100,
+                                            100
+                                          ) * 10
+                                        ) / 10
+                                      ).toFixed(1)}
                                       %
                                     </span>
                                   </div>

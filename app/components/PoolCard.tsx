@@ -103,15 +103,20 @@ export default function PoolCard({
             <div className="mb-3">
               <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
                 <span>
-                  {pool.currentViews?.toLocaleString() || 0} /{" "}
-                  {pool.targetViews.toLocaleString()} views
+                  {Math.round(pool.currentViews || 0).toLocaleString()} /{" "}
+                  {Math.round(pool.targetViews || 0).toLocaleString()} views
                 </span>
                 <span>
                   {pool.targetViews > 0
-                    ? Math.round(
-                        ((pool.currentViews || 0) / pool.targetViews) * 100
-                      )
-                    : 0}
+                    ? (
+                        Math.round(
+                          Math.min(
+                            ((pool.currentViews || 0) / pool.targetViews) * 100,
+                            100
+                          ) * 10
+                        ) / 10
+                      ).toFixed(1)
+                    : "0.0"}
                   %
                 </span>
               </div>

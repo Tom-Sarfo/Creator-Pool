@@ -269,17 +269,21 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
   };
 
   // Use live metrics for currentViews if available
-  const currentViews = liveMetrics
-    ? liveMetrics.viewCount
-    : currentPoolData.currentViews !== undefined &&
-        currentPoolData.currentViews !== null
-      ? toNumber(currentPoolData.currentViews)
-      : toNumber((videoData as any)?.viewCount ?? (videoData as any)?.views);
+  const currentViews = Math.round(
+    liveMetrics
+      ? liveMetrics.viewCount
+      : currentPoolData.currentViews !== undefined &&
+          currentPoolData.currentViews !== null
+        ? toNumber(currentPoolData.currentViews)
+        : toNumber((videoData as any)?.viewCount ?? (videoData as any)?.views)
+  );
 
   // Calculate progress similar to creator-pool-detail.tsx
-  const targetViews = toNumber(currentPoolData.targetViews);
+  const targetViews = Math.round(toNumber(currentPoolData.targetViews));
   const progress =
-    targetViews > 0 ? Math.min((currentViews / targetViews) * 100, 100) : 0;
+    targetViews > 0
+      ? Math.round(Math.min((currentViews / targetViews) * 100, 100) * 10) / 10
+      : 0;
 
   // Calculate distribution metrics from actual stakes
   const yesStake = toNumber(currentPoolData.yesStake);
@@ -300,6 +304,8 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
     ...currentPoolData,
     status: poolStatus, // Always use backend status
     title:
+      currentPoolData.video?.title ||
+      videoData?.title ||
       (currentPoolData as any).title ||
       (currentPoolData as any).videoTitle ||
       "Untitled Pool",
@@ -348,7 +354,11 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
       : "Unknown",
     expectedDuration: (videoData as any)?.duration
       ? parseISODuration((videoData as any).duration)
-      : "Unknown duration",
+      : currentPoolData.trackingDurationDays
+        ? currentPoolData.trackingDurationDays === 1
+          ? "1 day"
+          : `${currentPoolData.trackingDurationDays} days`
+        : "Unknown duration",
     youtubeUrl: (videoData as any)?.id
       ? `https://youtube.com/watch?v=video${(videoData as any).id}`
       : "https://youtube.com/watch?v=example",
@@ -570,7 +580,7 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                       {/* Mobile: Stack info vertically, Desktop: Wrap */}
                       <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
                         <span className="break-words">
-                          Target: {pool.targetViews.toLocaleString()} views
+                          Target: {Math.round(pool.targetViews || 0).toLocaleString()} views
                         </span>
                         <span>Duration: {pool.expectedDuration}</span>
                         <span>Category: {pool.category}</span>
@@ -627,12 +637,12 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                         {/* Mobile: Stack stats vertically, Desktop: Side by side */}
                         <div className="flex flex-col sm:flex-row sm:justify-between space-y-1 sm:space-y-0 text-xs sm:text-sm text-gray-600 mb-2">
                           <span>
-                            Current Progress: {pool.progress.toFixed(2)}%
+                            Current Progress: {pool.progress.toFixed(1)}%
                           </span>
 
                           <span className="break-all sm:break-normal">
-                            {pool.currentViews.toLocaleString()} /{" "}
-                            {pool.targetViews.toLocaleString()} views
+                            {Math.round(pool.currentViews || 0).toLocaleString()} /{" "}
+                            {Math.round(pool.targetViews || 0).toLocaleString()} views
                           </span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-3 relative overflow-hidden">
