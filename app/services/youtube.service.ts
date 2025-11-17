@@ -258,14 +258,15 @@ export class YouTubeService {
 
   // Format view count
   static formatViewCount(count: number): string {
-    if (count >= 1000000000) {
-      return `${(count / 1000000000).toFixed(1)}B`;
-    } else if (count >= 1000000) {
-      return `${(count / 1000000).toFixed(1)}M`;
-    } else if (count >= 1000) {
-      return `${(count / 1000).toFixed(1)}K`;
+    const roundedCount = Math.round(count);
+    if (roundedCount >= 1000000000) {
+      return `${Math.round(roundedCount / 1000000000)}B`;
+    } else if (roundedCount >= 1000000) {
+      return `${Math.round(roundedCount / 1000000)}M`;
+    } else if (roundedCount >= 1000) {
+      return `${Math.round(roundedCount / 1000)}K`;
     }
-    return count.toString();
+    return roundedCount.toString();
   }
 
   // Format duration (ISO 8601 to readable format)

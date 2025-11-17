@@ -2,6 +2,7 @@ import type { Route } from "./+types/home";
 import { Link } from "react-router";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useAuth } from "../contexts/AuthContext";
+import { UserRole as UserRoleEnum } from "../lib/types";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -15,7 +16,23 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Home() {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, logout, hasRole } = useAuth();
+
+  // Determine dashboard route based on user role
+  const getDashboardRoute = () => {
+    if (!isAuthenticated || !user) return "/signup";
+    if (user.role === UserRoleEnum.CREATOR) return "/creator";
+    if (user.role === UserRoleEnum.USER) return "/predictor";
+    return "/dashboard";
+  };
+
+  // Determine pools route based on authentication
+  const getPoolsRoute = () => {
+    if (isAuthenticated && hasRole("predictor")) {
+      return "/predictor/pools";
+    }
+    return "/pools";
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -34,13 +51,22 @@ export default function Home() {
             <div className="flex items-center space-x-4">
               {isAuthenticated ? (
                 <>
+                  {/* Mobile: Show only "Dashboard" */}
                   <Link
-                    to="/dashboard"
-                    className="text-gray-600 hover:text-gray-800 text-sm font-medium"
+                    to={isAuthenticated ? getDashboardRoute() : "/signup"}
+                    className="text-orange-600 hover:text-orange-700 text-sm font-medium md:hidden"
                   >
                     Go to Dashboard
                   </Link>
-                  <div className="flex items-center space-x-2">
+                  {/* Desktop: Show full "Go to Dashboard" */}
+                  <Link
+                    to={isAuthenticated ? getDashboardRoute() : "/signup"}
+                    className="text-gray-600 hover:text-gray-800 text-sm font-medium hidden md:block"
+                  >
+                    Go to Dashboard
+                  </Link>
+                  {/* Desktop: Show user info and sign out */}
+                  <div className="hidden md:flex items-center space-x-2">
                     <span className="text-sm text-gray-600">
                       {user?.name || user?.email}
                     </span>
@@ -54,15 +80,24 @@ export default function Home() {
                 </>
               ) : (
                 <>
+                  {/* Mobile: Show only "Sign In" in primary color */}
                   <Link
                     to="/login"
-                    className="text-gray-600 hover:text-gray-800 text-sm font-medium"
+                    className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors text-sm font-medium md:hidden"
                   >
                     Sign In
                   </Link>
+                  {/* Desktop: Show "Sign In" as text link */}
+                  <Link
+                    to="/login"
+                    className="text-gray-600 hover:text-gray-800 text-sm font-medium hidden md:block"
+                  >
+                    Sign In
+                  </Link>
+                  {/* Desktop: Show "Get Started" button */}
                   <Link
                     to="/signup"
-                    className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
+                    className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors hidden md:block"
                   >
                     Get Started
                   </Link>
@@ -90,13 +125,13 @@ export default function Home() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              to="/signup"
+              to={isAuthenticated ? getDashboardRoute() : "/signup"}
               className="bg-orange-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-orange-700 transition-colors text-center"
             >
-              Get Started
+              {isAuthenticated ? "Go to Dashboard" : "Get Started"}
             </Link>
             <Link
-              to="/pools"
+              to={getPoolsRoute()}
               className="bg-white text-orange-600 px-8 py-3 rounded-lg text-lg font-semibold border-2 border-orange-600 hover:bg-orange-50 transition-colors text-center"
             >
               Explore Pools
@@ -207,10 +242,10 @@ export default function Home() {
             to interact with YouTube content.
           </p>
           <Link
-            to="/signup"
+            to={isAuthenticated ? getDashboardRoute() : "/signup"}
             className="bg-white text-orange-600 px-8 py-3 rounded-lg text-lg font-semibold hover:bg-gray-50 transition-colors inline-block"
           >
-            Sign Up Now
+            {isAuthenticated ? "Go to Dashboard" : "Sign Up Now"}
           </Link>
         </div>
       </section>

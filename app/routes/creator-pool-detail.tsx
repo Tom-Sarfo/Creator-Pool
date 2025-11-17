@@ -278,11 +278,11 @@ export default function CreatorPoolDetailPage({
   const metrics = liveMetrics
     ? {
         ...baseMetrics,
-        currentViews: liveMetrics.viewCount,
+        currentViews: Math.round(liveMetrics.viewCount),
         progress:
           currentPoolData.targetViews > 0
             ? Math.min(
-                (liveMetrics.viewCount / currentPoolData.targetViews) * 100,
+                (Math.round(liveMetrics.viewCount) / currentPoolData.targetViews) * 100,
                 100
               )
             : 0,
@@ -315,7 +315,10 @@ export default function CreatorPoolDetailPage({
     yesStakers: metrics.yesStakers || 0,
     noStakers: metrics.noStakers || 0,
     title:
-      currentPoolData.title || currentPoolData.videoTitle || "Untitled Pool",
+      currentPoolData.title ||
+      currentPoolData.videoTitle ||
+      videoData?.title ||
+      "Untitled Pool",
     creator:
       typeof currentPoolData.creator === "object" &&
       currentPoolData.creator?.name
@@ -348,7 +351,10 @@ export default function CreatorPoolDetailPage({
       ? `${currentPoolData.trackingDurationDays} days`
       : "7 days",
     description:
-      currentPoolData.title || currentPoolData.videoTitle || "Pool description",
+      currentPoolData.title ||
+      currentPoolData.videoTitle ||
+      videoData?.title ||
+      "Pool description",
     youtubeUrl: videoData?.id
       ? `https://youtube.com/watch?v=video${videoData.id}`
       : "https://youtube.com/watch?v=example",
@@ -690,7 +696,7 @@ export default function CreatorPoolDetailPage({
                       {/* Mobile: Stack info vertically, Desktop: Wrap */}
                       <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
                         <span className="break-words">
-                          Target: {pool.targetViews.toLocaleString()} views in{" "}
+                          Target: {Math.round(pool.targetViews || 0).toLocaleString()} views in{" "}
                           {pool.targetTimeframe}
                         </span>
                         <span>Duration: {pool.poolDuration}</span>
@@ -722,10 +728,10 @@ export default function CreatorPoolDetailPage({
                     <div className="mb-2">
                       {/* Mobile: Stack stats vertically, Desktop: Side by side */}
                       <div className="flex flex-col sm:flex-row sm:justify-between space-y-1 sm:space-y-0 text-xs sm:text-sm text-gray-600 mb-2">
-                        <span>Current Progress: {pool.progress}%</span>
+                        <span>Current Progress: {pool.progress.toFixed(1)}%</span>
                         <span className="break-all sm:break-normal">
-                          {pool.currentViews.toLocaleString()} /{" "}
-                          {pool.targetViews.toLocaleString()} views
+                          {Math.round(pool.currentViews || 0).toLocaleString()} /{" "}
+                          {Math.round(pool.targetViews || 0).toLocaleString()} views
                         </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-3 relative overflow-hidden">

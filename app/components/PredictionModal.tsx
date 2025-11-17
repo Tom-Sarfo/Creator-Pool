@@ -234,7 +234,7 @@ export default function PredictionModal({
 
               {/* Stake Limits Info */}
               <div className="text-xs text-gray-500">
-                Minimum: $1 • Maximum: $500 • Max 10% of pool size
+                Minimum: $1 • Maximum: $500
               </div>
             </div>
 

@@ -141,7 +141,7 @@ export default function CreatorLayout() {
     <div className="min-h-screen bg-gray-50">
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 lg:hidden"
+          className="fixed inset-0 z-40 bg-transparent lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}

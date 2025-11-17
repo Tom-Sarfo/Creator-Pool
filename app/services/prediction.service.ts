@@ -9,6 +9,7 @@ import type {
   Prediction,
   PredictionChoice,
   PredictionResult,
+  PredictionStats,
 } from "../lib/types";
 import { PredictionResult as PredictionResultEnum } from "../lib/types";
 
@@ -99,7 +100,19 @@ export class PredictionService {
     return prediction !== null;
   }
 
-  // Get user's prediction statistics
+  // Get current user's prediction statistics from API
+  async getMyStats(): Promise<PredictionStats> {
+    return apiClient.get<PredictionStats>(API_ENDPOINTS.PREDICTIONS.MY_STATS);
+  }
+
+  // Get current user's predictions from API
+  async getMyPredictions(): Promise<Prediction[]> {
+    return apiClient.get<Prediction[]>(
+      API_ENDPOINTS.PREDICTIONS.MY_PREDICTIONS
+    );
+  }
+
+  // Get user's prediction statistics (legacy method - calculates from predictions)
   async getUserPredictionStats(userId: string): Promise<{
     totalPredictions: number;
     activePredictions: number;

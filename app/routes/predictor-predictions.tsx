@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChartBar,
@@ -19,66 +19,44 @@ import {
 import Tabs from "../components/Tabs";
 import StatsCard from "../components/StatsCard";
 import { useAppContext } from "../contexts/AppContext";
-import { useAuth } from "../contexts/AuthContext";
+import { usePredictionStats } from "../hooks/usePredictionStats";
+import { useMyPredictions } from "../hooks/useMyPredictions";
 
 export default function PredictorPredictions() {
   const [activeTab, setActiveTab] = useState("active");
-  const [isContextReady, setIsContextReady] = useState(false);
+  const { pools } = useAppContext();
 
-  // Add a safety check for AppContext
-  let context;
-  try {
-    context = useAppContext();
-    if (!isContextReady) {
-      setIsContextReady(true);
-    }
-  } catch (error) {
-    console.error("AppContext not available:", error);
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading...</h2>
-          <p className="text-gray-600">
-            Please wait while the application loads.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const { stats, loading: statsLoading } = usePredictionStats({
+    pollInterval: 30000,
+    enabled: true,
+  });
+  const { predictions: userPredictions, loading: predictionsLoading } =
+    useMyPredictions();
 
-  const {
-    predictions: allPredictions,
-    pools,
-    getPredictionsByPredictor,
-  } = context;
-
-  const { user } = useAuth();
-  const userPredictions = getPredictionsByPredictor(user?.id || "anonymous");
   const activePredictions = userPredictions.filter(
     (p) => p.result === "pending"
   );
   const wonPredictions = userPredictions.filter((p) => p.result === "won");
   const lostPredictions = userPredictions.filter((p) => p.result === "lost");
 
-  // Calculate real stats from user predictions
-  const totalPredictions = userPredictions.length;
-  const activePredictionsCount = userPredictions.filter(
-    (p) => p.result === "pending"
-  ).length;
-  const settledPredictions = userPredictions.filter(
-    (p) => p.result !== "pending"
-  );
-  const winRate =
-    settledPredictions.length > 0
-      ? Math.round((wonPredictions.length / settledPredictions.length) * 100)
-      : 0;
-  const totalEarnings = wonPredictions.reduce(
-    (sum, p) => sum + (p.actualPayout || 0),
-    0
-  );
-
   // Helper function to get pool data for a prediction
   const getPoolForPrediction = (prediction: any) => {
+    // Use pool data from prediction if available (from API)
+    if (prediction.pool) {
+      const poolData = prediction.pool;
+      const videoData = poolData.video || prediction["pool.video"];
+      const creatorData = poolData.creator || { name: "Unknown" };
+      
+      return {
+        ...poolData,
+        video: videoData,
+        thumbnail: videoData?.thumbnail || "",
+        title: videoData?.title || poolData.question || "",
+        creator: typeof creatorData === "string" ? creatorData : creatorData?.name || "Unknown",
+        creatorVerified: creatorData?.verified || false,
+      };
+    }
+    // Fallback to context pools
     return pools.find((p) => p.id === prediction.poolId);
   };
 
@@ -147,7 +125,13 @@ export default function PredictorPredictions() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard
           title="Total Predictions"
-          value={totalPredictions.toString()}
+          value={
+            statsLoading
+              ? "-"
+              : stats
+                ? stats.totalPredictions.toString()
+                : "0"
+          }
           icon={faBrain}
           iconColor="text-cyan-600"
           iconBgColor="bg-cyan-50"
@@ -157,7 +141,13 @@ export default function PredictorPredictions() {
 
         <StatsCard
           title="Win Rate"
-          value={`${winRate}%`}
+          value={
+            statsLoading
+              ? "-"
+              : stats
+                ? `${stats.winRate.toFixed(1)}%`
+                : "0%"
+          }
           icon={faBullseye}
           iconColor="text-green-600"
           iconBgColor="bg-green-50"
@@ -167,7 +157,13 @@ export default function PredictorPredictions() {
 
         <StatsCard
           title="Total Earnings"
-          value={`$${totalEarnings.toFixed(2)}`}
+          value={
+            statsLoading
+              ? "-"
+              : stats
+                ? `$${stats.totalEarnings.toFixed(2)}`
+                : "$0.00"
+          }
           icon={faDollarSign}
           iconColor="text-yellow-600"
           iconBgColor="bg-yellow-50"
@@ -177,7 +173,13 @@ export default function PredictorPredictions() {
 
         <StatsCard
           title="Active Now"
-          value={activePredictionsCount.toString()}
+          value={
+            statsLoading
+              ? "-"
+              : stats
+                ? stats.pendingPredictions.toString()
+                : "0"
+          }
           icon={faClock}
           iconColor="text-orange-600"
           iconBgColor="bg-orange-50"
@@ -191,7 +193,12 @@ export default function PredictorPredictions() {
         <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
 
         <div className="p-6">
-          {predictions.length === 0 ? (
+          {predictionsLoading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading predictions...</p>
+            </div>
+          ) : predictions.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
                 <FontAwesomeIcon
@@ -302,10 +309,14 @@ export default function PredictorPredictions() {
                                   <div className="flex items-center justify-between text-sm text-gray-500 mb-1">
                                     <span> target</span>
                                     <span>
-                                      {Math.round(
-                                        (pool.currentViews / pool.targetViews) *
-                                          100
-                                      )}
+                                      {(
+                                        Math.round(
+                                          Math.min(
+                                            (pool.currentViews / pool.targetViews) * 100,
+                                            100
+                                          ) * 10
+                                        ) / 10
+                                      ).toFixed(1)}
                                       %
                                     </span>
                                   </div>

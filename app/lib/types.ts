@@ -134,6 +134,16 @@ export interface PredictionFilters {
   limit?: number;
 }
 
+export interface PredictionStats {
+  totalPredictions: number;
+  wonPredictions: number;
+  lostPredictions: number;
+  pendingPredictions: number;
+  totalEarnings: number;
+  totalStaked: number;
+  winRate: number;
+}
+
 // ============================================================================
 // Entity Interfaces
 // ============================================================================

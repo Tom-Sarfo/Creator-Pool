@@ -54,29 +54,33 @@ export default function VideoCard({
   const { metrics: liveMetrics } = useLivePoolMetrics(poolId);
 
   // Use live metrics for currentViews if available (for pool cards)
-  const currentViews =
+  const currentViews = Math.round(
     shouldUseLiveMetrics && liveMetrics
       ? liveMetrics.viewCount
       : data?.currentViews !== undefined && data?.currentViews !== null
         ? data.currentViews
-        : (data as any)?.viewCount || (data as any)?.views || 0;
+        : (data as any)?.viewCount || (data as any)?.views || 0
+  );
 
   // Calculate progress similar to pool-detail.tsx
-  const targetViews = data?.targetViews || 0;
+  const targetViews = Math.round(data?.targetViews || 0);
   const progress =
-    targetViews > 0 ? Math.min((currentViews / targetViews) * 100, 100) : 0;
+    targetViews > 0
+      ? Math.round(Math.min((currentViews / targetViews) * 100, 100) * 10) / 10
+      : 0;
 
   // Get thumbnail with fallback for pools
   const thumbnail = getThumbnail(data, getVideoById, isPoolCard);
 
   // Default utility functions if not provided
   const defaultFormatNumber = (num: number) => {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + "M";
-    } else if (num >= 1000) {
-      return (num / 1000).toFixed(1) + "K";
+    const roundedNum = Math.round(num);
+    if (roundedNum >= 1000000) {
+      return Math.round(roundedNum / 1000000) + "M";
+    } else if (roundedNum >= 1000) {
+      return Math.round(roundedNum / 1000) + "K";
     }
-    return num.toString();
+    return roundedNum.toString();
   };
 
   const defaultGetPoolStatusColor = (status: string) => {
@@ -324,7 +328,7 @@ export default function VideoCard({
               <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
                 <span className="truncate">{formatNum(targetViews)} views</span>
                 <span className="flex-shrink-0 ml-2">
-                  {progress.toFixed(2)}%
+                  {progress.toFixed(1)}%
                 </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-1.5 sm:h-2">
