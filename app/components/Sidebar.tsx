@@ -18,7 +18,7 @@ export default function Sidebar({
   const location = useLocation();
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 min-h-screen">
+    <aside className="w-64 bg-transparent border-r border-gray-200 min-h-screen">
       <div className="p-6">
         <Link
           to="/"

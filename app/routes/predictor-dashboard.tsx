@@ -23,15 +23,21 @@ import {
   calculateRemainingTime,
   getPoolStatusColor,
   getPoolStatusLabel,
-  calculatePredictorStats,
   getRecentPools,
 } from "../lib/utils";
 import StatsCard from "../components/StatsCard";
+import { usePredictionStats } from "../hooks/usePredictionStats";
+import { useMyPredictions } from "../hooks/useMyPredictions";
 
 export default function PredictorDashboard() {
-  const { pools, predictions } = useAppContext();
-  const { user } = useAuth();
+  const { pools } = useAppContext();
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  const { stats, loading: statsLoading } = usePredictionStats({
+    pollInterval: 30000,
+    enabled: true,
+  });
+  const { predictions: userPredictions } = useMyPredictions();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -40,11 +46,7 @@ export default function PredictorDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  const stats = calculatePredictorStats(predictions, user?.id || "anonymous");
   const recentPools = getRecentPools(pools, 3);
-  const userPredictions = predictions.filter(
-    (p) => p.predictorId === (user?.id || "anonymous")
-  );
 
   const quickActions = PREDICTOR_QUICK_ACTIONS.map((action) => ({
     ...action,
@@ -82,12 +84,16 @@ export default function PredictorDashboard() {
             faDollarSign,
             faBrain,
           };
-          const valueMap = [
-            stats.totalPredictions,
-            `${stats.winRate}%`,
-            `$${stats.totalEarnings}`,
-            stats.activePredictions,
-          ];
+          const valueMap = statsLoading
+            ? ["-", "-", "-", "-"]
+            : stats
+              ? [
+                  stats.totalPredictions.toString(),
+                  `${stats.winRate.toFixed(1)}%`,
+                  `$${stats.totalEarnings.toFixed(2)}`,
+                  stats.pendingPredictions.toString(),
+                ]
+              : ["0", "0%", "$0.00", "0"];
 
           return (
             <StatsCard

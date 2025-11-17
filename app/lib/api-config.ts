@@ -82,6 +82,8 @@ export const API_ENDPOINTS = {
     LIST: "/api/predictions",
     CREATE: "/api/predictions",
     GET_BY_ID: (id: string) => `/api/predictions/${id}`,
+    MY_STATS: "/api/predictions/me/stats",
+    MY_PREDICTIONS: "/api/predictions/me",
   },
 
   // Videos

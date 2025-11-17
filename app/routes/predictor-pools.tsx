@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSearch, faBullseye, faClock } from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "../contexts/AuthContext";
-import { CATEGORIES } from "../lib/constants";
 import { useAppContext } from "../contexts/AppContext";
-import type { Pool, PredictionChoice } from "../lib/types";
-import { PredictionResult as PredictionResultEnum } from "../lib/types";
+import type { Pool, PredictionChoice, PoolStatus } from "../lib/types";
+import { PredictionResult as PredictionResultEnum, PoolStatus as PoolStatusEnum } from "../lib/types";
 import PredictionModal from "../components/PredictionModal";
 import PoolCard from "../components/PoolCard";
 import Pagination from "../components/Pagination";
+import EmptyState from "../components/EmptyState";
 import {
   Select,
   SelectContent,
@@ -16,9 +17,60 @@ import {
   SelectValue,
 } from "../components/ui/select";
 
+const STATUS_OPTIONS: { value: PoolStatus | "all"; label: string }[] = [
+  { value: "all", label: "All Statuses" },
+  { value: PoolStatusEnum.OPEN, label: "Open" },
+  { value: PoolStatusEnum.AWAITING_RELEASE, label: "Awaiting Release" },
+  { value: PoolStatusEnum.LIVE_TRACKING, label: "Live Tracking" },
+  { value: PoolStatusEnum.CLOSED, label: "Closed" },
+  { value: PoolStatusEnum.SETTLED, label: "Settled" },
+];
+
+// Helper function to check if a pool is ending soon (within 24 hours)
+function isPoolEndingSoon(pool: Pool, currentTime: Date): boolean {
+  // For open pools, check if prediction window is closing soon
+  if (pool.status === PoolStatusEnum.OPEN) {
+    if (pool.closesAt) {
+      const closesAt = new Date(pool.closesAt);
+      const hoursUntilClose = (closesAt.getTime() - currentTime.getTime()) / (1000 * 60 * 60);
+      return hoursUntilClose > 0 && hoursUntilClose <= 24;
+    }
+    
+    // Fallback: calculate from createdAt + predictionWindowMinutes
+    if (pool.createdAt) {
+      const deadline = new Date(
+        new Date(
+          typeof pool.createdAt === "string"
+            ? pool.createdAt
+            : pool.createdAt.toISOString()
+        ).getTime() +
+          (pool.predictionWindowMinutes || 43200) * 60 * 1000
+      );
+      const hoursUntilDeadline = (deadline.getTime() - currentTime.getTime()) / (1000 * 60 * 60);
+      return hoursUntilDeadline > 0 && hoursUntilDeadline <= 24;
+    }
+  }
+
+  // For live_tracking pools, check if tracking period is ending soon
+  if (pool.status === PoolStatusEnum.LIVE_TRACKING && pool.trackingStartedAt) {
+    const trackingStart = new Date(
+      typeof pool.trackingStartedAt === "string"
+        ? pool.trackingStartedAt
+        : pool.trackingStartedAt.toISOString()
+    );
+    const trackingEnd = new Date(
+      trackingStart.getTime() + pool.trackingDurationDays * 24 * 60 * 60 * 1000
+    );
+    const hoursUntilTrackingEnd = (trackingEnd.getTime() - currentTime.getTime()) / (1000 * 60 * 60);
+    return hoursUntilTrackingEnd > 0 && hoursUntilTrackingEnd <= 24;
+  }
+
+  return false;
+}
+
 export default function PredictorPools() {
   const [activeTab, setActiveTab] = useState("active");
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState<PoolStatus | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [showPredictionModal, setShowPredictionModal] = useState(false);
   const [selectedPool, setSelectedPool] = useState<Pool | null>(null);
@@ -30,7 +82,6 @@ export default function PredictorPools() {
 
   const { pools, addPrediction, addToast } = useAppContext();
   const { user } = useAuth();
-  const categories = CATEGORIES;
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -40,16 +91,38 @@ export default function PredictorPools() {
     return () => clearInterval(interval);
   }, []);
 
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, selectedStatus, searchQuery]);
+
   const allFilteredPools = pools.filter((pool) => {
-    const matchesCategory = selectedCategory === "all";
+    // Filter by status
+    const matchesStatus = selectedStatus === "all" || pool.status === selectedStatus;
+    
+    // Filter by search query
     const matchesSearch =
       searchQuery === "" ||
       pool.video?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       pool.creator?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       pool.question?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+    
+    // Filter by active/ending soon tab
+    let matchesTab = true;
+    if (activeTab === "ending") {
+      matchesTab = isPoolEndingSoon(pool, currentTime);
+    } else if (activeTab === "active") {
+      // Active pools: open, awaiting_release, or live_tracking
+      matchesTab = [
+        PoolStatusEnum.OPEN,
+        PoolStatusEnum.AWAITING_RELEASE,
+        PoolStatusEnum.LIVE_TRACKING,
+      ].includes(pool.status);
+    }
+
+    return matchesStatus && matchesSearch && matchesTab;
   });
-console.log("allFilteredPools", allFilteredPools);
+
   const totalPages = Math.ceil(allFilteredPools.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -136,16 +209,16 @@ console.log("allFilteredPools", allFilteredPools);
               />
             </div>
             <Select
-              value={selectedCategory}
-              onValueChange={setSelectedCategory}
+              value={selectedStatus}
+              onValueChange={(value) => setSelectedStatus(value as PoolStatus | "all")}
             >
               <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder="Select category" />
+                <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
+                {STATUS_OPTIONS.map((status) => (
+                  <SelectItem key={status.value} value={status.value}>
+                    {status.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -154,25 +227,47 @@ console.log("allFilteredPools", allFilteredPools);
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredPools.map((pool) => (
-          <PoolCard
-            key={pool.id}
-            pool={pool}
-            currentTime={currentTime}
-            onPredictClick={handlePredictClick}
-          />
-        ))}
-      </div>
-
-      {totalPages > 1 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={allFilteredPools.length}
-          itemsPerPage={itemsPerPage}
-          onPageChange={setCurrentPage}
+      {filteredPools.length === 0 ? (
+        <EmptyState
+          icon={
+            searchQuery || selectedStatus !== "all"
+              ? faSearch
+              : activeTab === "ending"
+                ? faClock
+                : faBullseye
+          }
+          title="No pools found"
+          message={
+            searchQuery || selectedStatus !== "all"
+              ? `No pools match your current filters. Try adjusting your search or status filter.`
+              : activeTab === "ending"
+                ? "No pools are ending soon. Check back later for pools approaching their deadline."
+                : "No active pools available at the moment. Check back later for new prediction opportunities."
+          }
         />
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredPools.map((pool) => (
+              <PoolCard
+                key={pool.id}
+                pool={pool}
+                currentTime={currentTime}
+                onPredictClick={handlePredictClick}
+              />
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={allFilteredPools.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
+          )}
+        </>
       )}
 
       {selectedPool && (
