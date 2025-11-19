@@ -504,9 +504,7 @@ export function calculatePoolMetrics(poolData: any, videoData: any) {
     creatorRoyalty: totalPoolForFees
       ? Math.round(totalPoolForFees * 0.01 * 100) / 100
       : 0,
-    creatorPledge:
-      creatorPledge ||
-      (totalPoolForFees ? Math.round(totalPoolForFees * 0.15 * 100) / 100 : 0),
+    creatorPledge: creatorPledge || 0,
     yesPool: yesStake,
     noPool: noStake,
     yesPercentage,

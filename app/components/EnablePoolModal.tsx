@@ -47,10 +47,11 @@ export default function EnablePoolModal({
   video,
   onEnablePool,
 }: EnablePoolModalProps) {
-  const { videos } = useAppContext();
+  const { videos, walletBalance } = useAppContext();
   const { user, isAuthenticated } = useAuth();
   const [pledgeType, setPledgeType] = useState("fixed");
   const [customAmount, setCustomAmount] = useState("200");
+  const [walletError, setWalletError] = useState<string | null>(null);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(
@@ -198,6 +199,20 @@ export default function EnablePoolModal({
     const isSuggestion =
       suggestions.length > 0 && selectedSuggestionIndex < suggestions.length;
 
+    const pledgeAmount = pledgeType === "fixed" ? parseFloat(customAmount) : 0;
+
+    // Validate wallet balance if pledge is set
+    if (pledgeAmount > 0) {
+      const balance = walletBalance?.balance || 0;
+      if (pledgeAmount > balance) {
+        setWalletError(
+          `Insufficient wallet balance. You have $${balance.toFixed(2)} but need $${pledgeAmount.toFixed(2)}.`
+        );
+        return;
+      }
+      setWalletError(null);
+    }
+
     const poolData = {
       videoId: selectedVideoId ? parseInt(selectedVideoId) : displayVideo.id,
       question: isSuggestion
@@ -210,8 +225,7 @@ export default function EnablePoolModal({
         ? (selectedQuestion as Suggestion).trackingDurationDays
         : undefined,
       pledgeType,
-      pledgeAmount: pledgeType === "fixed" ? parseFloat(customAmount) : 0,
-      pledgePercentage: pledgeType === "percentage" ? 15 : 0,
+      pledgeAmount,
     };
 
     console.log("poolData", poolData);
@@ -385,7 +399,7 @@ export default function EnablePoolModal({
               </h3>
               <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
                 Boost your pool size and attract buzz around your content by
-                pledging a portion of your AdSense revenue more engagement, more
+                pledging a fixed amount to the pool. More engagement, more
                 participants, bigger rewards.
               </p>
 
@@ -438,10 +452,13 @@ export default function EnablePoolModal({
               </div>
 
               {pledgeType === "fixed" && (
-                <div className="mt-3 sm:mt-4">
+                <div className="mt-3 sm:mt-4 space-y-2">
                   <TextInputField
                     value={customAmount}
-                    onChange={setCustomAmount}
+                    onChange={(value) => {
+                      setCustomAmount(value);
+                      setWalletError(null);
+                    }}
                     type="number"
                     label="Enter Fixed Amount"
                     placeholder="200"
@@ -461,6 +478,16 @@ export default function EnablePoolModal({
                     textColor="text-gray-900"
                     placeholderColor="placeholder-gray-500"
                   />
+                  {walletBalance && (
+                    <div className="text-xs text-gray-600">
+                      Your wallet balance: ${walletBalance.balance.toFixed(2)}
+                    </div>
+                  )}
+                  {walletError && (
+                    <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">
+                      {walletError}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -612,10 +639,15 @@ export default function EnablePoolModal({
               )}
             </div>
 
-            <div className="flex items-center space-x-2 text-xs sm:text-sm text-green-600 bg-green-50 p-2 sm:p-3 rounded-lg">
-              <FontAwesomeIcon icon={faShieldAlt} className="w-4 h-4" />
-              <span>Your pledge is held securely until pool settlement</span>
-            </div>
+            {pledgeType === "fixed" && parseFloat(customAmount) > 0 && (
+              <div className="flex items-center space-x-2 text-xs sm:text-sm text-green-600 bg-green-50 p-2 sm:p-3 rounded-lg">
+                <FontAwesomeIcon icon={faShieldAlt} className="w-4 h-4" />
+                <span>
+                  Your pledge will be automatically deducted from your wallet
+                  when the pool settles
+                </span>
+              </div>
+            )}
 
             <div className="flex items-start space-x-3">
               <input
@@ -655,7 +687,13 @@ export default function EnablePoolModal({
             <button
               onClick={handleEnablePool}
               disabled={
-                !termsAccepted || (needsVideoSelection && !selectedVideoId)
+                !termsAccepted ||
+                (needsVideoSelection && !selectedVideoId) ||
+                (pledgeType === "fixed" &&
+                  parseFloat(customAmount) > 0 &&
+                  walletBalance &&
+                  parseFloat(customAmount) > walletBalance.balance) ||
+                !!walletError
               }
               className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base"
             >

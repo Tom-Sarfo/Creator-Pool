@@ -18,7 +18,6 @@ import {
   faArrowLeft,
   faFlag,
   faBan,
-  faCoins,
   faExclamationTriangle,
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
@@ -67,10 +66,8 @@ export default function CreatorPoolDetailPage({
   const poolId = params.id;
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("overview");
-  const [showPledgeModal, setShowPledgeModal] = useState(false);
   const [predictionFilter, setPredictionFilter] = useState("all");
   const [poolData, setPoolData] = useState<Pool | null>(null);
-  const [isDepositing, setIsDepositing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const previousStatusRef = useRef<string | null>(null);
@@ -83,7 +80,6 @@ export default function CreatorPoolDetailPage({
     transitionPoolToNextStage,
     addToast,
     refreshPools,
-    refreshWallet,
   } = useAppContext();
   const { user } = useAuth();
   const statusParam = searchParams.get("status") || "active";
@@ -419,60 +415,6 @@ export default function CreatorPoolDetailPage({
     ],
   };
 
-  // Handle deposit pledge
-  const handleDepositPledge = async () => {
-    if (!currentPoolData || isDepositing) return;
-
-    setIsDepositing(true);
-    try {
-      const updatedPool = await poolService.depositPledge(
-        currentPoolData.id,
-        pool.creatorPledge
-      );
-
-      setPoolData(updatedPool);
-      previousStatusRef.current = updatedPool.status;
-
-      // Check if pool status changed from CLOSED to SETTLED
-      if (
-        currentPoolData.status === "closed" &&
-        updatedPool.status === "settled"
-      ) {
-        addToast({
-          type: "success",
-          title: "Pool Settled!",
-          message:
-            "Your pledge has been deposited and the pool has been settled.",
-          duration: 5000,
-        });
-      } else {
-        addToast({
-          type: "success",
-          title: "Pledge Deposited",
-          message: `Your pledge of $${pool.creatorPledge.toLocaleString()} has been deposited successfully.`,
-          duration: 4000,
-        });
-      }
-
-      await refreshPools();
-      await refreshWallet();
-      setShowPledgeModal(false);
-    } catch (error: any) {
-      const errorMessage =
-        error?.data?.message ||
-        error?.message ||
-        "Failed to deposit pledge. Please try again.";
-
-      addToast({
-        type: "error",
-        title: "Deposit Failed",
-        message: errorMessage,
-        duration: 4000,
-      });
-    } finally {
-      setIsDepositing(false);
-    }
-  };
 
   // console.log("currentPoolData", currentPoolData);
 
@@ -544,29 +486,6 @@ export default function CreatorPoolDetailPage({
                     <span className="hidden sm:inline">Next Stage</span>
                     <span className="sm:hidden">Next</span>
                   </button>
-                )}
-                {pool.pledgeStatus === "pending" && (
-                  <button
-                    onClick={() => setShowPledgeModal(true)}
-                    className="px-2 sm:px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm flex-1 sm:flex-none"
-                  >
-                    <FontAwesomeIcon
-                      icon={faCoins}
-                      className="w-3 h-3 sm:w-4 sm:h-4"
-                    />
-                    <span className="hidden sm:inline">Deposit Pledge</span>
-                    <span className="sm:hidden">Deposit</span>
-                  </button>
-                )}
-                {pool.pledgeStatus === "deposited" && (
-                  <div className="px-2 sm:px-4 py-2 bg-green-100 text-green-800 rounded-lg flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm flex-1 sm:flex-none">
-                    <FontAwesomeIcon
-                      icon={faCheckCircle}
-                      className="w-3 h-3 sm:w-4 sm:h-4"
-                    />
-                    <span className="hidden sm:inline">Pledge Deposited</span>
-                    <span className="sm:hidden">Deposited</span>
-                  </div>
                 )}
               </div>
             </div>
@@ -1073,48 +992,27 @@ export default function CreatorPoolDetailPage({
               </div>
 
               {/* Pledge Status */}
-              <div className="border-t pt-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-medium text-gray-900">Pledge Status</h4>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      pool.pledgeStatus === "deposited"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-yellow-100 text-yellow-800"
-                    }`}
-                  >
-                    {pool.pledgeStatus === "deposited"
-                      ? "Deposited"
-                      : "Pending"}
-                  </span>
-                </div>
-                {pool.pledgeStatus === "deposited" ? (
-                  <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg p-3">
-                    <div className="flex items-center space-x-2">
-                      <FontAwesomeIcon
-                        icon={faCheckCircle}
-                        className="w-4 h-4"
-                      />
-                      <span>
-                        Pledge amount deposited and ready for disbursement
-                      </span>
-                    </div>
+              {pool.creatorPledge > 0 && (
+                <div className="border-t pt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium text-gray-900">Pledge Status</h4>
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      Auto-Deduct
+                    </span>
                   </div>
-                ) : (
-                  <div className="text-sm text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <div className="text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-lg p-3">
                     <div className="flex items-center space-x-2 mb-2">
-                      <FontAwesomeIcon icon={faClock} className="w-4 h-4" />
-                      <span className="font-medium">
-                        Pledge not yet deposited
-                      </span>
+                      <FontAwesomeIcon icon={faInfoCircle} className="w-4 h-4" />
+                      <span className="font-medium">Automatic Deduction</span>
                     </div>
                     <p className="text-xs">
-                      Deposit your pledge amount to add it to the pool for
-                      disbursement to winners.
+                      Your pledge of ${pool.creatorPledge.toLocaleString()} will
+                      be automatically deducted from your wallet when the pool
+                      settles and added to the pool for disbursement to winners.
                     </p>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
               {/* Pool Distribution */}
               <PoolDistribution
@@ -1130,129 +1028,6 @@ export default function CreatorPoolDetailPage({
         </div>
       </div>
 
-      {/* Pledge Deposit Modal */}
-      {showPledgeModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex min-h-screen items-center justify-center p-4 sm:p-6">
-            <div
-              className="fixed inset-0 bg-black bg-opacity-50"
-              onClick={() => setShowPledgeModal(false)}
-            ></div>
-            <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center space-x-3 mb-4">
-                <FontAwesomeIcon
-                  icon={faCoins}
-                  className="w-6 h-6 text-orange-600"
-                />
-                <h3 className="text-lg font-medium text-gray-900">
-                  Deposit Creator Pledge
-                </h3>
-              </div>
-
-              <div className="space-y-4 mb-6">
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <FontAwesomeIcon
-                      icon={faInfoCircle}
-                      className="w-4 h-4 text-orange-600"
-                    />
-                    <span className="text-sm font-medium text-orange-900">
-                      Pledge Details
-                    </span>
-                  </div>
-                  <p className="text-sm text-orange-700">
-                    You pledged <strong>15%</strong> of your estimated AdSense
-                    revenue from this video to add to the pool for disbursement.
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                    <span className="text-gray-600">Pledge Amount</span>
-                    <span className="font-medium text-lg">
-                      ${pool.creatorPledge.toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                    <span className="text-gray-600">Your Wallet Balance</span>
-                    <span className="font-medium">
-                      ${pool.creatorWalletBalance.toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                    <span className="text-gray-600">After Deposit</span>
-                    <span className="font-medium text-gray-900">
-                      $
-                      {(
-                        pool.creatorWalletBalance - pool.creatorPledge
-                      ).toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                  <div className="flex items-start space-x-2">
-                    <FontAwesomeIcon
-                      icon={faExclamationTriangle}
-                      className="w-4 h-4 text-yellow-600 mt-0.5"
-                    />
-                    <div className="text-sm text-yellow-800">
-                      <p className="font-medium">Important:</p>
-                      <p>
-                        This amount will be automatically disbursed to winning
-                        predictors when the pool settles. Platform takes 5% fee
-                        from total pool.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => setShowPledgeModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDepositPledge}
-                  className={`flex-1 px-4 py-2 rounded-lg transition-colors flex items-center justify-center space-x-2 ${
-                    pool.creatorWalletBalance >= pool.creatorPledge &&
-                    !isDepositing
-                      ? "bg-orange-600 text-white hover:bg-orange-700"
-                      : "bg-gray-400 text-white cursor-not-allowed"
-                  }`}
-                  disabled={
-                    pool.creatorWalletBalance < pool.creatorPledge ||
-                    isDepositing
-                  }
-                >
-                  <FontAwesomeIcon icon={faCoins} className="w-4 h-4" />
-                  <span>
-                    {isDepositing
-                      ? "Depositing..."
-                      : `Deposit $${pool.creatorPledge.toLocaleString()}`}
-                  </span>
-                </button>
-              </div>
-
-              {pool.creatorWalletBalance < pool.creatorPledge && (
-                <div className="mt-3 text-center">
-                  <p className="text-sm text-red-600">
-                    Insufficient wallet balance. You need $
-                    {pool.creatorPledge.toLocaleString()} but only have $
-                    {pool.creatorWalletBalance.toLocaleString()}.
-                  </p>
-                  <button className="text-sm text-cyan-600 hover:text-cyan-800 mt-1">
-                    Add Funds to Wallet
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

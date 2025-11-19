@@ -35,7 +35,8 @@ export default function CreatorPools() {
   const [activeTab, setActiveTab] = useState("active");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const { pools, addPool, filteredPools, videos } = useAppContext();
+  const { pools, addPool, filteredPools, videos, walletBalance, addToast } =
+    useAppContext();
   const { user } = useAuth();
 
   const currentPools = filteredPools(
@@ -69,6 +70,22 @@ export default function CreatorPools() {
   };
 
   const handleCreatePool = (poolData: any) => {
+    const creatorPledgeAmount = poolData.pledgeAmount || 0;
+
+    // Validate wallet balance if pledge is set
+    if (creatorPledgeAmount > 0 && walletBalance) {
+      const balance = walletBalance.balance || 0;
+      if (creatorPledgeAmount > balance) {
+        addToast({
+          type: "error",
+          title: "Insufficient Balance",
+          message: `You have $${balance.toFixed(2)} but need $${creatorPledgeAmount.toFixed(2)} for the pledge.`,
+          duration: 5000,
+        });
+        return;
+      }
+    }
+
     const selectedVideo = videos.find((video) => video.id === poolData.videoId);
     const videoTitle =
       selectedVideo?.title || `Pool for Video ${poolData.videoId}`;
@@ -84,7 +101,6 @@ export default function CreatorPools() {
       extractDurationAndTimeRemaining(questionText);
     const isUnlistedVideo =
       selectedVideo && selectedVideo.status === "unlisted";
-    const creatorPledgeAmount = poolData.pledgeAmount || 0;
 
     const newPool: Omit<Pool, "id" | "createdAt" | "updatedAt"> = {
       videoId: poolData.videoId,

@@ -73,6 +73,7 @@ export default function CreatorDashboard() {
     refreshVideos,
     youtubeChannel,
     isYouTubeLoading,
+    walletBalance,
   } = useAppContext();
 
   // Handle YouTube connection success query parameter
@@ -291,6 +292,22 @@ export default function CreatorDashboard() {
   };
 
   const handleEnablePool = (poolData: any) => {
+    const pledgeAmount = poolData.pledgeAmount || 0;
+
+    // Validate wallet balance if pledge is set
+    if (pledgeAmount > 0 && walletBalance) {
+      const balance = walletBalance.balance || 0;
+      if (pledgeAmount > balance) {
+        addToast({
+          type: "error",
+          title: "Insufficient Balance",
+          message: `You have $${balance.toFixed(2)} but need $${pledgeAmount.toFixed(2)} for the pledge.`,
+          duration: 5000,
+        });
+        return;
+      }
+    }
+
     const selectedVideoData = poolData.videoId
       ? videos.find((video) => video.id === poolData.videoId)
       : selectedVideo;
@@ -324,8 +341,8 @@ export default function CreatorDashboard() {
       videoId: poolData.videoId,
       question: questionText,
       participants: 0,
-      totalStake: poolData.pledgeAmount || 0,
-      creatorPledge: poolData.pledgeAmount || 0,
+      totalStake: pledgeAmount,
+      creatorPledge: pledgeAmount,
       predictorStakes: 0,
       timeRemaining: "10m",
       status: "open",

@@ -1200,12 +1200,6 @@ export const PLEDGE_OPTIONS = [
     description: "Add a one-time amount to the pool",
     amount: "$200", // This will be updated dynamically in the component
   },
-  {
-    type: "percentage",
-    title: "Revenue Percentage",
-    description: "Pledge % of AdSense earnings from this video",
-    amount: "15%",
-  },
 ];
 
 // Pool lifecycle stages
