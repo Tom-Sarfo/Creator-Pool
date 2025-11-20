@@ -12,6 +12,7 @@ import {
   faTimes,
   faBrain,
   faUsersRectangle,
+  faPlay,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
@@ -117,9 +118,12 @@ export default function PredictorLayout() {
           <div className="flex h-16 items-center justify-between px-4">
             <Link
               to="/"
-              className="text-xl font-bold text-gray-900 hover:opacity-80 transition-opacity"
+              className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
             >
-              Creator Pool
+              <div className="w-8 h-8 bg-orange-600 rounded flex items-center justify-center">
+                <FontAwesomeIcon icon={faPlay} className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-xl font-bold text-gray-900">Creator Pool</span>
             </Link>
             <button
               onClick={() => setSidebarOpen(false)}

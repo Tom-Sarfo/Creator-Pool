@@ -25,7 +25,7 @@ export default function Sidebar({
           className="flex items-center space-x-2 mb-8 hover:opacity-80 transition-opacity"
         >
           <div className="w-8 h-8 bg-orange-600 rounded flex items-center justify-center">
-            <FontAwesomeIcon icon="chart-line" className="w-5 h-5 text-white" />
+            <FontAwesomeIcon icon="play" className="w-5 h-5 text-white" />
           </div>
           <span className="text-xl font-bold text-gray-800">Creator Pool</span>
         </Link>

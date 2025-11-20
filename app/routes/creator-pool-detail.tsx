@@ -1,6 +1,6 @@
 import type { Route } from "./+types/creator-pool-detail";
 import { useState, useEffect, useRef } from "react";
-import { Link, useSearchParams } from "react-router";
+import { Link, useSearchParams, useNavigate } from "react-router";
 import { useAuth } from "../contexts/AuthContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -65,6 +65,7 @@ export default function CreatorPoolDetailPage({
   // Keep poolId as string - pool IDs are strings in the system
   const poolId = params.id;
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
   const [predictionFilter, setPredictionFilter] = useState("all");
   const [poolData, setPoolData] = useState<Pool | null>(null);
@@ -278,7 +279,9 @@ export default function CreatorPoolDetailPage({
         progress:
           currentPoolData.targetViews > 0
             ? Math.min(
-                (Math.round(liveMetrics.viewCount) / currentPoolData.targetViews) * 100,
+                (Math.round(liveMetrics.viewCount) /
+                  currentPoolData.targetViews) *
+                  100,
                 100
               )
             : 0,
@@ -415,7 +418,6 @@ export default function CreatorPoolDetailPage({
     ],
   };
 
-
   // console.log("currentPoolData", currentPoolData);
 
   const poolPredictions = getPredictionsByPoolId(poolId);
@@ -436,15 +438,16 @@ export default function CreatorPoolDetailPage({
           {/* Mobile-first responsive layout */}
           <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start space-x-3 sm:space-x-4 min-w-0 flex-1">
-              <Link
-                to="/creator/pools"
+              <button
+                onClick={() => navigate(-1)}
                 className="text-gray-500 hover:text-gray-700 flex-shrink-0 mt-1"
+                aria-label="Go back"
               >
                 <FontAwesomeIcon icon={faArrowLeft} className="w-5 h-5" />
-              </Link>
+              </button>
               <div className="min-w-0 flex-1">
                 <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
-                  Pool Management
+                  Pool Details
                 </h1>
                 <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 mt-1">
                   Video: {pool.title}
@@ -615,8 +618,9 @@ export default function CreatorPoolDetailPage({
                       {/* Mobile: Stack info vertically, Desktop: Wrap */}
                       <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
                         <span className="break-words">
-                          Target: {Math.round(pool.targetViews || 0).toLocaleString()} views in{" "}
-                          {pool.targetTimeframe}
+                          Target:{" "}
+                          {Math.round(pool.targetViews || 0).toLocaleString()}{" "}
+                          views in {pool.targetTimeframe}
                         </span>
                         <span>Duration: {pool.poolDuration}</span>
                         <span>Category: {pool.category}</span>
@@ -647,10 +651,13 @@ export default function CreatorPoolDetailPage({
                     <div className="mb-2">
                       {/* Mobile: Stack stats vertically, Desktop: Side by side */}
                       <div className="flex flex-col sm:flex-row sm:justify-between space-y-1 sm:space-y-0 text-xs sm:text-sm text-gray-600 mb-2">
-                        <span>Current Progress: {pool.progress.toFixed(1)}%</span>
+                        <span>
+                          Current Progress: {pool.progress.toFixed(1)}%
+                        </span>
                         <span className="break-all sm:break-normal">
-                          {Math.round(pool.currentViews || 0).toLocaleString()} /{" "}
-                          {Math.round(pool.targetViews || 0).toLocaleString()} views
+                          {Math.round(pool.currentViews || 0).toLocaleString()}{" "}
+                          / {Math.round(pool.targetViews || 0).toLocaleString()}{" "}
+                          views
                         </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-3 relative overflow-hidden">
@@ -1002,7 +1009,10 @@ export default function CreatorPoolDetailPage({
                   </div>
                   <div className="text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-lg p-3">
                     <div className="flex items-center space-x-2 mb-2">
-                      <FontAwesomeIcon icon={faInfoCircle} className="w-4 h-4" />
+                      <FontAwesomeIcon
+                        icon={faInfoCircle}
+                        className="w-4 h-4"
+                      />
                       <span className="font-medium">Automatic Deduction</span>
                     </div>
                     <p className="text-xs">
@@ -1027,7 +1037,6 @@ export default function CreatorPoolDetailPage({
           </div>
         </div>
       </div>
-
     </div>
   );
 }

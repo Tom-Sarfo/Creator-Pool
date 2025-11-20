@@ -29,6 +29,7 @@ import {
   parseISODuration,
   formatPoolQuestion,
   formatProbabilityAsPercentage,
+  estimatePotentialPayout,
 } from "../lib/utils";
 import { useAppContext } from "../contexts/AppContext";
 import { poolService } from "../services/pool.service";
@@ -405,6 +406,24 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
   const resultChoice = showResultCard ? userPrediction!.choice : null;
   const resultSettledAt = showResultCard ? userPrediction!.settledAt : null;
   const didWin = showResultCard && predictionResult === "won";
+
+  // Calculate potential payout if user has a prediction
+  const calculatedPotentialPayout = userPrediction
+    ? userPrediction.potentialPayout !== null &&
+        userPrediction.potentialPayout !== undefined
+        ? userPrediction.potentialPayout
+        : userPrediction.result === "pending" &&
+            pool.status === "open" &&
+            pool.totalStake > 0
+          ? estimatePotentialPayout(
+              toNumber(userPrediction.stake),
+              userPrediction.choice === "yes"
+                ? pool.yesPool || 0
+                : pool.noPool || 0,
+              pool.totalStake
+            )
+          : null
+    : null;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -941,14 +960,15 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                         : userPrediction.result}
                     </span>
                   </div>
-                  {userPrediction.potentialPayout && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Potential Payout</span>
-                      <span className="font-medium text-green-600">
-                        ${userPrediction.potentialPayout}
-                      </span>
-                    </div>
-                  )}
+                  {calculatedPotentialPayout !== null &&
+                    userPrediction.result === "pending" && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-600">Potential Payout</span>
+                        <span className="font-medium text-green-600">
+                          ${calculatedPotentialPayout.toFixed(2)}
+                        </span>
+                      </div>
+                    )}
                   {pool.status === "open" && (
                     <button
                       onClick={() => setShowPredictionModal(true)}
