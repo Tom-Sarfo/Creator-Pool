@@ -148,7 +148,12 @@ export default function PoolCard({
           <span>
             Pool Size:{" "}
             <span className="font-semibold">
-              ${pool.totalStake.toLocaleString()}
+              $
+              {(
+                (pool.creatorPledge || 0) +
+                (pool.predictorStakes ||
+                  (pool.yesStake || 0) + (pool.noStake || 0))
+              ).toLocaleString()}
             </span>
           </span>
           <span>

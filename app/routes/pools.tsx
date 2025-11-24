@@ -381,7 +381,11 @@ export default function PoolsPage() {
                       {/* Pool Stats */}
                       <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
                         <span>
-                          Pool Size: ${pool.totalStake.toLocaleString()}
+                          Pool Size: $
+                          {(
+                            (pool.creatorPledge || 0) +
+                            (pool.predictorStakes || 0)
+                          ).toLocaleString()}
                         </span>
                         <span>{pool.participants} Predictors</span>
                       </div>

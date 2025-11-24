@@ -47,7 +47,7 @@ export default function EnablePoolModal({
   video,
   onEnablePool,
 }: EnablePoolModalProps) {
-  const { videos, walletBalance } = useAppContext();
+  const { videos, walletBalance, refreshWallet, addToast } = useAppContext();
   const { user, isAuthenticated } = useAuth();
   const [pledgeType, setPledgeType] = useState("fixed");
   const [customAmount, setCustomAmount] = useState("200");
@@ -59,9 +59,19 @@ export default function EnablePoolModal({
   );
   const [showVideoSelector, setShowVideoSelector] = useState(false);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [analytics, setAnalytics] = useState<{
+    avg24hViews: number | null;
+    avg48hViews: number | null;
+    avg7dViews: number | null;
+    avg30dViews: number | null;
+    sampleSize: number;
+    hasEnoughData: boolean;
+  } | null>(null);
+  const [customQuestion, setCustomQuestion] = useState("");
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [suggestionsError, setSuggestionsError] = useState<string | null>(null);
   const [suggestionsFetched, setSuggestionsFetched] = useState(false);
+  const [isEnabling, setIsEnabling] = useState(false);
 
   const questions = suggestions.length > 0 ? suggestions : POOL_QUESTIONS;
 
@@ -79,6 +89,8 @@ export default function EnablePoolModal({
       setSuggestionsFetched(false);
       setSuggestionsError(null);
       setSelectedSuggestionIndex(0);
+      setCustomQuestion("");
+      setAnalytics(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, isAuthenticated, user]);
@@ -93,6 +105,7 @@ export default function EnablePoolModal({
       const videoId = selectedVideoId || video?.id?.toString();
       const response = await poolService.getSuggestions(user.id, videoId);
       setSuggestions(response.suggestions);
+      setAnalytics(response.analytics);
       setSuggestionsFetched(true);
       if (response.suggestions.length > 0) {
         setSelectedSuggestionIndex(0);
@@ -103,6 +116,7 @@ export default function EnablePoolModal({
         error?.data?.message || error?.message || "Failed to load suggestions"
       );
       setSuggestions([]);
+      setAnalytics(null);
     } finally {
       setLoadingSuggestions(false);
     }
@@ -119,6 +133,7 @@ export default function EnablePoolModal({
       const videoId = selectedVideoId || video?.id?.toString();
       const response = await poolService.getSuggestions(user.id, videoId);
       setSuggestions(response.suggestions);
+      setAnalytics(response.analytics);
       setSuggestionsFetched(true);
       if (response.suggestions.length > 0) {
         setSelectedSuggestionIndex(0);
@@ -129,6 +144,7 @@ export default function EnablePoolModal({
         error?.data?.message || error?.message || "Failed to load suggestions"
       );
       setSuggestions([]);
+      setAnalytics(null);
     } finally {
       setLoadingSuggestions(false);
     }
@@ -175,6 +191,7 @@ export default function EnablePoolModal({
       try {
         const response = await poolService.getSuggestions(user.id, videoId);
         setSuggestions(response.suggestions);
+        setAnalytics(response.analytics);
         setSuggestionsFetched(true);
         if (response.suggestions.length > 0) {
           setSelectedSuggestionIndex(0);
@@ -185,19 +202,71 @@ export default function EnablePoolModal({
           error?.data?.message || error?.message || "Failed to load suggestions"
         );
         setSuggestions([]);
+        setAnalytics(null);
       } finally {
         setLoadingSuggestions(false);
       }
     }
   };
 
-  const handleEnablePool = () => {
+  // Helper function to format views
+  const formatViews = (views: number): string => {
+    if (views >= 1000000) {
+      return (views / 1000000).toFixed(1) + "M";
+    }
+    if (views >= 1000) {
+      return (views / 1000).toFixed(1) + "K";
+    }
+    return views.toString();
+  };
+
+  // Determine if creator has tracked metrics
+  const hasTrackedMetrics =
+    analytics &&
+    (analytics.hasEnoughData || analytics.sampleSize > 0) &&
+    (analytics.avg7dViews !== null || analytics.avg24hViews !== null);
+
+  // Determine if creator is new (no tracked videos)
+  const isNewCreator =
+    suggestions.length === 0 && (!analytics || analytics.sampleSize === 0);
+
+  // Sample suggestions for new creators
+  const sampleSuggestions = [
+    "Will this video reach 1,000 views within 24 hours?",
+    "Will this video reach 10,000 views within 7 days?",
+    "Will this video get more than 500 likes in the first 48 hours?",
+    "Will this video reach 50,000 views within 30 days?",
+  ];
+
+  const handleEnablePool = async () => {
     if (!termsAccepted) return;
     if (needsVideoSelection && !selectedVideoId) return;
+    if (isEnabling) return; // Prevent double submission
 
-    const selectedQuestion = questions[selectedSuggestionIndex];
-    const isSuggestion =
-      suggestions.length > 0 && selectedSuggestionIndex < suggestions.length;
+    // Use custom question if new creator, otherwise use selected suggestion
+    let questionText: string;
+    let targetViews: number | undefined;
+    let trackingDurationDays: number | undefined;
+
+    if (isNewCreator && customQuestion.trim()) {
+      questionText = customQuestion.trim();
+      targetViews = undefined;
+      trackingDurationDays = undefined;
+    } else {
+      const selectedQuestion = questions[selectedSuggestionIndex];
+      const isSuggestion =
+        suggestions.length > 0 && selectedSuggestionIndex < suggestions.length;
+
+      questionText = isSuggestion
+        ? (selectedQuestion as Suggestion).question
+        : (selectedQuestion as (typeof POOL_QUESTIONS)[0]).text;
+      targetViews = isSuggestion
+        ? (selectedQuestion as Suggestion).targetViews
+        : undefined;
+      trackingDurationDays = isSuggestion
+        ? (selectedQuestion as Suggestion).trackingDurationDays
+        : undefined;
+    }
 
     const pledgeAmount = pledgeType === "fixed" ? parseFloat(customAmount) : 0;
 
@@ -208,30 +277,77 @@ export default function EnablePoolModal({
         setWalletError(
           `Insufficient wallet balance. You have $${balance.toFixed(2)} but need $${pledgeAmount.toFixed(2)}.`
         );
+        addToast({
+          type: "error",
+          title: "Insufficient Balance",
+          message: `You have $${balance.toFixed(2)} but need $${pledgeAmount.toFixed(2)} for the pledge.`,
+          duration: 5000,
+        });
         return;
       }
       setWalletError(null);
     }
 
-    const poolData = {
-      videoId: selectedVideoId ? parseInt(selectedVideoId) : displayVideo.id,
-      question: isSuggestion
-        ? (selectedQuestion as Suggestion).question
-        : (selectedQuestion as (typeof POOL_QUESTIONS)[0]).text,
-      targetViews: isSuggestion
-        ? (selectedQuestion as Suggestion).targetViews
-        : undefined,
-      trackingDurationDays: isSuggestion
-        ? (selectedQuestion as Suggestion).trackingDurationDays
-        : undefined,
-      pledgeType,
-      pledgeAmount,
-    };
+    setIsEnabling(true);
 
-    console.log("poolData", poolData);
+    try {
+      const poolData = {
+        videoId: selectedVideoId ? parseInt(selectedVideoId) : displayVideo.id,
+        question: questionText,
+        targetViews,
+        trackingDurationDays,
+        pledgeType,
+        pledgeAmount,
+      };
 
-    onEnablePool?.(poolData);
-    onClose();
+      await onEnablePool?.(poolData);
+
+      await refreshWallet();
+
+      // Close modal on success
+      onClose();
+    } catch (error: any) {
+      console.error("Error enabling pool:", error);
+
+      // Extract error message from various possible error formats
+      const backendMessage =
+        error?.message ||
+        error?.data?.message ||
+        error?.response?.data?.message ||
+        "";
+
+      // Map backend error messages to user-friendly messages
+      let errorMessage: string;
+      let errorTitle: string;
+
+      if (
+        backendMessage.includes("Insufficient wallet balance") ||
+        backendMessage.includes("insufficient wallet balance")
+      ) {
+        errorTitle = "Insufficient Balance";
+        errorMessage =
+          "You don't have enough funds. Please reduce your pledge or add funds to your wallet.";
+      } else if (backendMessage.includes("Video already has an active pool")) {
+        errorTitle = "Pool Already Exists";
+        errorMessage = "This video already has an active pool.";
+      } else if (backendMessage) {
+        errorTitle = "Failed to Enable Pool";
+        errorMessage = backendMessage;
+      } else {
+        errorTitle = "Failed to Enable Pool";
+        errorMessage = "Failed to enable pool. Please try again.";
+      }
+
+      setWalletError(errorMessage);
+      addToast({
+        type: "error",
+        title: errorTitle,
+        message: errorMessage,
+        duration: 5000,
+      });
+    } finally {
+      setIsEnabling(false);
+    }
   };
 
   return (
@@ -497,7 +613,7 @@ export default function EnablePoolModal({
                 <h3 className="text-base sm:text-lg font-medium text-gray-900">
                   Prediction Question
                 </h3>
-                {isAuthenticated && (
+                {isAuthenticated && !isNewCreator && (
                   <button
                     onClick={handleRegenerate}
                     disabled={loadingSuggestions}
@@ -512,7 +628,7 @@ export default function EnablePoolModal({
                 )}
               </div>
 
-              {loadingSuggestions && suggestions.length === 0 ? (
+              {loadingSuggestions && suggestions.length === 0 && !analytics ? (
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
                   <div className="flex items-center justify-center space-x-2">
                     <FontAwesomeIcon
@@ -524,7 +640,7 @@ export default function EnablePoolModal({
                     </span>
                   </div>
                 </div>
-              ) : suggestionsError && suggestions.length === 0 ? (
+              ) : suggestionsError && suggestions.length === 0 && !analytics ? (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
@@ -544,64 +660,80 @@ export default function EnablePoolModal({
                     </button>
                   </div>
                 </div>
-              ) : questions.length > 0 ? (
+              ) : isNewCreator ? (
                 <>
-                  <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <FontAwesomeIcon
-                        icon={faQuestionCircle}
-                        className="w-4 h-4 text-cyan-600"
-                      />
-                      <span className="text-xs sm:text-sm text-cyan-600">
-                        {suggestions.length > 0 &&
-                        selectedSuggestionIndex < suggestions.length
-                          ? suggestions[selectedSuggestionIndex].type ===
-                            "average"
-                            ? "Based on your average performance"
-                            : "Based on your recent videos"
-                          : "AI Generated"}
-                      </span>
-                    </div>
-                    <p className="text-gray-900 font-medium mb-2 text-sm sm:text-base break-words">
-                      {suggestions.length > 0 &&
-                      selectedSuggestionIndex < suggestions.length
-                        ? suggestions[selectedSuggestionIndex].question
-                        : (
-                            questions[
-                              selectedSuggestionIndex
-                            ] as (typeof POOL_QUESTIONS)[0]
-                          ).text}
-                    </p>
-                    <div className="flex items-center space-x-2 text-xs sm:text-sm text-cyan-600">
-                      <FontAwesomeIcon icon={faLightbulb} className="w-4 h-4" />
-                      <span>
-                        {suggestions.length > 0 &&
-                        selectedSuggestionIndex < suggestions.length
-                          ? suggestions[selectedSuggestionIndex].description
-                          : (
-                              questions[
-                                selectedSuggestionIndex
-                              ] as (typeof POOL_QUESTIONS)[0]
-                            ).performance}
-                      </span>
-                    </div>
+                  <div className="mb-3 sm:mb-4">
+                    <label
+                      htmlFor="custom-question"
+                      className="block text-xs sm:text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Enter your prediction question
+                    </label>
+                    <input
+                      id="custom-question"
+                      type="text"
+                      value={customQuestion}
+                      onChange={(e) => setCustomQuestion(e.target.value)}
+                      placeholder="e.g., Will this video reach 10,000 views within 7 days?"
+                      className="w-full px-3 sm:px-4 py-2 sm:py-2.5 border-2 border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 bg-white focus:outline-none focus:border-orange-500 transition-colors placeholder:text-gray-500"
+                    />
                   </div>
 
-                  {questions.length > 1 && (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4">
+                    <p className="text-xs sm:text-sm font-semibold text-gray-600 mb-2 sm:mb-3">
+                      Sample Questions (for guidance):
+                    </p>
+                    <ul className="space-y-1 sm:space-y-2">
+                      {sampleSuggestions.map((sample, index) => (
+                        <li
+                          key={index}
+                          onClick={() => setCustomQuestion(sample)}
+                          className="p-2 sm:p-3 bg-white border border-gray-200 rounded-lg cursor-pointer transition-all hover:border-orange-500 hover:bg-orange-50 text-xs sm:text-sm text-gray-700 break-words"
+                        >
+                          {sample}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </>
+              ) : suggestions.length > 0 ? (
+                <>
+                  <button
+                    onClick={() => setSelectedSuggestionIndex(0)}
+                    className={`w-full bg-cyan-50 border-2 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4 text-left transition-colors ${
+                      selectedSuggestionIndex === 0
+                        ? "border-cyan-500 bg-cyan-100"
+                        : "border-cyan-200 hover:border-cyan-300"
+                    }`}
+                  >
+                    <p className="text-gray-900 font-medium mb-2 text-sm sm:text-base break-words">
+                      {suggestions[0]?.question}
+                    </p>
+                    {hasTrackedMetrics && analytics && (
+                      <div className="flex items-center space-x-2 text-xs sm:text-sm text-cyan-600 mt-2">
+                        <FontAwesomeIcon
+                          icon={faLightbulb}
+                          className="w-4 h-4"
+                        />
+                        <span>
+                          Based on your avg.{" "}
+                          {formatViews(
+                            analytics.avg7dViews || analytics.avg24hViews || 0
+                          )}{" "}
+                          views/week
+                        </span>
+                      </div>
+                    )}
+                  </button>
+
+                  {suggestions.length > 1 && (
                     <div>
                       <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3">
                         Or choose from these alternatives:
                       </p>
                       <div className="space-y-1 sm:space-y-2">
-                        {questions.slice(1).map((question, index) => {
+                        {suggestions.slice(1).map((suggestion, index) => {
                           const actualIndex = index + 1;
-                          const isSuggestion =
-                            suggestions.length > 0 &&
-                            actualIndex < suggestions.length;
-                          const questionText = isSuggestion
-                            ? (question as Suggestion).question
-                            : (question as (typeof POOL_QUESTIONS)[0]).text;
-
                           return (
                             <button
                               key={actualIndex}
@@ -615,7 +747,7 @@ export default function EnablePoolModal({
                               }`}
                             >
                               <p className="text-xs sm:text-sm text-gray-900 break-words">
-                                {questionText}
+                                {suggestion.question}
                               </p>
                             </button>
                           );
@@ -644,7 +776,7 @@ export default function EnablePoolModal({
                 <FontAwesomeIcon icon={faShieldAlt} className="w-4 h-4" />
                 <span>
                   Your pledge will be automatically deducted from your wallet
-                  when the pool settles
+                  immediately when you enable the pool
                 </span>
               </div>
             )}
@@ -689,16 +821,17 @@ export default function EnablePoolModal({
               disabled={
                 !termsAccepted ||
                 (needsVideoSelection && !selectedVideoId) ||
-                (pledgeType === "fixed" &&
-                  parseFloat(customAmount) > 0 &&
-                  walletBalance &&
-                  parseFloat(customAmount) > walletBalance.balance) ||
-                !!walletError
+                (isNewCreator && !customQuestion.trim()) ||
+                !!walletError ||
+                isEnabling
               }
               className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base"
             >
-              <FontAwesomeIcon icon={faRocket} className="w-4 h-4" />
-              <span>Enable Pool</span>
+              <FontAwesomeIcon
+                icon={isEnabling ? faSpinner : faRocket}
+                className={`w-4 h-4 ${isEnabling ? "animate-spin" : ""}`}
+              />
+              <span>{isEnabling ? "Enabling..." : "Enable Pool"}</span>
             </button>
           </div>
         </div>

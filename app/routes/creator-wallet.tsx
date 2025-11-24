@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   CREATOR_WALLET_TRANSACTIONS,
   CREATOR_WALLET_PAYMENT_METHODS,
@@ -9,7 +9,28 @@ import { useAppContext } from "../contexts/AppContext";
 export default function CreatorWallet() {
   const [activeTab, setActiveTab] = useState("overview");
   const [showDepositModal, setShowDepositModal] = useState(false);
-  const { walletBalance, isWalletLoading, refreshWallet } = useAppContext();
+  const { walletBalance, isWalletLoading, refreshWallet, pools } = useAppContext();
+
+  // Refresh wallet when component mounts and when pools change
+  useEffect(() => {
+    refreshWallet();
+  }, [refreshWallet, pools.length]);
+
+  // Calculate total pledged amount from all pools
+  const totalPledged = useMemo(() => {
+    return pools.reduce((sum, pool) => {
+      return sum + (pool.creatorPledge || 0);
+    }, 0);
+  }, [pools]);
+
+  console.log("walletBalance", walletBalance);
+
+  // Calculate active pools count
+  const activePoolsCount = useMemo(() => {
+    return pools.filter((pool) =>
+      ["open", "awaiting_release", "live_tracking"].includes(pool.status)
+    ).length;
+  }, [pools]);
 
   const transactions = CREATOR_WALLET_TRANSACTIONS;
   const paymentMethods = CREATOR_WALLET_PAYMENT_METHODS;
@@ -76,7 +97,7 @@ export default function CreatorWallet() {
               <div>
                 <span className="block">Total Pledged</span>
                 <span className="font-semibold">
-                  ${walletBalance?.totalStaked?.toFixed(2) || "0.00"}
+                  ${totalPledged.toFixed(2)}
                 </span>
               </div>
             </div>
@@ -181,7 +202,9 @@ export default function CreatorWallet() {
                       <p className="text-sm font-medium text-gray-600">
                         Active Pools
                       </p>
-                      <p className="text-2xl font-bold text-gray-900">3</p>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {activePoolsCount}
+                      </p>
                     </div>
                     <span className="text-2xl">🎯</span>
                   </div>
@@ -190,11 +213,13 @@ export default function CreatorWallet() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600">
-                        Pending Pledges
+                        Total Pledged
                       </p>
-                      <p className="text-2xl font-bold text-gray-900">$150</p>
+                      <p className="text-2xl font-bold text-gray-900">
+                        ${totalPledged.toFixed(2)}
+                      </p>
                     </div>
-                    <span className="text-2xl">⏱️</span>
+                    <span className="text-2xl">🤝</span>
                   </div>
                 </div>
               </div>

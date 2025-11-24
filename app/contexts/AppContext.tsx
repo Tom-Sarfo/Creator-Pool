@@ -473,21 +473,57 @@ export function AppProvider({ children }: { children: ReactNode }) {
         });
 
         await refreshPools();
+        // Refresh wallet after pool creation to reflect pledge deduction
+        await refreshWallet();
         addToast({
           type: "success",
           title: "Pool Created",
           message: "Your prediction pool has been created successfully.",
         });
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error creating pool:", error);
+        
+        // Extract error message from various possible error formats
+        const backendMessage =
+          error?.message ||
+          error?.data?.message ||
+          error?.response?.data?.message ||
+          "";
+        
+        // Map backend error messages to user-friendly messages
+        let errorMessage: string;
+        let errorTitle: string;
+        
+        if (
+          backendMessage.includes("Insufficient wallet balance") ||
+          backendMessage.includes("insufficient wallet balance")
+        ) {
+          errorTitle = "Insufficient Balance";
+          errorMessage =
+            "You don't have enough funds. Please reduce your pledge or add funds to your wallet.";
+        } else if (backendMessage.includes("Video already has an active pool")) {
+          errorTitle = "Pool Already Exists";
+          errorMessage = "This video already has an active pool.";
+        } else if (backendMessage) {
+          errorTitle = "Creation Failed";
+          errorMessage = backendMessage;
+        } else {
+          errorTitle = "Creation Failed";
+          errorMessage = "Failed to create pool. Please try again.";
+        }
+        
         addToast({
           type: "error",
-          title: "Creation Failed",
-          message: "Failed to create pool. Please try again.",
+          title: errorTitle,
+          message: errorMessage,
+          duration: 5000,
         });
+        
+        // Re-throw error so EnablePoolModal can handle it and show in the form
+        throw error;
       }
     },
-    [refreshPools]
+    [refreshPools, refreshWallet]
   );
 
   const updatePool = useCallback(
@@ -559,6 +595,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         await refreshPredictions();
         await refreshPools();
+        // Refresh wallet after prediction to reflect stake deduction
+        await refreshWallet();
         addToast({
           type: "success",
           title: "Prediction Placed",
@@ -573,7 +611,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         });
       }
     },
-    [refreshPredictions, refreshPools]
+    [refreshPredictions, refreshPools, refreshWallet]
   );
 
   const updatePrediction = useCallback(

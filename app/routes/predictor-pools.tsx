@@ -128,6 +128,9 @@ export default function PredictorPools() {
   const endIndex = startIndex + itemsPerPage;
   const filteredPools = allFilteredPools.slice(startIndex, endIndex);
 
+  console.log("filteredPools", filteredPools);
+  console.log("allFilteredPools", allFilteredPools);
+
   const handlePredictClick = (pool: Pool, choice: PredictionChoice) => {
     setSelectedPool(pool);
     setPreselectedChoice(choice);

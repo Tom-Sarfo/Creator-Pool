@@ -74,6 +74,7 @@ export default function CreatorDashboard() {
     youtubeChannel,
     isYouTubeLoading,
     walletBalance,
+    refreshWallet,
   } = useAppContext();
 
   // Handle YouTube connection success query parameter
@@ -291,7 +292,7 @@ export default function CreatorDashboard() {
     setSelectedVideo(null);
   };
 
-  const handleEnablePool = (poolData: any) => {
+  const handleEnablePool = async (poolData: any) => {
     const pledgeAmount = poolData.pledgeAmount || 0;
 
     // Validate wallet balance if pledge is set
@@ -363,8 +364,17 @@ export default function CreatorDashboard() {
     };
     console.log("newPool", newPool);
 
-    addPool(newPool);
-    handleCloseModal();
+    try {
+      // Create pool - backend will deduct the pledge amount
+      // addPool now handles wallet refresh automatically
+      await addPool(newPool);
+      
+      handleCloseModal();
+    } catch (error: any) {
+      // Error handling is done in addPool, but we can add additional handling here if needed
+      console.error("Error in handleEnablePool:", error);
+      // Don't close modal on error so user can retry
+    }
   };
   // console.log("videos", videos);
 

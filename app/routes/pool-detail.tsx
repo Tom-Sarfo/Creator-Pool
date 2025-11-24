@@ -290,6 +290,7 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
   const yesStake = toNumber(currentPoolData.yesStake);
   const noStake = toNumber(currentPoolData.noStake);
   const predictorStakes = yesStake + noStake;
+  const creatorPledge = toNumber(currentPoolData.creatorPledge);
   const yesStakers = toNumber(currentPoolData.yesCount);
   const noStakers = toNumber(currentPoolData.noCount);
 
@@ -300,6 +301,9 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
     yesPercentage = Math.round((yesStake / predictorStakes) * 100);
     noPercentage = 100 - yesPercentage;
   }
+
+  // Total pool size includes both creator pledge and all predictor stakes
+  const totalPoolSize = predictorStakes + creatorPledge;
 
   const pool = {
     ...currentPoolData,
@@ -342,8 +346,10 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
     targetViews,
     currentViews,
     progress, // Add progress calculation
-    totalStake: currentPoolData.totalStake || 0, // Use backend totalStake
+    totalStake: totalPoolSize, // Total includes creator pledge + predictor stakes
     participants: currentPoolData.participants || 0, // Use backend participants
+    creatorPledge: creatorPledge, // Creator's pledge amount
+    predictorStakes: predictorStakes, // Total predictor stakes
     yesPercentage,
     noPercentage,
     yesPool: yesStake,
@@ -410,19 +416,19 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
   // Calculate potential payout if user has a prediction
   const calculatedPotentialPayout = userPrediction
     ? userPrediction.potentialPayout !== null &&
-        userPrediction.potentialPayout !== undefined
-        ? userPrediction.potentialPayout
-        : userPrediction.result === "pending" &&
-            pool.status === "open" &&
-            pool.totalStake > 0
-          ? estimatePotentialPayout(
-              toNumber(userPrediction.stake),
-              userPrediction.choice === "yes"
-                ? pool.yesPool || 0
-                : pool.noPool || 0,
-              pool.totalStake
-            )
-          : null
+      userPrediction.potentialPayout !== undefined
+      ? userPrediction.potentialPayout
+      : userPrediction.result === "pending" &&
+          pool.status === "open" &&
+          pool.totalStake > 0
+        ? estimatePotentialPayout(
+            toNumber(userPrediction.stake),
+            userPrediction.choice === "yes"
+              ? pool.yesPool || 0
+              : pool.noPool || 0,
+            pool.totalStake
+          )
+        : null
     : null;
 
   return (
@@ -599,7 +605,9 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                       {/* Mobile: Stack info vertically, Desktop: Wrap */}
                       <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
                         <span className="break-words">
-                          Target: {Math.round(pool.targetViews || 0).toLocaleString()} views
+                          Target:{" "}
+                          {Math.round(pool.targetViews || 0).toLocaleString()}{" "}
+                          views
                         </span>
                         <span>Duration: {pool.expectedDuration}</span>
                         <span>Category: {pool.category}</span>
@@ -660,8 +668,12 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                           </span>
 
                           <span className="break-all sm:break-normal">
-                            {Math.round(pool.currentViews || 0).toLocaleString()} /{" "}
-                            {Math.round(pool.targetViews || 0).toLocaleString()} views
+                            {Math.round(
+                              pool.currentViews || 0
+                            ).toLocaleString()}{" "}
+                            /{" "}
+                            {Math.round(pool.targetViews || 0).toLocaleString()}{" "}
+                            views
                           </span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-3 relative overflow-hidden">
@@ -994,6 +1006,14 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                     ${pool.totalStake.toLocaleString()}
                   </span>
                 </div>
+                {pool.creatorPledge > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Creator Pledge</span>
+                    <span className="font-medium text-gray-900">
+                      ${pool.creatorPledge.toLocaleString()}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-gray-600">Total Predictors</span>
                   <span className="font-medium text-gray-900">

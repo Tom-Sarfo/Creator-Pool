@@ -1016,9 +1016,10 @@ export default function CreatorPoolDetailPage({
                       <span className="font-medium">Automatic Deduction</span>
                     </div>
                     <p className="text-xs">
-                      Your pledge of ${pool.creatorPledge.toLocaleString()} will
-                      be automatically deducted from your wallet when the pool
-                      settles and added to the pool for disbursement to winners.
+                      Your pledge of ${pool.creatorPledge.toLocaleString()} was
+                      automatically deducted from your wallet when you enabled
+                      the pool and added to the pool for disbursement to
+                      winners.
                     </p>
                   </div>
                 </div>
