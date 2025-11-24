@@ -1175,16 +1175,11 @@ export const POOL_QUESTIONS = [
   },
   {
     id: 2,
-    text: "Will this video reach 100,000 views within 14 days?",
+    text: "Will this video reach 10,000 views within 14 days?",
     basis: "Based on your channel's performance",
     performance: "Based on your avg. 85K views/2 weeks",
   },
-  {
-    id: 3,
-    text: "Will this video have more than 500 comments in 7 days?",
-    basis: "Based on your channel's comment rate",
-    performance: "Based on your avg. 320 comments/week",
-  },
+  
 ];
 
 export const PLEDGE_OPTIONS = [
@@ -1199,12 +1194,6 @@ export const PLEDGE_OPTIONS = [
     title: "Fixed Amount",
     description: "Add a one-time amount to the pool",
     amount: "$200", // This will be updated dynamically in the component
-  },
-  {
-    type: "percentage",
-    title: "Revenue Percentage",
-    description: "Pledge % of AdSense earnings from this video",
-    amount: "15%",
   },
 ];
 

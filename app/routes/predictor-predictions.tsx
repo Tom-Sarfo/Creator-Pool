@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link, href } from "react-router";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChartBar,
@@ -222,9 +223,10 @@ export default function PredictorPredictions() {
                 if (!pool) return null;
 
                 return (
-                  <div
+                  <Link
                     key={prediction.id}
-                    className="group relative bg-gray-50 rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all duration-200 p-6"
+                    to={href("/predictor/pool/:id", { id: prediction.poolId })}
+                    className="group relative bg-gray-50 rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all duration-200 p-6 block cursor-pointer"
                   >
                     <div className="flex flex-col lg:flex-row lg:items-center lg:space-x-6 space-y-4 lg:space-y-0">
                       {/* Video Thumbnail */}
@@ -408,7 +410,7 @@ export default function PredictorPredictions() {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>

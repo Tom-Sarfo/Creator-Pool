@@ -1,14 +1,37 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
-  CREATOR_WALLET_DATA,
   CREATOR_WALLET_TRANSACTIONS,
   CREATOR_WALLET_PAYMENT_METHODS,
 } from "../lib/constants";
+import DepositModal from "../components/DepositModal";
+import { useAppContext } from "../contexts/AppContext";
 
 export default function CreatorWallet() {
   const [activeTab, setActiveTab] = useState("overview");
+  const [showDepositModal, setShowDepositModal] = useState(false);
+  const { walletBalance, isWalletLoading, refreshWallet, pools } = useAppContext();
 
-  const walletData = CREATOR_WALLET_DATA;
+  // Refresh wallet when component mounts and when pools change
+  useEffect(() => {
+    refreshWallet();
+  }, [refreshWallet, pools.length]);
+
+  // Calculate total pledged amount from all pools
+  const totalPledged = useMemo(() => {
+    return pools.reduce((sum, pool) => {
+      return sum + (pool.creatorPledge || 0);
+    }, 0);
+  }, [pools]);
+
+  console.log("walletBalance", walletBalance);
+
+  // Calculate active pools count
+  const activePoolsCount = useMemo(() => {
+    return pools.filter((pool) =>
+      ["open", "awaiting_release", "live_tracking"].includes(pool.status)
+    ).length;
+  }, [pools]);
+
   const transactions = CREATOR_WALLET_TRANSACTIONS;
   const paymentMethods = CREATOR_WALLET_PAYMENT_METHODS;
 
@@ -55,28 +78,39 @@ export default function CreatorWallet() {
           <h2 className="text-lg font-semibold">Available Balance</h2>
           <span className="text-2xl">💰</span>
         </div>
-        <div className="text-3xl font-bold mb-2">
-          ${walletData.balance.toFixed(2)}
-        </div>
-        <div className="flex space-x-6 text-sm text-orange-100">
-          <div>
-            <span className="block">Total Earned</span>
-            <span className="font-semibold">
-              ${walletData.totalEarnings.toFixed(2)}
-            </span>
+        {isWalletLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
           </div>
-          <div>
-            <span className="block">Total Pledged</span>
-            <span className="font-semibold">
-              ${walletData.totalPledged.toFixed(2)}
-            </span>
-          </div>
-        </div>
+        ) : (
+          <>
+            <div className="text-3xl font-bold mb-2">
+              ${walletBalance?.balance?.toFixed(2) || "0.00"}
+            </div>
+            <div className="flex space-x-6 text-sm text-orange-100">
+              <div>
+                <span className="block">Total Earned</span>
+                <span className="font-semibold">
+                  ${walletBalance?.totalEarnings?.toFixed(2) || "0.00"}
+                </span>
+              </div>
+              <div>
+                <span className="block">Total Pledged</span>
+                <span className="font-semibold">
+                  ${totalPledged.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <button className="bg-white border border-gray-300 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+        <button
+          onClick={() => setShowDepositModal(true)}
+          className="bg-white border border-gray-300 rounded-lg p-4 hover:bg-gray-50 transition-colors"
+        >
           <div className="flex items-center space-x-3">
             <span className="text-2xl">💳</span>
             <div className="text-left">
@@ -168,7 +202,9 @@ export default function CreatorWallet() {
                       <p className="text-sm font-medium text-gray-600">
                         Active Pools
                       </p>
-                      <p className="text-2xl font-bold text-gray-900">3</p>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {activePoolsCount}
+                      </p>
                     </div>
                     <span className="text-2xl">🎯</span>
                   </div>
@@ -177,11 +213,13 @@ export default function CreatorWallet() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600">
-                        Pending Pledges
+                        Total Pledged
                       </p>
-                      <p className="text-2xl font-bold text-gray-900">$150</p>
+                      <p className="text-2xl font-bold text-gray-900">
+                        ${totalPledged.toFixed(2)}
+                      </p>
                     </div>
-                    <span className="text-2xl">⏱️</span>
+                    <span className="text-2xl">🤝</span>
                   </div>
                 </div>
               </div>
@@ -297,6 +335,15 @@ export default function CreatorWallet() {
           )}
         </div>
       </div>
+
+      {/* Deposit Modal */}
+      <DepositModal
+        isOpen={showDepositModal}
+        onClose={() => setShowDepositModal(false)}
+        onSuccess={() => {
+          refreshWallet();
+        }}
+      />
     </div>
   );
 }

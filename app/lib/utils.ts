@@ -466,12 +466,14 @@ export function calculatePoolMetrics(poolData: any, videoData: any) {
       ? Math.round(Math.min((currentViews / targetViews) * 100, 100) * 10) / 10
       : 0;
 
-  const totalPoolAmount = toNumber(poolData.totalStake);
   const creatorPledge = toNumber(poolData.creatorPledge);
 
   const yesStake = toNumber(poolData.yesStake);
   const noStake = toNumber(poolData.noStake);
   const predictorStakes = yesStake + noStake;
+
+  // Total pool amount includes both creator pledge and all predictor stakes
+  const totalPoolAmount = predictorStakes + creatorPledge;
 
   let yesPercentage = 0;
   let noPercentage = 0;
@@ -504,9 +506,7 @@ export function calculatePoolMetrics(poolData: any, videoData: any) {
     creatorRoyalty: totalPoolForFees
       ? Math.round(totalPoolForFees * 0.01 * 100) / 100
       : 0,
-    creatorPledge:
-      creatorPledge ||
-      (totalPoolForFees ? Math.round(totalPoolForFees * 0.15 * 100) / 100 : 0),
+    creatorPledge: creatorPledge || 0,
     yesPool: yesStake,
     noPool: noStake,
     yesPercentage,
