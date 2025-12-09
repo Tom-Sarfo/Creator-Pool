@@ -20,7 +20,9 @@ import {
   faBan,
   faExclamationTriangle,
   faUser,
+  faTrophy,
 } from "@fortawesome/free-solid-svg-icons";
+import Loader from "../components/Loader";
 import {
   STATUS_COLORS,
   STATUS_TIMELINE,
@@ -31,6 +33,7 @@ import {
   ANALYTICS_COMING_SOON_FEATURES,
   type PoolStatus,
 } from "../lib/constants";
+import { PoolStatus as PoolStatusEnum } from "../lib/types";
 import {
   calculatePoolMetrics,
   transformPredictionsToDisplay,
@@ -39,7 +42,8 @@ import {
 } from "../lib/utils";
 import { useAppContext } from "../contexts/AppContext";
 import { poolService } from "../services/pool.service";
-import type { Pool } from "../lib/types";
+import type { Pool, PoolResult } from "../lib/types";
+import { PoolResult as PoolResultEnum } from "../lib/types";
 import Stepper from "../components/Stepper";
 import PoolDistribution from "../components/PoolDistribution";
 import { useLivePoolMetrics } from "../hooks/useLivePoolMetrics";
@@ -224,7 +228,7 @@ export default function CreatorPoolDetailPage({
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+          <Loader size="lg" className="mx-auto mb-4" />
           <p className="text-gray-600">Loading pool data...</p>
         </div>
       </div>
@@ -1034,6 +1038,55 @@ export default function CreatorPoolDetailPage({
                 yesStakers={metrics.yesStakers || 0}
                 noStakers={metrics.noStakers || 0}
               />
+
+              {/* Winning Side Indicator - Show only for settled pools */}
+              {poolStatus === PoolStatusEnum.SETTLED &&
+                currentPoolData.result && (
+                  <div className="border-t pt-4 mt-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-medium text-gray-900">Pool Result</h4>
+                    </div>
+                    <div
+                      className={`rounded-lg p-4 ${
+                        currentPoolData.result === PoolResultEnum.YES_WON
+                          ? "bg-green-50 border border-green-200"
+                          : currentPoolData.result === PoolResultEnum.NO_WON
+                            ? "bg-red-50 border border-red-200"
+                            : "bg-gray-50 border border-gray-200"
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <FontAwesomeIcon
+                          icon={faTrophy}
+                          className={`w-6 h-6 ${
+                            currentPoolData.result === PoolResultEnum.YES_WON
+                              ? "text-green-600"
+                              : currentPoolData.result === PoolResultEnum.NO_WON
+                                ? "text-red-600"
+                                : "text-gray-600"
+                          }`}
+                        />
+                        <div>
+                          <p className="font-semibold text-gray-900">
+                            {currentPoolData.result === PoolResultEnum.YES_WON
+                              ? "YES Prediction Won"
+                              : currentPoolData.result === PoolResultEnum.NO_WON
+                                ? "NO Prediction Won"
+                                : "Result Pending"}
+                          </p>
+                          {currentPoolData.result !==
+                            PoolResultEnum.PENDING && (
+                            <p className="text-sm text-gray-600 mt-1">
+                              {currentPoolData.result === PoolResultEnum.YES_WON
+                                ? "The video reached its target views. YES predictors win."
+                                : "The video did not reach its target views. NO predictors win."}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
             </div>
           </div>
         </div>

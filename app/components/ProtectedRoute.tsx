@@ -5,6 +5,7 @@ import {
   useRequireRole,
 } from "../contexts/AuthContext";
 import { UserRole as UserRoleEnum } from "../lib/types";
+import Loader from "./Loader";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -28,7 +29,7 @@ export function ProtectedRoute({
     if (isLoading) {
       return (
         <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-600"></div>
+          <Loader size="lg" />
         </div>
       );
     }
@@ -47,7 +48,7 @@ export function ProtectedRoute({
     if (isLoading) {
       return (
         <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-600"></div>
+          <Loader size="lg" />
         </div>
       );
     }

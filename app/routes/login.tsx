@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import type { LoginRequest } from "../lib/types";
 import { UserRole as UserRoleEnum } from "../lib/types";
+import Loader from "../components/Loader";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -220,7 +221,7 @@ export default function LoginPage() {
               >
                 {isLoading ? (
                   <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    <Loader size="sm" className="mr-2" />
                     Signing in...
                   </div>
                 ) : (

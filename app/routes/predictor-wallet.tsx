@@ -6,6 +6,21 @@ import {
 import DepositModal from "../components/DepositModal";
 import { useAppContext } from "../contexts/AppContext";
 import { useAuth } from "~/contexts/AuthContext";
+import IconContainer from "../components/IconContainer";
+import Loader from "../components/Loader";
+import {
+  faWallet,
+  faCreditCard,
+  faMoneyBillTransfer,
+  faChartBar,
+  faTrophy,
+  faBullseye,
+  faCrown,
+  faHandshake,
+  faChartLine,
+  faClock,
+  faBuilding,
+} from "@fortawesome/free-solid-svg-icons";
 
 export default function PredictorWallet() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -19,19 +34,19 @@ export default function PredictorWallet() {
   const getTransactionIcon = (type: string) => {
     switch (type) {
       case "win":
-        return "🎉";
+        return faTrophy;
       case "stake":
-        return "🎯";
+        return faBullseye;
       case "deposit":
-        return "💰";
+        return faWallet;
       case "withdrawal":
-        return "💸";
+        return faMoneyBillTransfer;
       case "royalty":
-        return "👑";
+        return faCrown;
       case "pledge":
-        return "🤝";
+        return faHandshake;
       default:
-        return "📊";
+        return faChartBar;
     }
   };
 
@@ -40,6 +55,25 @@ export default function PredictorWallet() {
       return "text-green-600";
     } else {
       return "text-red-600";
+    }
+  };
+
+  const getTransactionIconColors = (type: string) => {
+    switch (type) {
+      case "win":
+        return { bg: "bg-yellow-100", icon: "text-yellow-600" };
+      case "stake":
+        return { bg: "bg-orange-100", icon: "text-orange-600" };
+      case "deposit":
+        return { bg: "bg-green-100", icon: "text-green-600" };
+      case "withdrawal":
+        return { bg: "bg-red-100", icon: "text-red-600" };
+      case "royalty":
+        return { bg: "bg-yellow-100", icon: "text-yellow-600" };
+      case "pledge":
+        return { bg: "bg-cyan-100", icon: "text-cyan-600" };
+      default:
+        return { bg: "bg-orange-100", icon: "text-orange-600" };
     }
   };
 
@@ -59,11 +93,16 @@ export default function PredictorWallet() {
       <div className="bg-gradient-to-r from-orange-600 to-cyan-600 rounded-xl p-6 text-white">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Available Balance</h2>
-          <span className="text-2xl">💰</span>
+          <IconContainer
+            icon={faWallet}
+            size="medium"
+            iconColor="text-white"
+            iconBgColor="bg-white/20"
+          />
         </div>
         {isWalletLoading ? (
           <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+            <Loader size="md" variant="white" />
           </div>
         ) : (
           <>
@@ -95,7 +134,12 @@ export default function PredictorWallet() {
           className="bg-white border border-gray-300 rounded-lg p-4 hover:bg-gray-50 transition-colors"
         >
           <div className="flex items-center space-x-3">
-            <span className="text-2xl">💳</span>
+            <IconContainer
+              icon={faCreditCard}
+              size="medium"
+              iconColor="text-orange-600"
+              iconBgColor="bg-orange-100"
+            />
             <div className="text-left">
               <div className="font-medium text-gray-900">Deposit</div>
               <div className="text-sm text-gray-500">
@@ -106,7 +150,12 @@ export default function PredictorWallet() {
         </button>
         <button className="bg-white border border-gray-300 rounded-lg p-4 hover:bg-gray-50 transition-colors">
           <div className="flex items-center space-x-3">
-            <span className="text-2xl">💸</span>
+            <IconContainer
+              icon={faMoneyBillTransfer}
+              size="medium"
+              iconColor="text-green-600"
+              iconBgColor="bg-green-100"
+            />
             <div className="text-left">
               <div className="font-medium text-gray-900">Withdraw</div>
               <div className="text-sm text-gray-500">Transfer to your bank</div>
@@ -115,7 +164,12 @@ export default function PredictorWallet() {
         </button>
         <button className="bg-white border border-gray-300 rounded-lg p-4 hover:bg-gray-50 transition-colors">
           <div className="flex items-center space-x-3">
-            <span className="text-2xl">📊</span>
+            <IconContainer
+              icon={faChartBar}
+              size="medium"
+              iconColor="text-cyan-600"
+              iconBgColor="bg-cyan-100"
+            />
             <div className="text-left">
               <div className="font-medium text-gray-900">History</div>
               <div className="text-sm text-gray-500">View all transactions</div>
@@ -176,7 +230,12 @@ export default function PredictorWallet() {
                         +$245.50
                       </p>
                     </div>
-                    <span className="text-2xl">📈</span>
+                    <IconContainer
+                      icon={faChartLine}
+                      size="large"
+                      iconColor="text-cyan-600"
+                      iconBgColor="bg-cyan-100"
+                    />
                   </div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4">
@@ -187,7 +246,12 @@ export default function PredictorWallet() {
                       </p>
                       <p className="text-2xl font-bold text-gray-900">78.7%</p>
                     </div>
-                    <span className="text-2xl">🎯</span>
+                    <IconContainer
+                      icon={faBullseye}
+                      size="large"
+                      iconColor="text-orange-600"
+                      iconBgColor="bg-orange-100"
+                    />
                   </div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4">
@@ -198,7 +262,12 @@ export default function PredictorWallet() {
                       </p>
                       <p className="text-2xl font-bold text-gray-900">$90</p>
                     </div>
-                    <span className="text-2xl">⏱️</span>
+                    <IconContainer
+                      icon={faClock}
+                      size="large"
+                      iconColor="text-orange-600"
+                      iconBgColor="bg-orange-100"
+                    />
                   </div>
                 </div>
               </div>
@@ -214,9 +283,16 @@ export default function PredictorWallet() {
                       key={transaction.id}
                       className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg"
                     >
-                      <span className="text-xl">
-                        {getTransactionIcon(transaction.type)}
-                      </span>
+                      <IconContainer
+                        icon={getTransactionIcon(transaction.type)}
+                        size="small"
+                        iconColor={
+                          getTransactionIconColors(transaction.type).icon
+                        }
+                        iconBgColor={
+                          getTransactionIconColors(transaction.type).bg
+                        }
+                      />
                       <div className="flex-1">
                         <p className="text-sm font-medium text-gray-900">
                           {transaction.description}
@@ -245,9 +321,12 @@ export default function PredictorWallet() {
                   key={transaction.id}
                   className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg"
                 >
-                  <span className="text-2xl">
-                    {getTransactionIcon(transaction.type)}
-                  </span>
+                  <IconContainer
+                    icon={getTransactionIcon(transaction.type)}
+                    size="medium"
+                    iconColor={getTransactionIconColors(transaction.type).icon}
+                    iconBgColor={getTransactionIconColors(transaction.type).bg}
+                  />
                   <div className="flex-1">
                     <p className="font-medium text-gray-900">
                       {transaction.description}
@@ -278,9 +357,18 @@ export default function PredictorWallet() {
                   className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
                 >
                   <div className="flex items-center space-x-3">
-                    <span className="text-2xl">
-                      {method.type === "bank" ? "🏦" : "💳"}
-                    </span>
+                    <IconContainer
+                      icon={method.type === "bank" ? faBuilding : faCreditCard}
+                      size="medium"
+                      iconColor={
+                        method.type === "bank"
+                          ? "text-blue-600"
+                          : "text-orange-600"
+                      }
+                      iconBgColor={
+                        method.type === "bank" ? "bg-blue-100" : "bg-orange-100"
+                      }
+                    />
                     <div>
                       <p className="font-medium text-gray-900">{method.name}</p>
                       <p className="text-sm text-gray-500 capitalize">

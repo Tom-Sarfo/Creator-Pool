@@ -18,6 +18,7 @@ import { faYoutube } from "@fortawesome/free-brands-svg-icons";
 import { useAppContext } from "../contexts/AppContext";
 import { useAuth } from "../contexts/AuthContext";
 import { POOL_QUESTIONS, PLEDGE_OPTIONS } from "../lib/constants";
+import Loader from "./Loader";
 import { formatISODurationShort } from "../lib/utils";
 import { poolService } from "../services/pool.service";
 import type { Suggestion } from "../lib/types";
@@ -619,10 +620,11 @@ export default function EnablePoolModal({
                     disabled={loadingSuggestions}
                     className="flex items-center space-x-2 text-sm text-orange-600 hover:text-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <FontAwesomeIcon
-                      icon={loadingSuggestions ? faSpinner : faRefresh}
-                      className={`w-4 h-4 ${loadingSuggestions ? "animate-spin" : ""}`}
-                    />
+                    {loadingSuggestions ? (
+                      <Loader size="sm" />
+                    ) : (
+                      <FontAwesomeIcon icon={faRefresh} className="w-4 h-4" />
+                    )}
                     <span>Regenerate</span>
                   </button>
                 )}
@@ -631,10 +633,7 @@ export default function EnablePoolModal({
               {loadingSuggestions && suggestions.length === 0 && !analytics ? (
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
                   <div className="flex items-center justify-center space-x-2">
-                    <FontAwesomeIcon
-                      icon={faSpinner}
-                      className="w-4 h-4 text-gray-400 animate-spin"
-                    />
+                    <Loader size="sm" />
                     <span className="text-xs sm:text-sm text-gray-500">
                       Loading suggestions...
                     </span>
@@ -827,10 +826,11 @@ export default function EnablePoolModal({
               }
               className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base"
             >
-              <FontAwesomeIcon
-                icon={isEnabling ? faSpinner : faRocket}
-                className={`w-4 h-4 ${isEnabling ? "animate-spin" : ""}`}
-              />
+              {isEnabling ? (
+                <Loader size="sm" variant="white" />
+              ) : (
+                <FontAwesomeIcon icon={faRocket} className="w-4 h-4" />
+              )}
               <span>{isEnabling ? "Enabling..." : "Enable Pool"}</span>
             </button>
           </div>

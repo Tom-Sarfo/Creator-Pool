@@ -1179,7 +1179,6 @@ export const POOL_QUESTIONS = [
     basis: "Based on your channel's performance",
     performance: "Based on your avg. 85K views/2 weeks",
   },
-  
 ];
 
 export const PLEDGE_OPTIONS = [

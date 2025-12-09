@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import { useAuth } from "../contexts/AuthContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import IconContainer from "../components/IconContainer";
 import { useState, useEffect } from "react";
 import {
   faBullseye,
@@ -66,7 +67,13 @@ export default function PredictorDashboard() {
     <div className="space-y-6">
       <div className="bg-gradient-to-r from-orange-600 to-cyan-600 rounded-xl p-6 text-white">
         <div className="flex items-center mb-2">
-          <FontAwesomeIcon icon={faBrain} className="text-2xl mr-3" />
+          <IconContainer
+            icon={faBrain}
+            size="medium"
+            iconColor="text-white"
+            iconBgColor="bg-white/20"
+            className="mr-3"
+          />
           <h1 className="text-2xl font-bold">
             {PREDICTOR_DASHBOARD_WELCOME_MESSAGE.title}
           </h1>
