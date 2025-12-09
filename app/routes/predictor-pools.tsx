@@ -1,10 +1,17 @@
 import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSearch, faBullseye, faClock } from "@fortawesome/free-solid-svg-icons";
+import {
+  faSearch,
+  faBullseye,
+  faClock,
+} from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "../contexts/AuthContext";
 import { useAppContext } from "../contexts/AppContext";
 import type { Pool, PredictionChoice, PoolStatus } from "../lib/types";
-import { PredictionResult as PredictionResultEnum, PoolStatus as PoolStatusEnum } from "../lib/types";
+import {
+  PredictionResult as PredictionResultEnum,
+  PoolStatus as PoolStatusEnum,
+} from "../lib/types";
 import PredictionModal from "../components/PredictionModal";
 import PoolCard from "../components/PoolCard";
 import Pagination from "../components/Pagination";
@@ -32,10 +39,11 @@ function isPoolEndingSoon(pool: Pool, currentTime: Date): boolean {
   if (pool.status === PoolStatusEnum.OPEN) {
     if (pool.closesAt) {
       const closesAt = new Date(pool.closesAt);
-      const hoursUntilClose = (closesAt.getTime() - currentTime.getTime()) / (1000 * 60 * 60);
+      const hoursUntilClose =
+        (closesAt.getTime() - currentTime.getTime()) / (1000 * 60 * 60);
       return hoursUntilClose > 0 && hoursUntilClose <= 24;
     }
-    
+
     // Fallback: calculate from createdAt + predictionWindowMinutes
     if (pool.createdAt) {
       const deadline = new Date(
@@ -46,7 +54,8 @@ function isPoolEndingSoon(pool: Pool, currentTime: Date): boolean {
         ).getTime() +
           (pool.predictionWindowMinutes || 43200) * 60 * 1000
       );
-      const hoursUntilDeadline = (deadline.getTime() - currentTime.getTime()) / (1000 * 60 * 60);
+      const hoursUntilDeadline =
+        (deadline.getTime() - currentTime.getTime()) / (1000 * 60 * 60);
       return hoursUntilDeadline > 0 && hoursUntilDeadline <= 24;
     }
   }
@@ -61,7 +70,8 @@ function isPoolEndingSoon(pool: Pool, currentTime: Date): boolean {
     const trackingEnd = new Date(
       trackingStart.getTime() + pool.trackingDurationDays * 24 * 60 * 60 * 1000
     );
-    const hoursUntilTrackingEnd = (trackingEnd.getTime() - currentTime.getTime()) / (1000 * 60 * 60);
+    const hoursUntilTrackingEnd =
+      (trackingEnd.getTime() - currentTime.getTime()) / (1000 * 60 * 60);
     return hoursUntilTrackingEnd > 0 && hoursUntilTrackingEnd <= 24;
   }
 
@@ -70,7 +80,9 @@ function isPoolEndingSoon(pool: Pool, currentTime: Date): boolean {
 
 export default function PredictorPools() {
   const [activeTab, setActiveTab] = useState("active");
-  const [selectedStatus, setSelectedStatus] = useState<PoolStatus | "all">("all");
+  const [selectedStatus, setSelectedStatus] = useState<PoolStatus | "all">(
+    "all"
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [showPredictionModal, setShowPredictionModal] = useState(false);
   const [selectedPool, setSelectedPool] = useState<Pool | null>(null);
@@ -98,25 +110,28 @@ export default function PredictorPools() {
 
   const allFilteredPools = pools.filter((pool) => {
     // Filter by status
-    const matchesStatus = selectedStatus === "all" || pool.status === selectedStatus;
-    
+    const matchesStatus =
+      selectedStatus === "all" || pool.status === selectedStatus;
+
     // Filter by search query
     const matchesSearch =
       searchQuery === "" ||
       pool.video?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       pool.creator?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       pool.question?.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     // Filter by active/ending soon tab
     let matchesTab = true;
     if (activeTab === "ending") {
       matchesTab = isPoolEndingSoon(pool, currentTime);
     } else if (activeTab === "active") {
-      // Active pools: open, awaiting_release, or live_tracking
+      // Active pools: open, awaiting_release, live_tracking, or settled
+      // Include settled pools so users can see results
       matchesTab = [
         PoolStatusEnum.OPEN,
         PoolStatusEnum.AWAITING_RELEASE,
         PoolStatusEnum.LIVE_TRACKING,
+        PoolStatusEnum.SETTLED,
       ].includes(pool.status);
     }
 
@@ -213,7 +228,9 @@ export default function PredictorPools() {
             </div>
             <Select
               value={selectedStatus}
-              onValueChange={(value) => setSelectedStatus(value as PoolStatus | "all")}
+              onValueChange={(value) =>
+                setSelectedStatus(value as PoolStatus | "all")
+              }
             >
               <SelectTrigger className="w-full sm:w-[200px]">
                 <SelectValue placeholder="Select status" />

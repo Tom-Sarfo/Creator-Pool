@@ -18,6 +18,7 @@ import { faYoutube } from "@fortawesome/free-brands-svg-icons";
 import { useAppContext } from "../contexts/AppContext";
 import { useAuth } from "../contexts/AuthContext";
 import { POOL_QUESTIONS, PLEDGE_OPTIONS } from "../lib/constants";
+import Loader from "./Loader";
 import { formatISODurationShort } from "../lib/utils";
 import { poolService } from "../services/pool.service";
 import type { Suggestion } from "../lib/types";
@@ -243,12 +244,12 @@ export default function EnablePoolModal({
     if (needsVideoSelection && !selectedVideoId) return;
     if (isEnabling) return; // Prevent double submission
 
-    // Use custom question if new creator, otherwise use selected suggestion
+    // Use custom question if no suggestions available, otherwise use selected suggestion
     let questionText: string;
     let targetViews: number | undefined;
     let trackingDurationDays: number | undefined;
 
-    if (isNewCreator && customQuestion.trim()) {
+    if (suggestions.length === 0 && customQuestion.trim()) {
       questionText = customQuestion.trim();
       targetViews = undefined;
       trackingDurationDays = undefined;
@@ -619,10 +620,11 @@ export default function EnablePoolModal({
                     disabled={loadingSuggestions}
                     className="flex items-center space-x-2 text-sm text-orange-600 hover:text-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <FontAwesomeIcon
-                      icon={loadingSuggestions ? faSpinner : faRefresh}
-                      className={`w-4 h-4 ${loadingSuggestions ? "animate-spin" : ""}`}
-                    />
+                    {loadingSuggestions ? (
+                      <Loader size="sm" />
+                    ) : (
+                      <FontAwesomeIcon icon={faRefresh} className="w-4 h-4" />
+                    )}
                     <span>Regenerate</span>
                   </button>
                 )}
@@ -631,10 +633,7 @@ export default function EnablePoolModal({
               {loadingSuggestions && suggestions.length === 0 && !analytics ? (
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
                   <div className="flex items-center justify-center space-x-2">
-                    <FontAwesomeIcon
-                      icon={faSpinner}
-                      className="w-4 h-4 text-gray-400 animate-spin"
-                    />
+                    <Loader size="sm" />
                     <span className="text-xs sm:text-sm text-gray-500">
                       Loading suggestions...
                     </span>
@@ -660,7 +659,7 @@ export default function EnablePoolModal({
                     </button>
                   </div>
                 </div>
-              ) : isNewCreator ? (
+              ) : suggestions.length === 0 ? (
                 <>
                   <div className="mb-3 sm:mb-4">
                     <label
@@ -756,19 +755,7 @@ export default function EnablePoolModal({
                     </div>
                   )}
                 </>
-              ) : (
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
-                  <div className="flex items-center space-x-2">
-                    <FontAwesomeIcon
-                      icon={faQuestionCircle}
-                      className="w-4 h-4 text-gray-400"
-                    />
-                    <span className="text-xs sm:text-sm text-gray-500">
-                      No suggestions available. Please create a pool manually.
-                    </span>
-                  </div>
-                </div>
-              )}
+              ) : null}
             </div>
 
             {pledgeType === "fixed" && parseFloat(customAmount) > 0 && (
@@ -821,16 +808,17 @@ export default function EnablePoolModal({
               disabled={
                 !termsAccepted ||
                 (needsVideoSelection && !selectedVideoId) ||
-                (isNewCreator && !customQuestion.trim()) ||
+                (suggestions.length === 0 && !customQuestion.trim()) ||
                 !!walletError ||
                 isEnabling
               }
               className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base"
             >
-              <FontAwesomeIcon
-                icon={isEnabling ? faSpinner : faRocket}
-                className={`w-4 h-4 ${isEnabling ? "animate-spin" : ""}`}
-              />
+              {isEnabling ? (
+                <Loader size="sm" variant="white" />
+              ) : (
+                <FontAwesomeIcon icon={faRocket} className="w-4 h-4" />
+              )}
               <span>{isEnabling ? "Enabling..." : "Enable Pool"}</span>
             </button>
           </div>

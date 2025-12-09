@@ -35,8 +35,10 @@ import EmptyState from "../components/EmptyState";
 import { useAppContext } from "../contexts/AppContext";
 import type { Pool } from "../lib/types";
 import YouTubeConnectionButton from "../components/YouTubeConnectionButton";
+import Loader from "../components/Loader";
 import { youtubeService } from "../services/youtube.service";
 import { API_CONFIG } from "../lib/api-config";
+import IconContainer from "~/components/IconContainer";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -368,7 +370,7 @@ export default function CreatorDashboard() {
       // Create pool - backend will deduct the pledge amount
       // addPool now handles wallet refresh automatically
       await addPool(newPool);
-      
+
       handleCloseModal();
     } catch (error: any) {
       // Error handling is done in addPool, but we can add additional handling here if needed
@@ -428,8 +430,14 @@ export default function CreatorDashboard() {
 
             {isYouTubeConnected && youtubeChannel ? (
               <div className="mb-3 sm:mb-4">
-                <p className="text-xs sm:text-sm text-gray-600 mb-2">
-                  ✅ Connected to:{" "}
+                <p className="flex items-center space-x-2 text-xs sm:text-sm text-gray-600 mb-2">
+                  <IconContainer
+                    icon={faCheckCircle}
+                    size="small"
+                    iconColor="text-green-600"
+                    iconBgColor="bg-green-100"
+                  />{" "}
+                  Connected to:{" "}
                   <span className="font-semibold text-gray-900">
                     {youtubeChannel.name ||
                       youtubeChannel.channelName ||
@@ -461,10 +469,11 @@ export default function CreatorDashboard() {
                   disabled={isYouTubeLoading}
                   className="px-3 sm:px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors inline-flex items-center justify-center space-x-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <FontAwesomeIcon
-                    icon={faSync}
-                    className={`w-4 h-4 ${isYouTubeLoading ? "animate-spin" : ""}`}
-                  />
+                  {isYouTubeLoading ? (
+                    <Loader size="sm" variant="white" />
+                  ) : (
+                    <FontAwesomeIcon icon={faSync} className="w-4 h-4" />
+                  )}
                   <span>{isYouTubeLoading ? "Syncing..." : "Sync Videos"}</span>
                 </button>
               </>

@@ -38,6 +38,11 @@ import {
   faUsers,
   faUsersRectangle,
   faChevronRight,
+  faCreditCard,
+  faMoneyBillTransfer,
+  faCrown,
+  faHandshake,
+  faBuilding,
 } from "@fortawesome/free-solid-svg-icons";
 import { faYoutube } from "@fortawesome/free-brands-svg-icons";
 
@@ -85,5 +90,10 @@ library.add(
   faUsers,
   faUsersRectangle,
   faChevronRight,
+  faCreditCard,
+  faMoneyBillTransfer,
+  faCrown,
+  faHandshake,
+  faBuilding,
   faYoutube
 );

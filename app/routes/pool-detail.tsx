@@ -20,6 +20,7 @@ import {
   faEdit,
   faCrown,
 } from "@fortawesome/free-solid-svg-icons";
+import Loader from "../components/Loader";
 import { POOL_DETAIL_TABS, HOW_IT_WORKS_STEPS } from "../lib/constants";
 import {
   calculateRemainingTime,
@@ -33,7 +34,8 @@ import {
 } from "../lib/utils";
 import { useAppContext } from "../contexts/AppContext";
 import { poolService } from "../services/pool.service";
-import type { Pool } from "../lib/types";
+import type { Pool, PoolResult } from "../lib/types";
+import { PoolResult as PoolResultEnum } from "../lib/types";
 import PlayButtonOverlay from "../components/PlayButtonOverlay";
 import PredictionModal from "../components/PredictionModal";
 import PoolDistribution from "../components/PoolDistribution";
@@ -207,7 +209,7 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+          <Loader size="lg" className="mx-auto mb-4" />
           <p className="text-gray-600">Loading pool data...</p>
         </div>
       </div>
@@ -706,7 +708,122 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                 </div>
 
                 {/* How It Works / Winner Card */}
-                {showResultCard ? (
+                {pool.status === "settled" && currentPoolData.result ? (
+                  <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 space-y-4">
+                    {/* Winning Side Indicator */}
+                    <div
+                      className={`rounded-lg p-4 ${
+                        currentPoolData.result === PoolResultEnum.YES_WON
+                          ? "bg-green-50 border border-green-200"
+                          : currentPoolData.result === PoolResultEnum.NO_WON
+                            ? "bg-red-50 border border-red-200"
+                            : "bg-gray-50 border border-gray-200"
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3 mb-2">
+                        <FontAwesomeIcon
+                          icon={faTrophy}
+                          className={`w-5 h-5 ${
+                            currentPoolData.result === PoolResultEnum.YES_WON
+                              ? "text-green-600"
+                              : currentPoolData.result === PoolResultEnum.NO_WON
+                                ? "text-red-600"
+                                : "text-gray-600"
+                          }`}
+                        />
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {currentPoolData.result === PoolResultEnum.YES_WON
+                            ? "YES Prediction Won"
+                            : currentPoolData.result === PoolResultEnum.NO_WON
+                              ? "NO Prediction Won"
+                              : "Pool Settled"}
+                        </h3>
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        {currentPoolData.result === PoolResultEnum.YES_WON
+                          ? "The video reached its target views. YES predictors win."
+                          : currentPoolData.result === PoolResultEnum.NO_WON
+                            ? "The video did not reach its target views. NO predictors win."
+                            : "The pool has been settled."}
+                      </p>
+                    </div>
+
+                    {/* User's Prediction Result Card */}
+                    {showResultCard && (
+                      <div
+                        className={`rounded-lg border p-4 ${
+                          didWin
+                            ? "border-green-200 bg-green-50"
+                            : "border-gray-200 bg-gray-50"
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3 mb-4">
+                          <div
+                            className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                              didWin
+                                ? "bg-green-100 text-green-700"
+                                : "bg-gray-100 text-gray-600"
+                            }`}
+                          >
+                            <FontAwesomeIcon
+                              icon={didWin ? faTrophy : faInfoCircle}
+                              className="w-5 h-5"
+                            />
+                          </div>
+                          <div>
+                            <h4 className="text-base font-semibold text-gray-900">
+                              {didWin
+                                ? "You won this pool!"
+                                : "Your prediction didn't win"}
+                            </h4>
+                            <p className="text-sm text-gray-600">
+                              {didWin
+                                ? `Great call on your ${resultChoice?.toUpperCase()} prediction.`
+                                : `Your ${resultChoice?.toUpperCase()} prediction didn't win this time.`}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="space-y-3">
+                          <div className="flex justify-between text-sm text-gray-700">
+                            <span>Your stake</span>
+                            <span className="font-medium text-gray-900">
+                              ${resultStake.toLocaleString()}
+                            </span>
+                          </div>
+                          {resultPayout !== null && resultPayout >= 0 && (
+                            <div className="flex justify-between text-sm text-gray-700">
+                              <span>
+                                {didWin ? "Payout received" : "Returned amount"}
+                              </span>
+                              <span
+                                className={`font-medium ${
+                                  didWin ? "text-green-700" : "text-gray-800"
+                                }`}
+                              >
+                                ${resultPayout.toLocaleString()}
+                              </span>
+                            </div>
+                          )}
+                          <div className="text-xs text-gray-500">
+                            Settled on{" "}
+                            {resultSettledAt
+                              ? new Date(resultSettledAt).toLocaleString()
+                              : "recently"}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Show message if user didn't make a prediction */}
+                    {!userPrediction && (
+                      <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                        <p className="text-sm text-gray-600">
+                          You didn't make a prediction on this pool.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : showResultCard ? (
                   <div
                     className={`bg-white rounded-lg border p-4 sm:p-6 ${
                       didWin ? "border-green-200" : "border-gray-200"

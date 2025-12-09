@@ -224,3 +224,26 @@ input[type="number"] {
 .prediction-modal button[class*="bg-orange-600"]:focus {
   box-shadow: 0 0 0 2px rgb(249 70 0 / 0.2) !important; /* orange-600 with opacity */
 }
+
+/* Play Button Loader Animations */
+@keyframes playRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes playPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.play-loader {
+  animation: playRotate 1.5s linear infinite, playPulse 1.5s ease-in-out infinite;
+}
