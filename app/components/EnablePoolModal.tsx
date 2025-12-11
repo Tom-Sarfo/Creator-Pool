@@ -596,15 +596,46 @@ export default function EnablePoolModal({
                     placeholderColor="placeholder-gray-500"
                   />
                   {walletBalance && (
-                    <div className="text-xs text-gray-600">
+                    <div className="text-xs text-gray-600 mb-2">
                       Your wallet balance: ${walletBalance.balance.toFixed(2)}
                     </div>
                   )}
                   {walletError && (
-                    <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">
+                    <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2 mb-2">
                       {walletError}
                     </div>
                   )}
+                  {customAmount &&
+                    parseFloat(customAmount) > 0 &&
+                    walletBalance && (
+                      <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-start space-x-2">
+                          <FontAwesomeIcon
+                            icon={faShieldAlt}
+                            className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0"
+                          />
+                          <div className="flex-1">
+                            <p className="text-xs font-medium text-blue-900 mb-1">
+                              Escrow Information
+                            </p>
+                            <p className="text-xs text-blue-700">
+                              ${parseFloat(customAmount).toFixed(2)} will be
+                              held in escrow until pool settlement
+                            </p>
+                            {walletBalance.balance >=
+                              parseFloat(customAmount) && (
+                              <p className="text-xs text-blue-600 mt-1">
+                                Remaining balance: $
+                                {(
+                                  walletBalance.balance -
+                                  parseFloat(customAmount)
+                                ).toFixed(2)}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                 </div>
               )}
             </div>

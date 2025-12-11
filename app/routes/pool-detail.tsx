@@ -705,6 +705,102 @@ export default function PoolDetailPage({ params }: Route.ComponentProps) {
                       </div>
                     )}
                   </div>
+
+                  {/* Escrow Information */}
+                  <div className="border-t pt-6 mt-6">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <FontAwesomeIcon
+                        icon={faInfoCircle}
+                        className="w-5 h-5 text-blue-600"
+                      />
+                      <h4 className="text-lg font-medium text-gray-900">
+                        Escrow Status
+                      </h4>
+                    </div>
+                    {pool.status !== "settled" &&
+                    Number(pool.escrowedAmount || 0) > 0 ? (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div className="mb-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-blue-900">
+                              Total in Escrow
+                            </span>
+                            <span className="text-lg font-bold text-blue-700">
+                              ${Number(pool.escrowedAmount || 0).toFixed(2)}
+                            </span>
+                          </div>
+                          <div className="text-xs text-blue-600 mb-3">
+                            Funds are securely held until pool settlement
+                          </div>
+                        </div>
+                        <div className="space-y-2 border-t border-blue-200 pt-3">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-700">
+                              Creator Pledge
+                            </span>
+                            <span className="font-medium text-gray-900">
+                              $
+                              {Number(pool.escrowedCreatorPledge || 0).toFixed(
+                                2
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-700">
+                              Predictor Stakes
+                            </span>
+                            <span className="font-medium text-gray-900">
+                              $
+                              {Number(
+                                pool.escrowedPredictorStakes || 0
+                              ).toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : pool.status === "settled" ? (
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                        <div className="mb-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-gray-900">
+                              Settlement Details
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              Escrow cleared
+                            </span>
+                          </div>
+                        </div>
+                        <div className="space-y-2 border-t border-gray-200 pt-3">
+                          {Number(pool.platformFeeCollected || 0) > 0 && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-700">
+                                Platform Fee (5%)
+                              </span>
+                              <span className="font-medium text-gray-900">
+                                $
+                                {Number(pool.platformFeeCollected || 0).toFixed(
+                                  2
+                                )}
+                              </span>
+                            </div>
+                          )}
+                          {Number(pool.creatorRoyaltyCollected || 0) > 0 && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-700">
+                                Creator Royalty (1%)
+                              </span>
+                              <span className="font-medium text-gray-900">
+                                $
+                                {Number(
+                                  pool.creatorRoyaltyCollected || 0
+                                ).toFixed(2)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
 
                 {/* How It Works / Winner Card */}

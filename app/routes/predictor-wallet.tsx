@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   PREDICTOR_WALLET_TRANSACTIONS,
   PREDICTOR_WALLET_PAYMENT_METHODS,
 } from "../lib/constants";
 import DepositModal from "../components/DepositModal";
+import TransactionHistory from "../components/TransactionHistory";
 import { useAppContext } from "../contexts/AppContext";
 import { useAuth } from "~/contexts/AuthContext";
 import IconContainer from "../components/IconContainer";
@@ -25,8 +26,27 @@ import {
 export default function PredictorWallet() {
   const [activeTab, setActiveTab] = useState("overview");
   const [showDepositModal, setShowDepositModal] = useState(false);
-  const { walletBalance, isWalletLoading, refreshWallet } = useAppContext();
+  const { walletBalance, isWalletLoading, refreshWallet, predictions, pools } =
+    useAppContext();
   const { user } = useAuth();
+
+  // Calculate total escrowed amount from user's stakes in non-settled pools
+  const totalEscrowed = useMemo(() => {
+    if (!user || !predictions || !pools) return 0;
+
+    const nonSettledPoolIds = new Set(
+      pools.filter((pool) => pool.status !== "settled").map((pool) => pool.id)
+    );
+
+    return predictions
+      .filter(
+        (prediction) =>
+          prediction.predictorId === user.id &&
+          prediction.poolId &&
+          nonSettledPoolIds.has(prediction.poolId)
+      )
+      .reduce((sum, prediction) => sum + (prediction.stake || 0), 0);
+  }, [user, predictions, pools]);
 
   const transactions = PREDICTOR_WALLET_TRANSACTIONS;
   const paymentMethods = PREDICTOR_WALLET_PAYMENT_METHODS;
@@ -109,18 +129,41 @@ export default function PredictorWallet() {
             <div className="text-3xl font-bold mb-2">
               ${user?.walletBalance?.toFixed(2) || "0.00"}
             </div>
-            <div className="flex space-x-6 text-sm text-orange-100">
-              <div>
-                <span className="block">Total Earned</span>
-                <span className="font-semibold">
-                  ${user?.walletBalance?.toFixed(2) || "0.00"}
-                </span>
-              </div>
-              <div>
-                <span className="block">Total Staked</span>
-                <span className="font-semibold">
-                  ${user?.walletBalance?.toFixed(2) || "0.00"}
-                </span>
+            <div className="space-y-2 text-sm text-orange-100">
+              {totalEscrowed > 0 && (
+                <div className="bg-white/10 rounded-lg p-2 mb-2">
+                  <div className="flex items-center justify-between">
+                    <span className="block">In Escrow</span>
+                    <span className="font-semibold">
+                      ${totalEscrowed.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="text-xs text-orange-200 mt-1">
+                    Held until pool settlement
+                  </div>
+                </div>
+              )}
+              <div className="flex space-x-6">
+                <div>
+                  <span className="block">Total Earned</span>
+                  <span className="font-semibold">
+                    ${user?.walletBalance?.toFixed(2) || "0.00"}
+                  </span>
+                </div>
+                <div>
+                  <span className="block">Total Staked</span>
+                  <span className="font-semibold">
+                    ${totalEscrowed.toFixed(2)}
+                  </span>
+                </div>
+                {totalEscrowed > 0 && (
+                  <div>
+                    <span className="block">Total Balance</span>
+                    <span className="font-semibold">
+                      ${((user?.walletBalance || 0) + totalEscrowed).toFixed(2)}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </>
@@ -315,38 +358,11 @@ export default function PredictorWallet() {
           )}
 
           {activeTab === "transactions" && (
-            <div className="space-y-4">
-              {transactions.map((transaction) => (
-                <div
-                  key={transaction.id}
-                  className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg"
-                >
-                  <IconContainer
-                    icon={getTransactionIcon(transaction.type)}
-                    size="medium"
-                    iconColor={getTransactionIconColors(transaction.type).icon}
-                    iconBgColor={getTransactionIconColors(transaction.type).bg}
-                  />
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">
-                      {transaction.description}
-                    </p>
-                    <p className="text-sm text-gray-500">{transaction.date}</p>
-                  </div>
-                  <div className="text-right">
-                    <span
-                      className={`font-medium ${getTransactionColor(transaction.type, transaction.amount)}`}
-                    >
-                      {transaction.amount > 0 ? "+" : ""}$
-                      {transaction.amount.toFixed(2)}
-                    </span>
-                    <p className="text-xs text-gray-500 capitalize">
-                      {transaction.status}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <TransactionHistory
+              userId={user?.id}
+              limit={50}
+              showFilters={true}
+            />
           )}
 
           {activeTab === "payment-methods" && (

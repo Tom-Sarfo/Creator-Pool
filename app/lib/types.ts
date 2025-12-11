@@ -220,6 +220,12 @@ export interface Pool {
   video?: Video;
   creator?: User;
   predictions?: Prediction[];
+  // Escrow fields
+  escrowedAmount?: number;
+  escrowedCreatorPledge?: number;
+  escrowedPredictorStakes?: number;
+  platformFeeCollected?: number;
+  creatorRoyaltyCollected?: number;
 }
 
 export interface Prediction {
@@ -391,13 +397,17 @@ export type TransactionType =
   | "reward"
   | "fee"
   | "royalty"
-  | "pledge";
+  | "pledge"
+  | "winnings"
+  | "platform_fee"
+  | "refund";
 
 export type TransactionStatus = "pending" | "completed" | "failed";
 
 export interface Transaction {
   id: string;
   userId: string;
+  poolId?: string | null;
   amount: number;
   type: TransactionType;
   status: TransactionStatus;
@@ -407,9 +417,12 @@ export interface Transaction {
   createdAt: string;
   updatedAt: string;
   user?: User;
+  pool?: Pool;
 }
 
 export interface GetTransactionsRequest {
+  userId?: string;
+  poolId?: string;
   type?: TransactionType;
   status?: TransactionStatus;
   page?: number;

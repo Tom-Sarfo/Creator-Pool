@@ -164,6 +164,51 @@ export default function PoolCard({
           </span>
         </div>
 
+        {/* Escrow Status */}
+        {pool.status !== "settled" && Number(pool.escrowedAmount || 0) > 0 && (
+          <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-medium text-blue-700 flex items-center gap-1">
+                <FontAwesomeIcon icon="lock" className="w-3 h-3" />$
+                {Number(pool.escrowedAmount || 0).toFixed(2)} in escrow
+              </span>
+            </div>
+            <div className="flex gap-2 text-xs text-blue-600">
+              <span>
+                Pledge: ${Number(pool.escrowedCreatorPledge || 0).toFixed(2)}
+              </span>
+              <span>•</span>
+              <span>
+                Stakes: ${Number(pool.escrowedPredictorStakes || 0).toFixed(2)}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Settlement Info */}
+        {pool.status === "settled" && (
+          <div className="mb-3 p-2 bg-gray-50 border border-gray-200 rounded-lg">
+            <div className="text-xs text-gray-600 space-y-1">
+              {Number(pool.platformFeeCollected || 0) > 0 && (
+                <div className="flex justify-between">
+                  <span>Platform Fee:</span>
+                  <span className="font-medium">
+                    ${Number(pool.platformFeeCollected || 0).toFixed(2)}
+                  </span>
+                </div>
+              )}
+              {Number(pool.creatorRoyaltyCollected || 0) > 0 && (
+                <div className="flex justify-between">
+                  <span>Creator Royalty:</span>
+                  <span className="font-medium">
+                    ${Number(pool.creatorRoyaltyCollected || 0).toFixed(2)}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="flex space-x-2">
           <button
             onClick={() =>
